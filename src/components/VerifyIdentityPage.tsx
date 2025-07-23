@@ -15,9 +15,7 @@ const steps = [
   { id: 6, title: "Declaration & Consent" },
 ];
 
-/**
- * Stepper navigation component to show progress
- */
+
 const Stepper = ({ currentStep }: { currentStep: number }) => (
   <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-5">
     <div className="absolute top-5 left-13 right-13 h-1 bg-gray-300"></div>
@@ -47,23 +45,15 @@ const Stepper = ({ currentStep }: { currentStep: number }) => (
 );
 
 
-/**
- * Main page component for Identity Verification
- */
 export function VerifyIdentityPage() {
     function onNavigateToUpload(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
         event.preventDefault();
-        // Example: navigate to upload page or open file dialog
-        // If using React Router:
-        // navigate("/upload-id");
-        // For now, just show an alert as a placeholder
         alert("Navigate to upload ID card page or open file dialog.");
     }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
       <div className="w-full max-w-lg ">
-        {/* Stepper Component */}
         <Stepper currentStep={1} />
         <div className="w-full bg-white rounded-xl shadow-md p-8 ">
           <div className="text-center mb-8">
@@ -74,19 +64,19 @@ export function VerifyIdentityPage() {
           </div>
 
           <div className="space-y-4">
-            {/* Option 1: Scan ID Card */}
+            {/* Scan ID Card */}
             <Card className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
               <div className="bg-blue-600 p-4 rounded-lg">
                 <Camera className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="font-semibold text-lg text-gray-800">Scan ID Card</h2>
-                <p className="text-sm text-gray-500">Use your Camera to scan</p>
+                <h2 className="font-semibold text-base sm:text-lg text-gray-800">Scan ID Card</h2>
+                <p className="text-xs sm:text-sm text-gray-500">Use your Camera to scan</p>
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
             </Card>
 
-            {/* Option 2: Upload from device */}
+            {/* Upload from device */}
             
             <Card 
             className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
@@ -94,8 +84,8 @@ export function VerifyIdentityPage() {
                 <UploadCloud className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="font-semibold text-lg text-gray-800">Upload from device</h2>
-                <p className="text-sm text-gray-500">Choose file from your device</p>
+                <h2 className="font-semibold text-base sm:text-lg text-gray-800">Upload from device</h2>
+                <p className="text-xs sm:text-sm text-gray-500">Choose file from your device</p>
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
             </Card>
@@ -106,3 +96,4 @@ export function VerifyIdentityPage() {
   );
 
 }
+
