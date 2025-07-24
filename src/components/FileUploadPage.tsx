@@ -12,11 +12,9 @@ export function FileUploadPage() {
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
-  // **(1) เพิ่ม State สำหรับเก็บ URL ภาพตัวอย่าง**
   const [filePreview, setFilePreview] = React.useState<string | null>(null);
 
   const simulateUpload = (file: File) => {
-    // รีเซ็ตค่าเก่าก่อนเริ่มอัปโหลดใหม่
     if (filePreview) {
       URL.revokeObjectURL(filePreview);
       setFilePreview(null);
@@ -26,7 +24,6 @@ export function FileUploadPage() {
     setUploadProgress(0);
     setSelectedFile(file);
 
-    // **(2) สร้าง URL สำหรับภาพตัวอย่างถ้าเป็นไฟล์รูปภาพ**
     if (file.type.startsWith("image/")) {
       setFilePreview(URL.createObjectURL(file));
     }
@@ -35,7 +32,7 @@ export function FileUploadPage() {
       setUploadProgress((prev) => {
         if (prev >= 100) {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          setIsUploading(false); // อัปโหลดเสร็จ
+          setIsUploading(false);
           return 100;
         }
         return prev + 10;
@@ -81,7 +78,6 @@ export function FileUploadPage() {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    // **(3) ล้าง URL ภาพตัวอย่างเมื่อลบไฟล์ เพื่อป้องกัน memory leak**
     if (filePreview) {
       URL.revokeObjectURL(filePreview);
       setFilePreview(null);
@@ -111,7 +107,7 @@ export function FileUploadPage() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-xl text-blue-900 font-bold">Upload from device</CardTitle>
+                <CardTitle className="text-xl text-[#0F2D73] font-bold">Upload from device</CardTitle>
                 <CardDescription className="text-sm text-gray-500 pt-1">
                   Please upload your files here
                 </CardDescription>
@@ -121,9 +117,7 @@ export function FileUploadPage() {
           <CardContent>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".jpg,.jpeg,.png,.pdf" />
 
-            {/* **(4) แก้ไข Logic: ใน Card จะแสดงแค่ Loading หรือ Dropzone** */}
             {isUploading ? (
-              // UI ขณะกำลังอัปโหลด 
               <div className="mt-2 flex flex-col items-center justify-center p-8 border-2 border-dashed border-blue-200 rounded-xl">
                 <div className="relative h-20 w-20">
                   <svg className="h-full w-full" viewBox="0 0 100 100">
@@ -136,7 +130,6 @@ export function FileUploadPage() {
                 <Button variant="outline" size="sm" onClick={handleCancelOrRemove} className="mt-4 rounded-lg border-gray-300 text-gray-600">Cancel</Button>
               </div>
             ) : (
-              // UI เริ่มต้น (Dropzone)
               <div 
                 onClick={handleDropzoneClick} 
                 onDrop={handleDrop} 
@@ -144,7 +137,7 @@ export function FileUploadPage() {
                 className="mt-2 group flex flex-col items-center justify-center p-8 border-2 border-dashed border-blue-700 rounded-xl cursor-pointer transition-all duration-300 hover:border-solid hover:border-blue-600 hover:bg-[#F0F1F9]"
               >
                 <div className="text-center">
-                  <UploadCloud className="mx-auto h-12 w-12 text-blue-700 transition-colors duration-300 group-hover:text-blue-700" />
+                  <UploadCloud className="mx-auto h-12 w-12 text-[#1849D6] transition-colors duration-300 group-hover:text-[#1849D6]" />
                   <p className="mt-4 font-semibold text-gray-600">Upload picture here</p>
                   <p className="mt-1 text-xs text-gray-500">Max 10 MB files are allowed</p>
                 </div>
@@ -154,12 +147,11 @@ export function FileUploadPage() {
             <p className="mt-4 text-xs text-gray-500">
               Only support .jpg, .png and .pdf files
             </p>
-            {/* ส่วนแสดงไฟล์หลัง upload */}
+
             {selectedFile && !isUploading && (
               <div className="mt-4 w-full max-w-md p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3 text-left">
-                    {/* แสดงภาพตัวอย่างถ้ามี, หรือแสดงไอคอนไฟล์ทั่วไป */}
                     {filePreview ? (
                       <img src={filePreview} alt="Preview" className="h-10 w-10 rounded-md object-cover" />
                     ) : (
@@ -170,7 +162,11 @@ export function FileUploadPage() {
                       <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(2)} KB</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={handleCancelOrRemove} className="text-gray-500 hover:text-gray-700 flex-shrink-0">
+                  <Button 
+                    size="icon" 
+                    onClick={handleCancelOrRemove} 
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-800 rounded-full flex-shrink-0 transition-colors"
+                  >
                     <X className="h-5 w-5" />
                   </Button>
                 </div>
@@ -181,7 +177,7 @@ export function FileUploadPage() {
       </main>
 
       <footer className="p-4 mt-auto">
-        <Button className="w-full max-w-md mx-auto flex h-12 text-base " disabled={!selectedFile || isUploading}>
+        <Button className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#1A377A] hover:to-[#1F58C7] text-white " disabled={!selectedFile || isUploading}>
           Confirm
         </Button>
       </footer>
