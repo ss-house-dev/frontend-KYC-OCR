@@ -1,9 +1,10 @@
 // src/components/verify-identity-page.tsx
+'use client'
 
 import * as React from "react";
-import { Camera, UploadCloud, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {Card} from "@/components/ui/card";
+import { Camera, UploadCloud, ChevronRight, Link } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { useRouter } from 'next/navigation'
 
 // Data for the stepper component
 const steps = [
@@ -23,18 +24,16 @@ const Stepper = ({ currentStep }: { currentStep: number }) => (
       {steps.map((step) => (
         <div key={step.id} className="flex flex-col items-center w-24 text-center">
           <div
-            className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 ${
-              step.id === currentStep
-                ? "bg-blue-600 text-white"
-                : "border-2 border-gray-300 bg-white text-gray-400"
-            }`}
+            className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 ${step.id === currentStep
+              ? "bg-blue-600 text-white"
+              : "border-2 border-gray-300 bg-white text-gray-400"
+              }`}
           >
             {step.id}
           </div>
           <p
-            className={`mt-2 text-xs font-semibold transition-all duration-300 ${
-              step.id === currentStep ? "text-blue-600" : "text-gray-500"
-            }`}
+            className={`mt-2 text-xs font-semibold transition-all duration-300 ${step.id === currentStep ? "text-blue-600" : "text-gray-500"
+              }`}
           >
             {step.title}
           </p>
@@ -46,10 +45,12 @@ const Stepper = ({ currentStep }: { currentStep: number }) => (
 
 
 export function VerifyIdentityPage() {
-    function onNavigateToUpload(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
-        event.preventDefault();
-        alert("Navigate to upload ID card page or open file dialog.");
-    }
+  function onNavigateToUpload(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
+    event.preventDefault();
+    alert("Navigate to upload ID card page or open file dialog.");
+  }
+
+  const router = useRouter();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
@@ -65,7 +66,9 @@ export function VerifyIdentityPage() {
 
           <div className="space-y-4">
             {/* Scan ID Card */}
-            <Card className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
+            <Card 
+            onClick={() => router.push('/')}
+            className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
               <div className="bg-blue-600 p-4 rounded-lg">
                 <Camera className="w-8 h-8 text-white" />
               </div>
@@ -77,9 +80,9 @@ export function VerifyIdentityPage() {
             </Card>
 
             {/* Upload from device */}
-            
-            <Card 
-            className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
+            <Card
+              onClick={() => router.push('/uploadpic')}
+              className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
               <div className="bg-blue-600 p-4 rounded-lg">
                 <UploadCloud className="w-8 h-8 text-white" />
               </div>
