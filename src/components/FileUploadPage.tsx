@@ -24,10 +24,10 @@ export function FileUploadPage() {
     setUploadProgress(0);
     setSelectedFile(file);
 
+    // การแสดงภาพตัวอย่าง
     if (file.type.startsWith("image/")) {
       setFilePreview(URL.createObjectURL(file));
     }
-
     intervalRef.current = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 100) {
@@ -40,6 +40,7 @@ export function FileUploadPage() {
     }, 200);
   };
 
+  // เช็คขนาดไฟล์ที่อัปโหลด จากการคลิกเลือกไฟล์
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -51,9 +52,11 @@ export function FileUploadPage() {
     }
   };
 
+  // เช็คขนาดไฟล์ที่อัปโหลด จากการลากไฟล์มาวาง
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    if (isUploading || selectedFile) return;
     const file = event.dataTransfer.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
@@ -69,8 +72,9 @@ export function FileUploadPage() {
     event.stopPropagation();
   };
 
+  // ล้างไฟล์ที่อัปโหลด
   const handleDropzoneClick = () => {
-    if (isUploading) return;
+    if (isUploading || selectedFile) return;
     fileInputRef.current?.click();
   };
 
@@ -95,13 +99,12 @@ export function FileUploadPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
       <header className="p-4">
-        <Button 
-        onClick={() => router.push('/verified')}
-        variant="ghost" size="icon">
+        <Button
+          onClick={() => router.push('/verified')}
+          variant="ghost" size="icon">
           <ArrowLeft className="h-6 w-6" />
         </Button>
       </header>
-
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <Card className="flex-col w-full max-w-md rounded-2xl shadow-lg">
           <CardHeader>
@@ -117,6 +120,7 @@ export function FileUploadPage() {
           <CardContent>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".jpg,.jpeg,.png,.pdf" />
 
+            {/* uploading picture */}
             {isUploading ? (
               <div className="mt-2 flex flex-col items-center justify-center p-8 border-2 border-dashed border-blue-200 rounded-xl">
                 <div className="relative h-20 w-20">
@@ -130,16 +134,19 @@ export function FileUploadPage() {
                 <Button variant="outline" size="sm" onClick={handleCancelOrRemove} className="mt-4 rounded-lg border-gray-300 text-gray-600">Cancel</Button>
               </div>
             ) : (
-              <div 
-                onClick={handleDropzoneClick} 
-                onDrop={handleDrop} 
-                onDragOver={handleDragOver} 
-                className="mt-2 group flex flex-col items-center justify-center p-8 border-2 border-dashed border-blue-700 rounded-xl cursor-pointer transition-all duration-300 hover:border-solid hover:border-blue-600 hover:bg-[#F0F1F9]"
+              <div
+                onClick={handleDropzoneClick}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                className={`group flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl transition-all duration-300 ${selectedFile
+                  ? 'border-gray-300'
+                  : 'border-blue-700 cursor-pointer hover:border-solid hover:border-blue-600 hover:bg-[#F0F1F9]'
+                  }`}
               >
                 <div className="text-center">
-                  <UploadCloud className="mx-auto h-12 w-12 text-[#1849D6] transition-colors duration-300 group-hover:text-[#1849D6]" />
-                  <p className="mt-4 font-semibold text-gray-600">Upload picture here</p>
-                  <p className="mt-1 text-xs text-gray-500">Max 10 MB files are allowed</p>
+                  <UploadCloud className={`mx-auto h-12 w-12 transition-colors duration-300 ${selectedFile ? 'text-gray-400' : 'text-[#1849D6]'}`} />
+                  <p className={`mt-4 font-semibold ${selectedFile ? 'text-gray-400' : 'text-gray-600'}`}>Upload picture here</p>
+                  <p className={`mt-1 ${selectedFile ? 'text-gray-300' : 'text-gray-400'}`}>Max 10 MB files are allowed</p>
                 </div>
               </div>
             )}
@@ -148,12 +155,14 @@ export function FileUploadPage() {
               Only support .jpg, .png and .pdf files
             </p>
 
+            {/* แสดงตัวอย่างไฟล์ที่อัปโหลด */}
             {selectedFile && !isUploading && (
               <div className="mt-4 w-full max-w-md p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 text-left">
+                <div className="flex items-center justify-between space-x-2">
+                  {/* [การแก้ไข] เพิ่ม flex-1 และ min-w-0 ที่นี่ */}
+                  <div className="flex flex-1 items-center space-x-3 text-left min-w-0">
                     {filePreview ? (
-                      <img src={filePreview} alt="Preview" className="h-10 w-10 rounded-md object-cover" />
+                      <img src={filePreview} alt="Preview" className="h-10 w-10 rounded-md object-cover flex-shrink-0" />
                     ) : (
                       <FileIcon className="h-10 w-10 text-gray-400 flex-shrink-0" />
                     )}
@@ -162,9 +171,9 @@ export function FileUploadPage() {
                       <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(2)} KB</p>
                     </div>
                   </div>
-                  <Button 
-                    size="icon" 
-                    onClick={handleCancelOrRemove} 
+                  <Button
+                    size="icon"
+                    onClick={handleCancelOrRemove}
                     className="bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-800 rounded-full flex-shrink-0 transition-colors"
                   >
                     <X className="h-5 w-5" />
@@ -177,7 +186,11 @@ export function FileUploadPage() {
       </main>
 
       <footer className="p-4 mt-auto">
-        <Button className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#1A377A] hover:to-[#1F58C7] text-white " disabled={!selectedFile || isUploading}>
+        {/* [แก้ไข] เพิ่ม disabled:bg-gray-300 และ disabled:text-gray-500 เพื่อเปลี่ยนสีปุ่มตอนปิดใช้งาน */}
+        <Button
+          className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] text-white transition-colors duration-200 hover:from-[#1A377A] hover:to-[#1F58C7] disabled:from-gray-500 disabled:to-gray-500 disabled:text-white"
+          disabled={!selectedFile || isUploading}
+        >
           Confirm
         </Button>
       </footer>
