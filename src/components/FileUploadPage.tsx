@@ -1,145 +1,193 @@
-"use client"; // จำเป็นต้องใช้ Client Component เพราะมีการใช้ State และ Event Handlers
+"use client";
 
 import * as React from "react";
 import { ArrowLeft, UploadCloud, X, File as FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useRouter } from 'next/navigation'
 
-/**
- * A responsive file upload page component built with Next.js, Tailwind CSS, and shadcn/ui.
- * It features a drag-and-drop zone and file selection handling.
- */
 export function FileUploadPage() {
-  // State สำหรับเก็บไฟล์ที่ผู้ใช้เลือก
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  // Ref สำหรับเชื่อมกับ input element
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [filePreview, setFilePreview] = React.useState<string | null>(null);
 
-  // Handler เมื่อมีการเลือกไฟล์
+  const simulateUpload = (file: File) => {
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview);
+      setFilePreview(null);
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setSelectedFile(file);
+
+    // การแสดงภาพตัวอย่าง
+    if (file.type.startsWith("image/")) {
+      setFilePreview(URL.createObjectURL(file));
+    }
+    intervalRef.current = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 100) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          setIsUploading(false);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+  };
+
+  // เช็คขนาดไฟล์ที่อัปโหลด จากการคลิกเลือกไฟล์
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // ตรวจสอบขนาดไฟล์ (ไม่เกิน 10MB)
       if (file.size > 10 * 1024 * 1024) {
         alert("File is too large! Maximum size is 10 MB.");
         return;
       }
-      setSelectedFile(file);
+      simulateUpload(file);
     }
   };
 
-  // Handler สำหรับการลากไฟล์มาวาง
+  // เช็คขนาดไฟล์ที่อัปโหลด จากการลากไฟล์มาวาง
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    if (isUploading || selectedFile) return;
     const file = event.dataTransfer.files?.[0];
     if (file) {
-        if (file.size > 10 * 1024 * 1024) {
-            alert("File is too large! Maximum size is 10 MB.");
-            return;
-        }
-        setSelectedFile(file);
+      if (file.size > 10 * 1024 * 1024) {
+        alert("File is too large! Maximum size is 10 MB.");
+        return;
+      }
+      simulateUpload(file);
     }
   };
 
-  // ป้องกันพฤติกรรมปกติของ browser เมื่อลากไฟล์ข้าม
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
   };
 
-  // เมื่อคลิกที่ dropzone ให้ไป trigger การคลิกที่ input file
+  // ล้างไฟล์ที่อัปโหลด
   const handleDropzoneClick = () => {
+    if (isUploading || selectedFile) return;
     fileInputRef.current?.click();
   };
-  
-  // ฟังก์ชันสำหรับลบไฟล์ที่เลือก
-  const handleRemoveFile = () => {
+
+  const handleCancelOrRemove = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview);
+      setFilePreview(null);
+    }
+    setIsUploading(false);
+    setUploadProgress(0);
     setSelectedFile(null);
-    // รีเซ็ตค่าใน input เพื่อให้สามารถเลือกไฟล์เดิมซ้ำได้
-    if(fileInputRef.current) {
-        fileInputRef.current.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
+  const router = useRouter();
+
   return (
-    <div className="flex flex-col h-screen bg-gray-50 font-sans">
-      {/* Header with back arrow */}
+    <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
       <header className="p-4">
-        <Button variant="ghost" size="icon">
+        <Button
+          onClick={() => router.push('/verified')}
+          variant="ghost" size="icon">
           <ArrowLeft className="h-6 w-6" />
         </Button>
       </header>
-
-      {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md rounded-2xl shadow-lg">
+        <Card className="flex-col w-full max-w-md rounded-2xl shadow-lg">
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-xl font-bold">Upload from device</CardTitle>
+                <CardTitle className="text-xl text-[#0F2D73] font-bold">Upload from device</CardTitle>
                 <CardDescription className="text-sm text-gray-500 pt-1">
                   Please upload your files here
                 </CardDescription>
               </div>
-              <Button variant="ghost" size="icon" className="-mt-2 -mr-2">
-                <X className="h-5 w-5 text-gray-400" />
-              </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {/* Hidden file input */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept=".jpg,.jpeg,.png,.pdf"
-            />
-            
-            {/* Dropzone Area */}
-            <div
-              onClick={handleDropzoneClick}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              className="mt-2 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              {selectedFile ? (
-                // แสดงผลเมื่อมีไฟล์ถูกเลือกแล้ว
-                <div className="text-center">
-                    <FileIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 font-semibold text-gray-700 break-all">{selectedFile.name}</p>
-                    <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                    <Button variant="link" size="sm" onClick={(e) => { e.stopPropagation(); handleRemoveFile(); }} className="text-red-500 hover:text-red-600 h-auto p-0 mt-2">
-                        Remove file
-                    </Button>
-                </div>
-              ) : (
-                // แสดงผลเมื่อยังไม่มีไฟล์
-                <div className="text-center">
-                  <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-4 font-semibold text-gray-600">
-                    Upload picture here
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Max 10 MB files are allowed
-                  </p>
-                </div>
-              )}
-            </div>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".jpg,.jpeg,.png,.pdf" />
 
-            <p className="mt-4 text-center text-xs text-gray-500">
+            {/* uploading picture */}
+            {isUploading ? (
+              <div className="mt-2 flex flex-col items-center justify-center p-8 border-2 border-dashed border-blue-200 rounded-xl">
+                <div className="relative h-20 w-20">
+                  <svg className="h-full w-full" viewBox="0 0 100 100">
+                    <circle className="stroke-current text-gray-200" cx="50" cy="50" r="45" strokeWidth="10" fill="transparent" />
+                    <circle className="stroke-current text-blue-600" cx="50" cy="50" r="45" strokeWidth="10" fill="transparent" strokeDasharray={283} strokeDashoffset={283 - (uploadProgress / 100) * 283} strokeLinecap="round" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xl font-semibold text-gray-800">{`${Math.round(uploadProgress)}%`}</span>
+                </div>
+                <p className="mt-4 font-semibold text-gray-700">Uploading...</p>
+                <Button variant="outline" size="sm" onClick={handleCancelOrRemove} className="mt-4 rounded-lg border-gray-300 text-gray-600">Cancel</Button>
+              </div>
+            ) : (
+              <div
+                onClick={handleDropzoneClick}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                className={`group flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl transition-all duration-300 ${selectedFile
+                  ? 'border-gray-300'
+                  : 'border-blue-700 cursor-pointer hover:border-solid hover:border-blue-600 hover:bg-[#F0F1F9]'
+                  }`}
+              >
+                <div className="text-center">
+                  <UploadCloud className={`mx-auto h-12 w-12 transition-colors duration-300 ${selectedFile ? 'text-gray-400' : 'text-[#1849D6]'}`} />
+                  <p className={`mt-4 font-semibold ${selectedFile ? 'text-gray-400' : 'text-gray-600'}`}>Upload picture here</p>
+                  <p className={`mt-1 ${selectedFile ? 'text-gray-300' : 'text-gray-400'}`}>Max 10 MB files are allowed</p>
+                </div>
+              </div>
+            )}
+
+            <p className="mt-4 text-xs text-gray-500">
               Only support .jpg, .png and .pdf files
             </p>
+
+            {/* แสดงตัวอย่างไฟล์ที่อัปโหลด */}
+            {selectedFile && !isUploading && (
+              <div className="mt-4 w-full max-w-md p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex flex-1 items-center space-x-3 text-left min-w-0">
+                    {filePreview ? (
+                      <img src={filePreview} alt="Preview" className="h-10 w-10 rounded-md object-cover flex-shrink-0" />
+                    ) : (
+                      <FileIcon className="h-10 w-10 text-gray-400 flex-shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-gray-800 truncate">{selectedFile.name}</p>
+                      <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(2)} KB</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    onClick={handleCancelOrRemove}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-800 rounded-full flex-shrink-0 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
 
-      {/* Footer with Confirm button */}
-      <footer className="p-4">
+      <footer className="p-4 mt-auto">
         <Button
-          className="w-full max-w-md mx-auto flex h-12 text-base"
-          disabled={!selectedFile}
+          className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] text-white transition-colors duration-200 hover:from-[#1A377A] hover:to-[#1F58C7] disabled:from-gray-500 disabled:to-gray-500 disabled:text-white"
+          disabled={!selectedFile || isUploading}
         >
           Confirm
         </Button>
