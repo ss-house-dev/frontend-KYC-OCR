@@ -25,14 +25,14 @@ const Stepper = ({ currentStep }: { currentStep: number }) => (
         <div key={step.id} className="flex flex-col items-center w-24 text-center">
           <div
             className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 ${step.id === currentStep
-              ? "bg-blue-600 text-white"
+              ? "bg-[#153885] text-white"
               : "border-2 border-gray-300 bg-white text-gray-400"
               }`}
           >
             {step.id}
           </div>
           <p
-            className={`mt-2 text-xs font-semibold transition-all duration-300 ${step.id === currentStep ? "text-blue-600" : "text-gray-500"
+            className={`mt-2 text-xs font-semibold transition-all duration-300 ${step.id === currentStep ? "text-black" : "text-gray-500"
               }`}
           >
             {step.title}
@@ -58,7 +58,7 @@ export function VerifyIdentityPage() {
         <Stepper currentStep={1} />
         <div className="w-full bg-white rounded-xl shadow-md p-8 ">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Verify Your Identity</h1>
+            <h1 className="text-3xl font-bold text-[#0F2D73]">Verify Your Identity</h1>
             <p className="mt-2 text-gray-600">
               Choose one option to verify your ID card
             </p>
@@ -69,11 +69,11 @@ export function VerifyIdentityPage() {
             <Card 
             onClick={() => router.push('/')}
             className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
-              <div className="bg-blue-600 p-4 rounded-lg">
-                <Camera className="w-8 h-8 text-white" />
+              <div className="bg-gradient-to-t from-[#1F4293] to-[#246AEC] p-4 rounded-lg">
+                <Camera className="w-8 h-8 text-white " />
               </div>
               <div className="flex-1">
-                <h2 className="font-semibold text-base sm:text-lg text-gray-800">Scan ID Card</h2>
+                <h2 className="font-semibold text-base sm:text-lg text-[#1C55D9]">Scan ID Card</h2>
                 <p className="text-xs sm:text-sm text-gray-500">Use your Camera to scan</p>
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
@@ -83,11 +83,11 @@ export function VerifyIdentityPage() {
             <Card
               onClick={() => router.push('/uploadpic')}
               className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
-              <div className="bg-blue-600 p-4 rounded-lg">
+              <div className="bg-gradient-to-t from-[#1F4293] to-[#246AEC] p-4 rounded-lg">
                 <UploadCloud className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="font-semibold text-base sm:text-lg text-gray-800">Upload from device</h2>
+                <h2 className="font-semibold text-base sm:text-lg text-[#1C55D9]">Upload from device</h2>
                 <p className="text-xs sm:text-sm text-gray-500">Choose file from your device</p>
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
