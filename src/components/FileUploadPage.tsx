@@ -159,7 +159,6 @@ export function FileUploadPage() {
             {selectedFile && !isUploading && (
               <div className="mt-4 w-full max-w-md p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
                 <div className="flex items-center justify-between space-x-2">
-                  {/* [การแก้ไข] เพิ่ม flex-1 และ min-w-0 ที่นี่ */}
                   <div className="flex flex-1 items-center space-x-3 text-left min-w-0">
                     {filePreview ? (
                       <img src={filePreview} alt="Preview" className="h-10 w-10 rounded-md object-cover flex-shrink-0" />
@@ -186,7 +185,6 @@ export function FileUploadPage() {
       </main>
 
       <footer className="p-4 mt-auto">
-        {/* [แก้ไข] เพิ่ม disabled:bg-gray-300 และ disabled:text-gray-500 เพื่อเปลี่ยนสีปุ่มตอนปิดใช้งาน */}
         <Button
           className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] text-white transition-colors duration-200 hover:from-[#1A377A] hover:to-[#1F58C7] disabled:from-gray-500 disabled:to-gray-500 disabled:text-white"
           disabled={!selectedFile || isUploading}

@@ -1,4 +1,3 @@
-// src/components/verify-identity-page.tsx
 'use client'
 
 import * as React from "react";
@@ -6,7 +5,7 @@ import { Camera, UploadCloud, ChevronRight, Link } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useRouter } from 'next/navigation'
 
-// Data for the stepper component
+
 const steps = [
   { id: 1, title: "ID Card" },
   { id: 2, title: "Personal Info" },
@@ -43,13 +42,7 @@ const Stepper = ({ currentStep }: { currentStep: number }) => (
   </div>
 );
 
-
 export function VerifyIdentityPage() {
-  function onNavigateToUpload(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
-    event.preventDefault();
-    alert("Navigate to upload ID card page or open file dialog.");
-  }
-
   const router = useRouter();
 
   return (
