@@ -74,7 +74,7 @@ export function VerifyIdentityPage() {
 
             {/* Upload from device */}
             <Card
-              onClick={() => router.push('/uploadpic')}
+              onClick={() => router.push('/upload-id-card')}
               className="p-4 flex items-center space-x-6 cursor-pointer hover:bg-gray-100/70 transition duration-200">
               <div className="bg-gradient-to-t from-[#1F4293] to-[#246AEC] p-4 rounded-lg">
                 <UploadCloud className="w-8 h-8 text-white" />
