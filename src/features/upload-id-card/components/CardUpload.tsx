@@ -29,11 +29,10 @@ export const CardUpload = React.forwardRef<HTMLInputElement, CardUploadProps>(
     onCancelOrRemove
   }, fileInputRef) => {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center ">
-      <div className="flex-col w-full max-w-md rounded-2xl shadow-lg bg-white p-6">
+    <div className="flex items-center justify-center p-4 mb-10">
+      <div className="w-full max-w-md rounded-2xl shadow-lg bg-white p-6">
         <h2 className="text-xl text-[#0F2D73] font-bold">Upload from device</h2>
         <p className="text-sm text-gray-500 pt-1">Please upload your files here</p>
-        
         <div className="mt-4">
           <input type="file" ref={fileInputRef} onChange={onFileChange} className="hidden" accept=".jpg, .png, .pdf" />
 

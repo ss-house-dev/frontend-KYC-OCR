@@ -10,7 +10,7 @@ interface ConfirmButtonProps {
 
 export function ConfirmButton({ onClick, disabled, isLoading }: ConfirmButtonProps) {
   return (
-    <div className="p-4 mt-auto">
+    <div className='p-4'>
       <Button
         onClick={onClick}
         disabled={disabled}

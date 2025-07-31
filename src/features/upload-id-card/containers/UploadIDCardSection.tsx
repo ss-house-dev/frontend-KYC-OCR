@@ -147,6 +147,7 @@ export function UploadIDCardSection() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
+      
       {/* ส่ง State และ Functions ทั้งหมดไปเป็น Props */}
       <CardUpload
         isUploading={isUploading}
