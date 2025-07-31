@@ -1,10 +1,7 @@
-"use client";
 
 import * as React from "react";
-import { ArrowLeft,File as FileIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useRouter } from 'next/navigation'
 import { CardUpload } from "@/features/upload-id-card/components/CardUpload";
+import { ConfirmButton } from "@/features/upload-id-card/components/ConfirmButton";
 
 export function UploadIDCardSection() {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -22,7 +19,6 @@ export function UploadIDCardSection() {
       URL.revokeObjectURL(filePreview);
       setFilePreview(null);
     }
-
     setIsUploading(true);
     setUploadProgress(0);
     setSelectedFile(file);
@@ -51,7 +47,6 @@ export function UploadIDCardSection() {
         alert("File is too large! Maximum size is 10 MB.");
         return;
       }
-
       const allowedExtensions = ['.jpg', '.png', '.pdf'];
       const fileName = file.name.toLowerCase();
       const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
@@ -62,7 +57,6 @@ export function UploadIDCardSection() {
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
-
       simulateUpload(file);
     }
   };
@@ -78,7 +72,6 @@ export function UploadIDCardSection() {
         alert("File is too large! Maximum size is 10 MB.");
         return;
       }
-
       const allowedExtensions = ['.jpg', '.png', '.pdf'];
       const fileName = file.name.toLowerCase();
       const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
@@ -118,19 +111,17 @@ export function UploadIDCardSection() {
     }
   };
 
-  const router = useRouter();
+  const handleConfirmClick = () => {
+    if (!selectedFile || isUploading) {
+      console.log("Cannot confirm, button should be disabled.");
+      return;
+    }
+    console.log("Confirm button clicked!", selectedFile.name);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
-      <header className="p-4">
-        <Button
-          onClick={() => router.push('/verified')}
-          variant="ghost" size="icon">
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-      </header>
-
-      {/* 3. ส่ง State และ Functions ทั้งหมดไปเป็น Props */}
+      {/* ส่ง State และ Functions ทั้งหมดไปเป็น Props */}
       <CardUpload
         isUploading={isUploading}
         uploadProgress={uploadProgress}
@@ -143,15 +134,10 @@ export function UploadIDCardSection() {
         onDropzoneClick={handleDropzoneClick}
         onCancelOrRemove={handleCancelOrRemove}
       />
-
-      <footer className="p-4 mt-auto">
-        <Button
-          className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] text-white transition-colors duration-200 hover:from-[#1A377A] hover:to-[#1F58C7] disabled:from-gray-500 disabled:to-gray-500 disabled:text-white"
-          disabled={!selectedFile || isUploading}
-        >
-          Confirm
-        </Button>
-      </footer>
+      <ConfirmButton
+        onClick={handleConfirmClick}
+        disabled={!selectedFile || isUploading}
+      />
     </div>
   );
 }
