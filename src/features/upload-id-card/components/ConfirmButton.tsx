@@ -8,7 +8,7 @@ interface ConfirmFooterProps {
 }
 
 // รับ props 
-export function ConfirmFooter({ onClick, disabled }: ConfirmFooterProps) {
+export function ConfirmButton({ onClick, disabled }: ConfirmFooterProps) {
   return (
     <div className="p-4 mt-auto">
       <Button

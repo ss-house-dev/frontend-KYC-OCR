@@ -1,7 +1,9 @@
+"use client";
 
 import * as React from "react";
 import { CardUpload } from "@/features/upload-id-card/components/CardUpload";
 import { ConfirmButton } from "@/features/upload-id-card/components/ConfirmButton";
+import { useRouter } from 'next/navigation';
 
 export function UploadIDCardSection() {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -110,12 +112,14 @@ export function UploadIDCardSection() {
       fileInputRef.current.value = "";
     }
   };
+  const router = useRouter();
 
   const handleConfirmClick = () => {
     if (!selectedFile || isUploading) {
       console.log("Cannot confirm, button should be disabled.");
       return;
     }
+    router.push('/preview-id-card');
     console.log("Confirm button clicked!", selectedFile.name);
   };
 

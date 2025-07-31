@@ -7,7 +7,7 @@ interface BackButtonHeaderProps {
   onClick: () => void;
 }
 
-export function BackButtonHeader({ onClick }: BackButtonHeaderProps) {
+export function GoBackButton({ onClick }: BackButtonHeaderProps) {
 
   return (
     <header className="p-4">
