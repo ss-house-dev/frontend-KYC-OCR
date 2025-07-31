@@ -52,11 +52,8 @@ const ScanIdCardPage = () => {
   };
 
   return (
-    <main className="min-h-screen w-full flex flex-col items-center justify-center bg-gray-900">
-      <div className="w-full h-full min-h-screen p-4 bg-gray-800 flex flex-col items-center justify-center">
-        <h1 className="text-3xl font-bold text-center text-white mb-4">
-          ยืนยันตัวตนด้วยบัตรประชาชน
-        </h1>
+    <main >
+      <div >
         {status === 'capturing' ? (
           <IdCardScanner
             onCapture={handleCapture}
