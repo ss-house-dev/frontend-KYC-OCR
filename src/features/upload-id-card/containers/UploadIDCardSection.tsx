@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 export function UploadIDCardSection() {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [isConfirming, setIsConfirming] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -114,13 +115,34 @@ export function UploadIDCardSection() {
   };
   const router = useRouter();
 
-  const handleConfirmClick = () => {
-    if (!selectedFile || isUploading) {
-      console.log("Cannot confirm, button should be disabled.");
+  // ฟังก์ชันสำหรับจัดการการยืนยันไฟล์
+  const handleConfirm = () => {
+    // ตรวจสอบว่ามีไฟล์ที่เลือกและเป็นไฟล์รูปภาพหรือไม่
+    if (!selectedFile || !selectedFile.type.startsWith('image/')) {
+      alert('Please select an image file (.jpg, .png) to preview.');
       return;
     }
-    router.push('/preview-id-card');
-    console.log("Confirm button clicked!", selectedFile.name);
+
+    setIsConfirming(true); // เริ่มสถานะ loading
+
+    const reader = new FileReader();
+
+    // เมื่ออ่านไฟล์เสร็จสิ้น
+    reader.onload = (e) => {
+      const imageSrc = e.target?.result as string;
+      sessionStorage.setItem('capturedIdCardImage', imageSrc);
+      sessionStorage.setItem('imageSource', 'upload'); // ระบุว่ามาจากหน้าอัปโหลด
+      router.push('/preview-id-card'); 
+    };
+
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      alert('Failed to read the file. Please try again.');
+      setIsConfirming(false); // ปิดสถานะ loading
+    };
+
+    // อ่านไฟล์ในรูปแบบ Data URL 
+    reader.readAsDataURL(selectedFile);
   };
 
   return (
@@ -139,8 +161,9 @@ export function UploadIDCardSection() {
         onCancelOrRemove={handleCancelOrRemove}
       />
       <ConfirmButton
-        onClick={handleConfirmClick}
-        disabled={!selectedFile || isUploading}
+        onClick={handleConfirm}
+        disabled={!selectedFile || isUploading || isConfirming}
+        isLoading={isConfirming}
       />
     </div>
   );
