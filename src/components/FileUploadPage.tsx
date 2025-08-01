@@ -14,6 +14,12 @@ export function FileUploadPage() {
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const [filePreview, setFilePreview] = React.useState<string | null>(null);
 
+  const allowedFileTypes = ["image/jpg", "image/png", "application/pdf"];
+  const allowedExtensions = [".jpg", ".png", ".pdf"];
+
+  // State สำหรับจัดการสถานะ loading ตอนกด Confirm
+  const [isConfirming, setIsConfirming] = React.useState(false);
+
   const simulateUpload = (file: File) => {
     if (filePreview) {
       URL.revokeObjectURL(filePreview);
@@ -48,6 +54,18 @@ export function FileUploadPage() {
         alert("File is too large! Maximum size is 10 MB.");
         return;
       }
+
+      const allowedExtensions = ['.jpg', '.png', '.pdf'];
+      const fileName = file.name.toLowerCase();
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+
+      if (!allowedExtensions.includes(fileExtension)) {
+        alert("Please upload only .jpg, .png, or .pdf files.");
+        // รีเซ็ต input เพื่อให้เลือกไฟล์เดิมซ้ำได้
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
       simulateUpload(file);
     }
   };
@@ -63,6 +81,16 @@ export function FileUploadPage() {
         alert("File is too large! Maximum size is 10 MB.");
         return;
       }
+
+      const allowedExtensions = ['.jpg', '.png', '.pdf'];
+      const fileName = file.name.toLowerCase();
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+
+      if (!allowedExtensions.includes(fileExtension)) {
+        alert("Please upload only .jpg, .png, or .pdf files.");
+        return;
+      }
+
       simulateUpload(file);
     }
   };
@@ -94,6 +122,37 @@ export function FileUploadPage() {
     }
   };
 
+  // ฟังก์ชันสำหรับจัดการการยืนยันไฟล์
+  const handleConfirm = () => {
+    // ตรวจสอบว่ามีไฟล์ที่เลือกและเป็นไฟล์รูปภาพหรือไม่
+    if (!selectedFile || !selectedFile.type.startsWith('image/')) {
+      alert('Please select an image file (.jpg, .png) to preview.');
+      return;
+    }
+
+    setIsConfirming(true); // เริ่มสถานะ loading
+
+    const reader = new FileReader();
+
+    // เมื่ออ่านไฟล์เสร็จสิ้น
+    reader.onload = (e) => {
+      const imageSrc = e.target?.result as string;
+      sessionStorage.setItem('capturedIdCardImage', imageSrc);
+      sessionStorage.setItem('imageSource', 'upload'); // ระบุว่ามาจากหน้าอัปโหลด
+      router.push('/previewpic');
+    };
+
+    // หากเกิดข้อผิดพลาด
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      alert('Failed to read the file. Please try again.');
+      setIsConfirming(false); // ปิดสถานะ loading
+    };
+
+    // เริ่มอ่านไฟล์ในรูปแบบ Data URL (Base64)
+    reader.readAsDataURL(selectedFile);
+  };
+
   const router = useRouter();
 
   return (
@@ -118,7 +177,7 @@ export function FileUploadPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".jpg,.jpeg,.png,.pdf" />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".jpg, .png, .pdf" />
 
             {/* uploading picture */}
             {isUploading ? (
@@ -186,10 +245,12 @@ export function FileUploadPage() {
 
       <footer className="p-4 mt-auto">
         <Button
-          className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] text-white transition-colors duration-200 hover:from-[#1A377A] hover:to-[#1F58C7] disabled:from-gray-500 disabled:to-gray-500 disabled:text-white"
-          disabled={!selectedFile || isUploading}
+          onClick={handleConfirm} // เพิ่ม onClick handler
+          className="w-full max-w-md mx-auto flex h-12 text-base bg-gradient-to-b from-[#1F4293] to-[#246AEC] text-white transition-colors duration-200 hover:from-[#1A377A] hover:to-[#1F58C7] disabled:bg-gray-400 disabled:from-gray-400 disabled:to-gray-400"
+          // ปรับเงื่อนไข disabled ให้รวม isConfirming และเช็คว่าเป็นไฟล์รูปภาพหรือไม่
+          disabled={!selectedFile || isUploading || isConfirming || !selectedFile.type.startsWith('image/')}
         >
-          Confirm
+          {isConfirming ? 'Confirming...' : 'Confirm'}
         </Button>
       </footer>
     </div>
