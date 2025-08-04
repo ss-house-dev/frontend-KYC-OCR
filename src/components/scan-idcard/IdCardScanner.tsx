@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
+import { useRouter } from 'next/navigation';
 
 // ให้ TypeScript ทราบว่า cv จะมีอยู่
 declare const cv: any;
@@ -171,10 +172,19 @@ export default function IdCardScanner({
       }
     };
   }, [cvReady, analyse]);
+
+  const router = useRouter();
+
   /* ---------- กดถ่าย ---------- */
   const shoot = () => {
     const img = webcamRef.current?.getScreenshot();
-    if (img) onCapture(img);
+    if (img) {
+      onCapture(img);
+      // บันทึกรูปลง sessionStorage แล้วไปหน้า preview
+      sessionStorage.setItem('capturedIdCardImage', img);
+      sessionStorage.setItem('imageSource', 'camera');
+      router.push('/preview-id-card');
+    }
   };
 
   /* ---------- UI ---------- */
@@ -200,9 +210,8 @@ export default function IdCardScanner({
         {/* กรอบข้อความ */}
         <div className="absolute -top-20 left-2 right-2 flex justify-center z-30">
           <div
-            className={`inline-block border-2 border-dashed ${
-              frameColor === "green" ? "border-green-500" : "border-red-500"
-            } text-center p-2 rounded-lg`}
+            className={`inline-block border-2 border-dashed ${frameColor === "green" ? "border-green-500" : "border-red-500"
+              } text-center p-2 rounded-lg`}
           >
             <p className="text-white font-semibold text-sm">{sharpnessMsg}</p>
           </div>
@@ -224,20 +233,19 @@ export default function IdCardScanner({
         </div>
 
         {/* ปุ่มถ่าย – แสดงเฉพาะเมื่อ ready */}
-  
-          <button
-            onClick={shoot}
-            className={`absolute -bottom-44 left-1/2 -translate-x-1/2
+
+        <button
+          onClick={shoot}
+          className={`absolute -bottom-44 left-1/2 -translate-x-1/2
                         w-14 h-14 rounded-full border-4 border-gray-300 shadow-lg
                         transition-all duration-300
 
-                        ${
-                 readyToShoot
-                   ? "bg-white opacity-100 blur-0 cursor-pointer" // << สภาพพร้อมถ่าย (ชัด)
-                   : "bg-white/60  cursor-not-allowed" 
-               }`}
-            disabled={!readyToShoot}
-          />
+                        ${readyToShoot
+              ? "bg-white opacity-100 blur-0 cursor-pointer" // << สภาพพร้อมถ่าย (ชัด)
+              : "bg-white/60  cursor-not-allowed"
+            }`}
+          disabled={!readyToShoot}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-// src/app/scan-idcard/page.tsx
 'use client';
 
 import { useState } from 'react';
