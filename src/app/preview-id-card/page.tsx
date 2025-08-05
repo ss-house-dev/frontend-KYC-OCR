@@ -1,11 +1,10 @@
-import PreviewPicture, {  } from "@/components/PreviewPicture";
-import PreviewCardTest from "@/components/PreviewCardTest";
+
+import PreviewIDCardSection from "@/features/preview-id-card/containers/PreviewIDCardSection";
 
 export default function Home() {
   return (
     <main>
-      {/* <PreviewPicture /> */}
-      <PreviewCardTest />
+      <PreviewIDCardSection />
     </main>
   );
 }
