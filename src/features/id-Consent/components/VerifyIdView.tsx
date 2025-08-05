@@ -1,11 +1,5 @@
-// src/features/verify-id/components/VerifyIdView.tsx
-
 "use client";
 
-// 1. เปลี่ยนชื่อ import ให้เป็นตัวพิมพ์เล็ก (camelCase) เพราะเราจะใช้เป็นข้อมูล ไม่ใช่ Component
-
-
-// --- (โค้ดส่วน SVG Icons และ Props Interface เหมือนเดิม) ---
 const InfoIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +31,6 @@ interface VerifyIdViewProps {
   onBack: () => void;
 }
 
-// --- Main Component ---
 export default function VerifyIdView({
   isChecked,
   onCheckboxChange,
@@ -46,7 +39,7 @@ export default function VerifyIdView({
   return (
     <div className="flex flex-col h-screen bg-white font-inter">
       <main className="flex-grow flex flex-col p-6 pt-8">
-        {/* ... (โค้ดส่วน Step Indicator และ Header Text เหมือนเดิม) ... */}
+
         <div className="flex  w-full mb-8 ">
           <div className="flex-1 flex flex-col items-center">
             <div
@@ -89,7 +82,6 @@ export default function VerifyIdView({
           </p>
         </div>
 
-        {/* 2. เปลี่ยนกลับไปใช้แท็ก <img> และ .src */}
         <div className="w-40 h-40 mx-auto my-4">
           <img
             src="/id-Consent/Artboard 6 1.svg"
@@ -98,7 +90,6 @@ export default function VerifyIdView({
           />
         </div>
 
-        {/* 3. เปลี่ยนทุกจุดที่เรียกใช้ SVG กลับเป็น <img> */}
         <div className="grid grid-cols-3 gap-3 my-4">
           <div className="flex items-center justify-center">
             <img
@@ -126,7 +117,6 @@ export default function VerifyIdView({
           </div>
         </div>
 
-        {/* ... (โค้ดส่วน Info Points และ Footer เหมือนเดิม) ... */}
         <div className="space-y-3 text-left">
           <div className="flex ">
             <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
@@ -193,7 +183,7 @@ export default function VerifyIdView({
         </div>
       </main>
       <footer className="p-6  bg-white">
-        {/* ใช้ Label ครอบทั้งหมดเพื่อให้คลิกที่ข้อความหรือวงกลมก็ได้ */}
+
         <label
           htmlFor="consent-checkbox"
           className="flex items-start space-x-3 cursor-pointer"
@@ -232,7 +222,6 @@ export default function VerifyIdView({
               />
             </label>
           </div>
-          {/* 3. ไอคอนเครื่องหมายถูก (จะแสดงผลเมื่อ isChecked เป็น true) */}
           <svg
             className="h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
             xmlns="http://www.w3.org/2000/svg"
@@ -245,13 +234,11 @@ export default function VerifyIdView({
           >
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
-          {/* 4. ข้อความ Label */}
           <span className="text-sm text-black" style={{ fontSize: "14px" }}>
             I consent to the collection and verification of my national ID
             information for the purposes of identity verification and AML
             compliance.
           </span>
-          {/* เพิ่มระยะห่างระหว่าง label กับปุ่ม */}
         </label>
         <div className="mt-4"></div>
         <button
