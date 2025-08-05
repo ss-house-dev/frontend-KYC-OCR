@@ -1,45 +1,54 @@
 // src/components/FormField.jsx
 
 import React from 'react';
-import PropTypes from 'prop-types'; // <-- Import PropTypes for type checking
+import PropTypes from 'prop-types'; // ตัวนี้คือ 'PropTypes' ไม่ใช่ 'props' นะครับ
 
-// 2. เปลี่ยนวิธีรับ props มาเป็นแบบ (props) ตรงๆ
+// 1. เปลี่ยนวิธีการรับ props มาเป็น (props) ตรงๆ เพื่อให้ชัวร์ที่สุด
 const FormField = (props) => {
-  // 3. ดึงค่าแต่ละตัวออกจาก props object ด้านในฟังก์ชัน
-  const { label, value, charCount, placeholder } = props;
+  
+  // 2. ดึงค่าตัวแปรทั้งหมดออกมาจาก object 'props' ด้านในฟังก์ชัน
+  const {
+    fieldName,
+    label,
+    register,
+    errors,
+    validationRules,
+    ...rest
+  } = props;
 
+  // ส่วนที่เหลือของคอมโพเนนต์เหมือนเดิมทุกอย่าง
   return (
     <div>
-      <label className="text-sm text-gray-500 mb-1 block">{label}</label>
-      <div className="w-full rounded-lg bg-gray-100 p-3">
-        {placeholder ? (
-          <input 
-            type="text" 
-            placeholder={placeholder}
-            className="w-full bg-transparent text-gray-900 outline-none placeholder:text-gray-400"
-          />
-        ) : (
-          <p className="text-gray-900">{value}</p>
-        )}
-      </div>
-      {charCount && <p className="text-right text-xs text-gray-400 mt-1">{charCount}</p>}
+      <label htmlFor={fieldName} className="text-sm text-gray-500 mb-1 block">
+        {label}
+      </label>
+      <input
+        id={fieldName}
+        {...register(fieldName, validationRules)}
+        className="w-full rounded-lg bg-gray-100 p-3 text-gray-900 outline-none border-2 border-transparent focus:border-blue-500"
+        {...rest}
+      />
+      {errors[fieldName] && (
+        <p className="text-red-500 text-sm mt-1">
+          {errors[fieldName].message}
+        </p>
+      )}
     </div>
   );
 };
 
-// 4. (แนะนำ) กำหนด propTypes เพื่อระบุว่า props แต่ละตัวควรเป็นข้อมูลประเภทไหน
+// ส่วนของ PropTypes เหมือนเดิม
 FormField.propTypes = {
+  fieldName: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
-  value: PropTypes.string,
-  charCount: PropTypes.string,
-  placeholder: PropTypes.string,
+  register: PropTypes.func.isRequired,
+  errors: PropTypes.object.isRequired,
+  validationRules: PropTypes.object,
 };
 
-// 5. (แนะนำ) กำหนดค่าเริ่มต้นให้ props ที่อาจจะไม่ถูกส่งมา
+// ส่วนของ defaultProps เหมือนเดิม
 FormField.defaultProps = {
-  value: '',
-  charCount: null,
-  placeholder: '',
+  validationRules: {},
 };
 
 export default FormField;
