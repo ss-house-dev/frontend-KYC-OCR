@@ -1,21 +1,25 @@
-import React from 'react';
+// src/components/FormField.tsx
 
+import React from "react";
 import {
   UseFormRegister,
   FieldErrors,
   RegisterOptions,
-  FieldValues, 
-  Path,      
-} from 'react-hook-form';
+  FieldValues,
+  Path,
+  UseFormWatch, // 1. Import UseFormWatch
+} from "react-hook-form";
 
-interface FormFieldProps<TFieldValues extends FieldValues> {
-  fieldName: Path<TFieldValues>; 
+// 2. อัปเดต Interface ให้รับ watch และ maxLength
+interface FormFieldProps<TFieldValues extends FieldValues>
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  fieldName: Path<TFieldValues>;
   label: string;
-  register: UseFormRegister<TFieldValues>; 
-  errors: FieldErrors<TFieldValues>;       
+  register: UseFormRegister<TFieldValues>;
+  errors: FieldErrors<TFieldValues>;
+  watch?: UseFormWatch<TFieldValues>; // ทำให้ watch เป็น optional
+  maxLength?: number; // ทำให้ maxLength เป็น optional
   validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
-  
-  [key: string]: unknown; 
 }
 
 const FormField = <TFieldValues extends FieldValues>({
@@ -23,25 +27,36 @@ const FormField = <TFieldValues extends FieldValues>({
   label,
   register,
   errors,
+  watch,
+  maxLength,
   validationRules,
-  ...rest 
+  ...rest
 }: FormFieldProps<TFieldValues>) => {
+  // 3. ใช้ watch เพื่อดึงค่าปัจจุบันของ field มาดู
+  const currentValue = watch ? watch(fieldName) : "";
+  const currentLength =
+    typeof currentValue === "string" ? currentValue.length : 0;
 
-  
   return (
     <div>
-      <label htmlFor={fieldName} className="text-sm text-gray-500 mb-1 block">
-        {label}
-      </label>
+      <div className="flex justify-between items-center mb-1">
+        <label htmlFor={fieldName} className="text-sm text-gray-500">
+          {label}
+        </label>
+      </div>
       <input
         id={fieldName}
-        
         {...register(fieldName, validationRules)}
         className="w-full rounded-lg bg-gray-100 p-3 text-gray-900 outline-none border-2 border-transparent focus:border-blue-500"
-
+        maxLength={maxLength} // 5. ใส่ maxLength ให้กับ input โดยตรงเพื่อจำกัดการพิมพ์
         {...rest}
       />
-      {/* แสดงข้อความ Error ถ้ามี */}
+      {/* 4. แสดงตัวนับ ถ้ามีการส่ง maxLength เข้ามา */}
+      {maxLength && (
+        <span className="text-xs text-gray-400">
+          {currentLength}/{maxLength}
+        </span>
+      )}
       {errors[fieldName] && (
         <p className="text-red-500 text-sm mt-1">
           {errors[fieldName]?.message as string}

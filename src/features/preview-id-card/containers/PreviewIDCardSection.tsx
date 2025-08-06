@@ -5,23 +5,6 @@ import { useForm } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
 import { useRouter } from "next/navigation";
 
-const IconArrowLeft = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="w-6 h-6"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15.75 19.5L8.25 12l7.5-7.5"
-    />
-  </svg>
-);
-
 const IconInfo = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -57,37 +40,31 @@ type VerifyIdentityForm = typeof defaultFormValues;
 export default function VerifyIdentityScreen() {
   // 1. เพิ่ม State สำหรับจัดการรูปภาพและ Error
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [imageSource, setImageSource] = useState<"camera" | "upload" | null>(
-    null
-  );
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  // 1. ดึงฟังก์ชัน watch ออกมาจาก useForm
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm({
     defaultValues: defaultFormValues,
     mode: "onBlur",
   });
 
-  // 2. รวม useEffect เพื่อจัดการทั้งรูปภาพและข้อมูลฟอร์ม
   useEffect(() => {
     // --- ส่วนที่ 1: ตรวจสอบรูปภาพจาก Session Storage ---
     const imageSrc = sessionStorage.getItem("capturedIdCardImage");
-    const source = sessionStorage.getItem("imageSource") as
-      | "camera"
-      | "upload"
-      | null;
 
-    if (imageSrc && source) {
+    // ตรวจสอบว่ามีรูปภาพหรือไม่
+    if (imageSrc) {
       setCapturedImage(imageSrc);
-      setImageSource(source);
     } else {
-      // ถ้าไม่มีรูป, ให้กลับไปหน้าแรกและหยุดการทำงานของ Effect นี้
+      // ถ้าไม่มีรูป, ให้กลับไปหน้าแรกและหยุดการทำงาน
       router.replace("/");
       return;
     }
@@ -131,112 +108,119 @@ export default function VerifyIdentityScreen() {
   }
 
   return (
-    <div className="bg-gray-50 flex justify-center">
-      <div className="w-full max-w-md bg-white min-h-screen">
-        <header className="relative flex items-center justify-center p-5">
-          <button className="absolute left-4 top-1/2 -translate-y-1/2">
-            <IconArrowLeft />
-          </button>
-          <h1 className="text-xl font-bold text-[#0F2D73]">
-            Verify Your Identity
-          </h1>
-        </header>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-          <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-5 mb-5">
-            <IconInfo />
-            <p className="text-sm font-medium">
-              Your data will be used only for identity verification and handled
-              securely.
-            </p>
-          </div>
-
-          {/* 3. แสดงรูปภาพจาก State และมี Fallback กรณีรูปยังไม่มา */}
-          {capturedImage ? (
-            <img
-              src={capturedImage}
-              alt="Thai National ID Card"
-              className="rounded-xl w-full mb-5"
-            />
-          ) : (
-            <div className="w-full h-48 bg-gray-200 rounded-xl mb-5 animate-pulse"></div>
-          )}
-
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
-              <FormField
-                fieldName="idCard"
-                label="ID Card"
-                register={register}
-                errors={errors}
-                validationRules={{ required: "ID Card is required" }}
-              />
-              <FormField
-                fieldName="dateOfIssue"
-                label="Date of Issue"
-                type="date"
-                register={register}
-                errors={errors}
-              />
-              <FormField
-                fieldName="dateOfExpiry"
-                label="Date of Expiry"
-                type="date"
-                register={register}
-                errors={errors}
-              />
-              <FormField
-                fieldName="laserId"
-                label="Laser ID"
-                placeholder="Enter Laser ID number"
-                register={register}
-                errors={errors}
-                validationRules={{ required: "Laser ID is required" }}
-              />
-            </div>
-
-            <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
-              <FormField
-                fieldName="fullName"
-                label="Full name"
-                register={register}
-                errors={errors}
-              />
-              <FormField
-                fieldName="lastName"
-                label="Last name"
-                register={register}
-                errors={errors}
-              />
-              <FormField
-                fieldName="dateOfBirth"
-                label="Date of Birth"
-                type="date"
-                register={register}
-                errors={errors}
-              />
-            </div>
-
-            <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
-              <FormField
-                fieldName="address"
-                label="Address"
-                register={register}
-                errors={errors}
-              />
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <button
-              type="submit"
-              className="w-full h-12 rounded-xl bg-gray-800 text-white font-semibold text-base hover:bg-gray-900 active:bg-gray-700"
-            >
-              Confirm
-            </button>
-          </div>
-        </form>
+    <form onSubmit={handleSubmit(onSubmit)} className="p-4">
+      <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
+        <IconInfo />
+        <p className="text-sm font-medium">
+          Your data will be used only for identity verification and handled
+          securely.
+        </p>
       </div>
-    </div>
+
+      {/* 3. แสดงรูปภาพจาก State และมี Fallback กรณีรูปยังไม่มา */}
+      {capturedImage ? (
+        <img
+          src={capturedImage}
+          alt="Thai National ID Card"
+          className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6]"
+        />
+      ) : (
+        <div className="w-full h-48 bg-gray-200 rounded-xl mb-5 animate-pulse"></div>
+      )}
+
+      <div className="space-y-4">
+        <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
+          <FormField
+            fieldName="idCard"
+            label="ID Card"
+            register={register}
+            errors={errors}
+            watch={watch}
+            maxLength={13}
+            validationRules={{
+              required: "ID Card is required",
+              maxLength: {
+                value: 13,
+                message: "ID Card must be 13 digits",
+              },
+            }}
+          />
+          <FormField
+            fieldName="dateOfIssue"
+            label="Date of Issue"
+            type="date"
+            register={register}
+            errors={errors}
+          />
+          <FormField
+            fieldName="dateOfExpiry"
+            label="Date of Expiry"
+            type="date"
+            register={register}
+            errors={errors}
+          />
+          <FormField
+            fieldName="laserId"
+            label="Laser ID"
+            placeholder="Enter Laser ID number"
+            register={register}
+            errors={errors}
+            watch={watch}
+            maxLength={14}
+            validationRules={{
+              required: "Laser ID is required",
+              maxLength: {
+                value: 14,
+                message: "Laser ID must be 14 characters",
+              },
+            }}
+          />
+        </div>
+        <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
+          <FormField
+            fieldName="fullName"
+            label="Full name"
+            register={register}
+            errors={errors}
+            watch={watch}
+            maxLength={50}
+          />
+          <FormField
+            fieldName="lastName"
+            label="Last name"
+            register={register}
+            errors={errors}
+            watch={watch}
+            maxLength={50}
+          />
+          <FormField
+            fieldName="dateOfBirth"
+            label="Date of Birth"
+            type="date"
+            register={register}
+            errors={errors}
+          />
+        </div>
+        <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
+          <FormField
+            fieldName="address"
+            label="Address"
+            register={register}
+            errors={errors}
+            watch={watch}
+            maxLength={100}
+          />
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <button
+          type="submit"
+          className="w-full h-12 rounded-xl bg-gray-800 text-white font-semibold text-base hover:bg-gray-900 active:bg-gray-700"
+        >
+          Confirm
+        </button>
+      </div>
+    </form>
   );
 }
