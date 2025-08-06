@@ -84,7 +84,7 @@ export default function VerifyIdView({
 
         <div className="w-40 h-40 mx-auto my-4">
           <img
-            src="/id-Consent/Artboard 6 1.svg"
+            src="/id-Consent/card-sample.svg"
             alt="ID Card Illustration"
             className="w-full h-full object-contain"
           />
@@ -93,7 +93,7 @@ export default function VerifyIdView({
         <div className="grid grid-cols-3 gap-3 my-4">
           <div className="flex items-center justify-center">
             <img
-              src="/id-Consent/Artboard 7 1.svg"
+              src="/id-Consent/card-sample-correct.svg"
               alt="Correct Example"
               className="object-contain"
               style={{ width: "100px", height: "75px" }}
@@ -101,7 +101,7 @@ export default function VerifyIdView({
           </div>
           <div className="flex items-center justify-center">
             <img
-              src="/id-Consent/Artboard 8 1.svg"
+              src="/id-Consent/card-sample-blurry.svg"
               alt="Blurry Example"
               className="object-contain"
               style={{ width: "100px", height: "75px" }}
@@ -109,7 +109,7 @@ export default function VerifyIdView({
           </div>
           <div className="flex items-center justify-center">
             <img
-              src="/id-Consent/Artboard 9 1.svg"
+              src="/id-Consent/card-sample-glare.svg"
               alt="Glare Example"
               className="object-contain"
               style={{ width: "100px", height: "75px" }}
