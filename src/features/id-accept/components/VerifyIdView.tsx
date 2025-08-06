@@ -30,7 +30,7 @@ interface VerifyIdViewProps {
   onStartScan: () => void;
   onBack: () => void;
 }
-
+// --- Main Component ---
 export default function VerifyIdView({
   isChecked,
   onCheckboxChange,

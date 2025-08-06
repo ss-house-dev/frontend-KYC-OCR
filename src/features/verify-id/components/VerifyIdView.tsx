@@ -126,7 +126,7 @@ export default function VerifyIdView({
           </div>
         </div>
 
-        {/* ... (โค้ดส่วน Info Points และ Footer เหมือนเดิม) ... */}
+        {/* ... (โค้ดส่วน Info Points และ Footer เหมือนเดิม) ...////// */}
         <div className="space-y-3 text-left">
           <div className="flex ">
             <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
