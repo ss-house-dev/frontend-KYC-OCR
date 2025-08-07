@@ -137,11 +137,20 @@ export default function VerifyIdentityScreen() {
             errors={errors}
             watch={watch}
             maxLength={13}
+            ignoreChars={["-"]} // ส่ง prop นี้เพื่อไม่ให้นับขีด
             validationRules={{
-              required: "ID Card is required",
-              maxLength: {
-                value: 13,
-                message: "ID Card must be 13 digits",
+              required: "Unable to extact data. Kindly rescan your document.",
+              // ใช้ custom validation เพื่อตรวจสอบความยาวของตัวเลขเท่านั้น
+              validate: (value) => {
+                const digitsOnly = value.replace(/-/g, "");
+                if (digitsOnly.length > 13) {
+                  return "ID Card must be 13 digits";
+                }
+                // ตรวจสอบว่าเป็นตัวเลขหรือขีดเท่านั้น
+                if (value.length > 0 && !/^[0-9-]+$/.test(value)) {
+                  return "ID Card can only contain digits and hyphens";
+                }
+                return true;
               },
             }}
           />
@@ -151,6 +160,9 @@ export default function VerifyIdentityScreen() {
             type="date"
             register={register}
             errors={errors}
+            validationRules={{
+              required: "Unable to extact data. Kindly rescan your document.",
+            }}
           />
           <FormField
             fieldName="dateOfExpiry"
@@ -158,6 +170,9 @@ export default function VerifyIdentityScreen() {
             type="date"
             register={register}
             errors={errors}
+            validationRules={{
+              required: "Unable to extact data. Kindly rescan your document.",
+            }}
           />
           <FormField
             fieldName="laserId"
@@ -184,6 +199,9 @@ export default function VerifyIdentityScreen() {
             errors={errors}
             watch={watch}
             maxLength={50}
+            validationRules={{
+              required: "This field is needed",
+            }}
           />
           <FormField
             fieldName="lastName"
@@ -192,6 +210,9 @@ export default function VerifyIdentityScreen() {
             errors={errors}
             watch={watch}
             maxLength={50}
+            validationRules={{
+              required: "This field is needed",
+            }}
           />
           <FormField
             fieldName="dateOfBirth"
@@ -199,6 +220,9 @@ export default function VerifyIdentityScreen() {
             type="date"
             register={register}
             errors={errors}
+            validationRules={{
+              required: "Unable to extact data. Kindly rescan your document.",
+            }}
           />
         </div>
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
@@ -209,6 +233,9 @@ export default function VerifyIdentityScreen() {
             errors={errors}
             watch={watch}
             maxLength={100}
+            validationRules={{
+              required: "This field is needed",
+            }}
           />
         </div>
       </div>
