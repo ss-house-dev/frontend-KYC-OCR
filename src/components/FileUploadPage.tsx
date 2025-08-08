@@ -139,7 +139,7 @@ export function FileUploadPage() {
       const imageSrc = e.target?.result as string;
       sessionStorage.setItem('capturedIdCardImage', imageSrc);
       sessionStorage.setItem('imageSource', 'upload'); // ระบุว่ามาจากหน้าอัปโหลด
-      router.push('/previewpic');
+      router.push('/preview-id-card');
     };
 
     // หากเกิดข้อผิดพลาด

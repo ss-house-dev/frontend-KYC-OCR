@@ -3,7 +3,8 @@
 import * as React from "react";
 import { CardUpload } from "@/features/upload-id-card/components/CardUpload";
 import { ConfirmButton } from "@/features/upload-id-card/components/ConfirmButton";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export function UploadIDCardSection() {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -13,9 +14,10 @@ export function UploadIDCardSection() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const [filePreview, setFilePreview] = React.useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const allowedFileTypes = ["image/jpg", "image/png", "application/pdf"];
-  const allowedExtensions = [".jpg", ".png", ".pdf"];
+  const ALLOWED_FILE_TYPES = ["image/jpg", "image/png", "application/pdf"];
+  const ALLOWED_EXTENSIONS = [".jpg", ".png", ".pdf"];
 
   const simulateUpload = (file: File) => {
     if (filePreview) {
@@ -26,10 +28,10 @@ export function UploadIDCardSection() {
     setUploadProgress(0);
     setSelectedFile(file);
 
-    // การแสดงภาพตัวอย่าง
     if (file.type.startsWith("image/")) {
       setFilePreview(URL.createObjectURL(file));
     }
+
     intervalRef.current = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 100) {
@@ -42,21 +44,18 @@ export function UploadIDCardSection() {
     }, 200);
   };
 
-  // เช็คขนาดไฟล์ที่อัปโหลด จากการคลิกเลือกไฟล์
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        alert("File is too large! Maximum size is 10 MB.");
+        setErrorMessage("File is too large! Maximum size is 10 MB.");
         return;
       }
-      const allowedExtensions = ['.jpg', '.png', '.pdf'];
       const fileName = file.name.toLowerCase();
-      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+      const fileExtension = fileName.substring(fileName.lastIndexOf("."));
 
-      if (!allowedExtensions.includes(fileExtension)) {
-        alert("Please upload only .jpg, .png, or .pdf files.");
-        // รีเซ็ต input เพื่อให้เลือกไฟล์เดิมซ้ำได้
+      if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+        setErrorMessage("Please upload only .jpg, .png, or .pdf files.");
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
@@ -64,7 +63,6 @@ export function UploadIDCardSection() {
     }
   };
 
-  // เช็คขนาดไฟล์ที่อัปโหลด จากการลากไฟล์มาวาง
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -72,15 +70,14 @@ export function UploadIDCardSection() {
     const file = event.dataTransfer.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        alert("File is too large! Maximum size is 10 MB.");
+        setErrorMessage("File is too large! Maximum size is 10 MB.");
         return;
       }
-      const allowedExtensions = ['.jpg', '.png', '.pdf'];
       const fileName = file.name.toLowerCase();
-      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+      const fileExtension = fileName.substring(fileName.lastIndexOf("."));
 
-      if (!allowedExtensions.includes(fileExtension)) {
-        alert("Please upload only .jpg, .png, or .pdf files.");
+      if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+        setErrorMessage("Please upload only .jpg, .png, or .pdf files.");
         return;
       }
       simulateUpload(file);
@@ -118,8 +115,8 @@ export function UploadIDCardSection() {
   // ฟังก์ชันสำหรับจัดการการยืนยันไฟล์
   const handleConfirm = () => {
     // ตรวจสอบว่ามีไฟล์ที่เลือกและเป็นไฟล์รูปภาพหรือไม่
-    if (!selectedFile || !selectedFile.type.startsWith('image/')) {
-      alert('Please select an image file (.jpg, .png) to preview.');
+    if (!selectedFile || !selectedFile.type.startsWith("image/")) {
+      alert("Please select an image file (.jpg, .png) to preview.");
       return;
     }
 
@@ -130,24 +127,23 @@ export function UploadIDCardSection() {
     // เมื่ออ่านไฟล์เสร็จสิ้น
     reader.onload = (e) => {
       const imageSrc = e.target?.result as string;
-      sessionStorage.setItem('capturedIdCardImage', imageSrc);
-      sessionStorage.setItem('imageSource', 'upload'); // ระบุว่ามาจากหน้าอัปโหลด
-      router.push('/preview-id-card'); 
+      sessionStorage.setItem("capturedIdCardImage", imageSrc);
+      sessionStorage.setItem("imageSource", "upload"); // ระบุว่ามาจากหน้าอัปโหลด
+      router.push("/preview-id-card");
     };
 
     reader.onerror = (error) => {
-      console.error('Error reading file:', error);
-      alert('Failed to read the file. Please try again.');
+      console.error("Error reading file:", error);
+      alert("Failed to read the file. Please try again.");
       setIsConfirming(false); // ปิดสถานะ loading
     };
 
-    // อ่านไฟล์ในรูปแบบ Data URL 
+    // อ่านไฟล์ในรูปแบบ Data URL
     reader.readAsDataURL(selectedFile);
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
-      
       {/* ส่ง State และ Functions ทั้งหมดไปเป็น Props */}
       <CardUpload
         isUploading={isUploading}

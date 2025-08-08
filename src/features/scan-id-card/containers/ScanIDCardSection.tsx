@@ -69,7 +69,7 @@ export default function IdCardScanner({
                 }
             }, 100);
         };
-        s.onerror = () => onStatusChange("ไม่สามารถโหลด OpenCV", "red");
+        s.onerror = () => onStatusChange("Unable to load OpenCV", "red");
         document.body.appendChild(s);
     }, [onStatusChange]);
 
@@ -159,7 +159,7 @@ export default function IdCardScanner({
         } catch (e) {
             console.error(e);
             setReadyToShoot(false);
-            onStatusChange("เกิดข้อผิดพลาดในการวิเคราะห์", "red");
+            onStatusChange("An error occurred during analysis", "red");
         }
     }, [cvReady, onStatusChange]);
 

@@ -23,6 +23,7 @@ export default function VerifyIdentityScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
 
   const {
@@ -81,8 +82,7 @@ export default function VerifyIdentityScreen() {
   }, [router, reset]);
 
   const onSubmit = (data: PreviewIdCardForm) => {
-    console.log("ข้อมูลที่ถูกส่งไป Backend:", data);
-    alert("บันทึกข้อมูลสำเร็จ!");
+    setSuccessMessage("บันทึกข้อมูลสำเร็จ!");
   };
 
   return (
