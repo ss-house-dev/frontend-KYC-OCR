@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@tanstack/react-router": "^1.128.0",
     "@tanstack/react-start": "^1.128.1",
@@ -19,13 +21,14 @@
     "lucide-react": "^0.525.0",
     "next": "15.4.1",
     "next-intl": "^4.3.4",
+    "prop-types": "^15.8.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-hook-form": "^7.60.0",
+    "react-hook-form": "^7.62.0",
     "react-webcam": "^7.2.0",
     "tailwind-merge": "^3.3.1",
     "vite": "^7.0.5",
-    "zod": "^4.0.5"
+    "zod": "^4.0.14"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
