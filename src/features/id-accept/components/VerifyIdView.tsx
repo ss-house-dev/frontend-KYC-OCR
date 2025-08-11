@@ -1,4 +1,6 @@
 "use client";
+import React from "react";
+import Image from "next/image";
 
 const InfoIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -30,7 +32,7 @@ interface VerifyIdViewProps {
   onStartScan: () => void;
   onBack: () => void;
 }
-// --- Main Component ---
+
 export default function VerifyIdView({
   isChecked,
   onCheckboxChange,
@@ -39,7 +41,6 @@ export default function VerifyIdView({
   return (
     <div className="flex flex-col h-screen bg-white font-inter">
       <main className="flex-grow flex flex-col p-6 pt-8">
-
         <div className="flex  w-full mb-8 ">
           <div className="flex-1 flex flex-col items-center">
             <div
@@ -81,38 +82,41 @@ export default function VerifyIdView({
             Make sure your ID card is clearly visible.
           </p>
         </div>
-
         <div className="w-40 h-40 mx-auto my-4">
-          <img
-            src="/id-Consent/card-sample.svg"
+          <Image
+            src="/id-accept/card-sample.svg"
             alt="ID Card Illustration"
+            width={160} 
+            height={160}
             className="w-full h-full object-contain"
           />
         </div>
-
         <div className="grid grid-cols-3 gap-3 my-4">
           <div className="flex items-center justify-center">
-            <img
-              src="/id-Consent/card-sample-correct.svg"
+            <Image
+              src="\id-accept\card-sample-correct.svg"
               alt="Correct Example"
+              width={100}
+              height={75}
               className="object-contain"
-              style={{ width: "100px", height: "75px" }}
             />
           </div>
           <div className="flex items-center justify-center">
-            <img
-              src="/id-Consent/card-sample-blurry.svg"
+            <Image
+              src="\id-accept\card-sample-blurry.svg"
               alt="Blurry Example"
+              width={100}
+              height={75}
               className="object-contain"
-              style={{ width: "100px", height: "75px" }}
             />
           </div>
           <div className="flex items-center justify-center">
-            <img
-              src="/id-Consent/card-sample-glare.svg"
+            <Image
+              src="\id-accept\card-sample-glare.svg"
               alt="Glare Example"
+              width={100}
+              height={75}
               className="object-contain"
-              style={{ width: "100px", height: "75px" }}
             />
           </div>
         </div>
@@ -183,7 +187,6 @@ export default function VerifyIdView({
         </div>
       </main>
       <footer className="p-6  bg-white">
-
         <label
           htmlFor="consent-checkbox"
           className="flex items-start space-x-3 cursor-pointer"
