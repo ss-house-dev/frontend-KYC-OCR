@@ -177,6 +177,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
           <Label htmlFor="address" className="text-sm">
             Address
+            <span className="text-red-500 ml-[1px]">*</span>
           </Label>
           <Textarea
             id="address"
@@ -192,18 +193,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               {errors.address.message as string}
             </p>
           )}
-
-          {/* <FormField
-            fieldName={"address" as Path<TFieldValues>}
-            label="Address"
-            register={register}
-            errors={errors}
-            watch={watch}
-            maxLength={100}
-            validationRules={{
-              required: "This field is needed",
-            }}
-          /> */}
         </div>
       </div>
 

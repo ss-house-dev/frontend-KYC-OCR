@@ -62,7 +62,7 @@ export default function VerifyIdentityScreen() {
       const mockApiData = await new Promise<PreviewIdCardForm>((resolve) =>
         setTimeout(() => {
           resolve({
-            idCard: "140-990-3549-297",
+            idCard: "1-4099-03549-29-7",
             dateOfIssue: "2019-01-23",
             dateOfExpiry: "2027-12-22",
             laserId: "",

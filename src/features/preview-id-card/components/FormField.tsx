@@ -41,30 +41,33 @@ const FormField = <TFieldValues extends FieldValues>({
 
   return (
     <div className="space-y-1">
-      <div className="flex justify-between items-center">
-        <Label htmlFor={fieldName} className="text-sm">
-          {label}
-        </Label>
-        {maxLength && (
-          <span className="text-xs text-muted-foreground">
-            {currentLength}/{maxLength}
-          </span>
-        )}
-      </div>
-
-      <Input
-        id={fieldName}
-        {...register(fieldName, validationRules)}
-        {...(ignoreChars ? {} : { maxLength })}
-        {...rest}
-      />
-
-      {errors[fieldName] && (
-        <p className="text-sm text-destructive">
-          {errors[fieldName]?.message as string}
-        </p>
+  <div className="flex justify-between items-center">
+    <Label htmlFor={fieldName} className="text-sm">
+      {label}
+      {validationRules?.required && (
+        <span className="text-red-500 ml-[1px]">*</span>
       )}
-    </div>
+    </Label>
+    {maxLength && (
+      <span className="text-xs text-muted-foreground">
+        {currentLength}/{maxLength}
+      </span>
+    )}
+  </div>
+
+  <Input
+    id={fieldName}
+    {...register(fieldName, validationRules)}
+    {...(ignoreChars ? {} : { maxLength })}
+    {...rest}
+  />
+
+  {errors[fieldName] && (
+    <p className="text-sm text-destructive">
+      {errors[fieldName]?.message as string}
+    </p>
+  )}
+</div>
   );
 };
 
