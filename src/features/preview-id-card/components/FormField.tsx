@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   UseFormRegister,
@@ -7,6 +9,8 @@ import {
   Path,
   UseFormWatch,
 } from "react-hook-form";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface FormFieldProps<TFieldValues extends FieldValues>
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -36,26 +40,27 @@ const FormField = <TFieldValues extends FieldValues>({
     typeof currentValue === "string" ? currentValue.length : 0;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
-        <label htmlFor={fieldName} className="text-sm text-gray-500">
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <Label htmlFor={fieldName} className="text-sm">
           {label}
-        </label>
+        </Label>
+        {maxLength && (
+          <span className="text-xs text-muted-foreground">
+            {currentLength}/{maxLength}
+          </span>
+        )}
       </div>
-      <input
+
+      <Input
         id={fieldName}
         {...register(fieldName, validationRules)}
-        className="w-full rounded-lg bg-gray-100 p-3 text-gray-900 outline-none border-2 border-transparent focus:border-blue-500"
-        {...(ignoreChars ? {} : { maxLength: maxLength })}
+        {...(ignoreChars ? {} : { maxLength })}
         {...rest}
       />
-      {maxLength && (
-        <span className="text-xs text-gray-400">
-          {currentLength}/{maxLength}
-        </span>
-      )}
+
       {errors[fieldName] && (
-        <p className="text-red-500 text-sm mt-1">
+        <p className="text-sm text-destructive">
           {errors[fieldName]?.message as string}
         </p>
       )}

@@ -10,6 +10,8 @@ import {
 } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
 import ProgressLoading from "./ProgressLoading";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const IconInfo = () => (
   <svg
@@ -49,7 +51,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   capturedImage,
   isValid,
   isLoading,
-  loadingProgress
+  loadingProgress,
 }: FormIdCardProps<TFieldValues>) => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
@@ -66,7 +68,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         <img
           src={capturedImage!}
           alt="Thai National ID Card"
-          className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6]"
+          className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
         />
       )}
 
@@ -75,7 +77,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <FormField
             fieldName={"idCard" as Path<TFieldValues>}
-            label="ID Card"
+            label="ID Number"
+            placeholder="Enter 13-digit Citizen ID number"
             register={register}
             errors={errors}
             watch={watch}
@@ -98,6 +101,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <FormField
             fieldName={"dateOfIssue" as Path<TFieldValues>}
             label="Date of Issue"
+            placeholder="DD-MM-YYYY"
             type="date"
             register={register}
             errors={errors}
@@ -108,6 +112,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <FormField
             fieldName={"dateOfExpiry" as Path<TFieldValues>}
             label="Date of Expiry"
+            placeholder="DD-MM-YYYY"
             type="date"
             register={register}
             errors={errors}
@@ -134,8 +139,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         </div>
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <FormField
-            fieldName={"fullName" as Path<TFieldValues>}
-            label="Full name"
+            fieldName={"firstName" as Path<TFieldValues>}
+            label="First name"
+            placeholder="Enter your First name"
             register={register}
             errors={errors}
             watch={watch}
@@ -147,6 +153,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <FormField
             fieldName={"lastName" as Path<TFieldValues>}
             label="Last name"
+            placeholder="Enter your Last name"
             register={register}
             errors={errors}
             watch={watch}
@@ -158,6 +165,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <FormField
             fieldName={"dateOfBirth" as Path<TFieldValues>}
             label="Date of Birth"
+            placeholder="DD-MM-YYYY"
             type="date"
             register={register}
             errors={errors}
@@ -167,7 +175,25 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           />
         </div>
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
-          <FormField
+          <Label htmlFor="address" className="text-sm">
+            Address
+          </Label>
+          <Textarea
+            id="address"
+            placeholder="Enter your Address"
+            {...register("address" as Path<TFieldValues>, {
+              required: "This field is needed",
+              maxLength: 100,
+            })}
+            className="h-24 resize-y mt-1 bg-muted"
+          />
+          {errors.address && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.address.message as string}
+            </p>
+          )}
+
+          {/* <FormField
             fieldName={"address" as Path<TFieldValues>}
             label="Address"
             register={register}
@@ -177,7 +203,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             validationRules={{
               required: "This field is needed",
             }}
-          />
+          /> */}
         </div>
       </div>
 
