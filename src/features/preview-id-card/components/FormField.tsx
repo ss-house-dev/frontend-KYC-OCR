@@ -46,8 +46,6 @@ const FormField = <TFieldValues extends FieldValues>({
       rules={validationRules}
       render={({ field }) => {
         const val = field.value || "";
-
-        // นับตัวอักษรโดยไม่นับตัวที่อยู่ใน ignoreChars
         const charCount =
           typeof val === "string"
             ? ignoreChars && ignoreChars.length > 0

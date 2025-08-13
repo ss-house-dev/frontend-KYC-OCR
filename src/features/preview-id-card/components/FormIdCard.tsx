@@ -1,4 +1,3 @@
-// นำเข้า Controller และ Control
 import {
   Control,
   Controller,
@@ -37,7 +36,7 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
   handleSubmit: UseFormHandleSubmit<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
   watch?: UseFormWatch<TFieldValues>;
-  control: Control<TFieldValues>; // ✅ ใช้ control แทน register
+  control: Control<TFieldValues>; 
   errors: FieldErrors<TFieldValues>;
   capturedImage: string | null;
   isValid: boolean;
@@ -198,7 +197,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             label="Name Title"
             control={control}
             errors={errors}
-            validationRules={{ required: "กรุณาเลือกคำนำหน้าชื่อ" }}
+            validationRules={{ required: "This field is needed." }}
           />
 
           <Controller
