@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import IdCardScannerContainer from "@/features/scan-idcard/containers/ScanIDCardSection";
+import IdCardScannerContainer from "@/features/scan-id-card-owen/containers/ScanIDCardSection";
 
 const ScanIdCardPage = () => {
     const [statusMessage, setStatusMessage] = useState("Please hold steady");

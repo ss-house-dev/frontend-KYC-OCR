@@ -3,10 +3,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
 import { useRouter } from "next/navigation";
-import { CaptureButton } from "@/features/scan-idcard/components/CaptureButton";
-import { FrameSVG } from "@/features/scan-idcard/components/FrameSVG";
-import { BoxShadowMask } from "@/features/scan-idcard/components/BoxShadowMask";
-import { ScanHeader } from "@/features/scan-idcard/components/ScanHeader";
+import { CaptureButton } from "@/features/scan-id-card-owen/components/CaptureButton";
+import { FrameSVG } from "@/features/scan-id-card-owen/components/FrameSVG";
+import { BoxShadowMask } from "@/features/scan-id-card-owen/components/BoxShadowMask";
+import { ScanHeader } from "@/features/scan-id-card-owen/components/ScanHeader";
 
 declare const cv: any;
 
