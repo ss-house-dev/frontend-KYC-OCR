@@ -2,12 +2,12 @@
 
 import React from "react";
 import {
-  UseFormRegister,
+  Controller,
+  Control,
   FieldErrors,
   RegisterOptions,
   FieldValues,
   Path,
-  UseFormWatch,
 } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,8 @@ interface FormFieldProps<TFieldValues extends FieldValues>
   extends React.InputHTMLAttributes<HTMLInputElement> {
   fieldName: Path<TFieldValues>;
   label: string;
-  register: UseFormRegister<TFieldValues>;
+  control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
-  watch?: UseFormWatch<TFieldValues>;
   maxLength?: number;
   validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
   ignoreChars?: string[];
@@ -27,47 +26,67 @@ interface FormFieldProps<TFieldValues extends FieldValues>
 const FormField = <TFieldValues extends FieldValues>({
   fieldName,
   label,
-  register,
+  control,
   errors,
-  watch,
   maxLength,
   validationRules,
   ignoreChars,
   ...rest
 }: FormFieldProps<TFieldValues>) => {
-  const currentValue = watch ? watch(fieldName) : "";
-  const currentLength =
-    typeof currentValue === "string" ? currentValue.length : 0;
-
   return (
-    <div className="space-y-1">
-  <div className="flex justify-between items-center">
-    <Label htmlFor={fieldName} className="text-sm">
-      {label}
-      {validationRules?.required && (
-        <span className="text-red-500 ml-[1px]">*</span>
-      )}
-    </Label>
-    {maxLength && (
-      <span className="text-xs text-muted-foreground">
-        {currentLength}/{maxLength}
-      </span>
-    )}
-  </div>
+    <Controller
+      name={fieldName}
+      control={control}
+      rules={validationRules}
+      render={({ field }) => {
+        const currentValue = field.value || "";
+        const charCount =
+          typeof currentValue === "string"
+            ? ignoreChars && ignoreChars.length > 0
+              ? currentValue.replace(
+                  new RegExp(`[${ignoreChars.join("")}]`, "g"),
+                  ""
+                ).length
+              : currentValue.length
+            : 0;
 
-  <Input
-    id={fieldName}
-    {...register(fieldName, validationRules)}
-    {...(ignoreChars ? {} : { maxLength })}
-    {...rest}
-  />
+        return (
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <Label htmlFor={fieldName} className="text-sm">
+                {label}
+                {validationRules?.required && (
+                  <span className="text-red-500 ml-[1px]">*</span>
+                )}
+              </Label>
+            </div>
 
-  {errors[fieldName] && (
-    <p className="text-sm text-destructive">
-      {errors[fieldName]?.message as string}
-    </p>
-  )}
-</div>
+            <Input
+              id={fieldName}
+              {...field}
+              {...(ignoreChars ? {} : { maxLength })}
+              {...rest}
+            />
+
+            <div className="text-xs text-muted-foreground min-h-[1rem]">
+              {fieldName !== "firstNameThai" &&
+              fieldName !== "lastNameThai" &&
+              errors[fieldName] ? (
+                <span className="text-destructive text-sm">
+                  {errors[fieldName]?.message as string}
+                </span>
+              ) : (
+                maxLength && (
+                  <span>
+                    {charCount}/{maxLength}
+                  </span>
+                )
+              )}
+            </div>
+          </div>
+        );
+      }}
+    />
   );
 };
 
