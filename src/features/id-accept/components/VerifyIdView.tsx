@@ -41,36 +41,23 @@ export default function VerifyIdView({
   return (
     <div className="flex flex-col h-screen bg-white font-inter">
       <main className="flex-grow flex flex-col p-6 pt-8">
-        <div className="flex  w-full mb-8 ">
-          <div className="flex-1 flex flex-col items-center">
-            <div
-              className="flex flex-col items-start"
-              style={{ width: "100px" }}
-            >
-              <span className="text-sm font-bold text-gray-400">
-                Step 1 of 3
-              </span>
-              <div
-                className="mt-1 bg-blue-600 rounded-full"
-                style={{ width: "100px", height: "4px" }}
-              ></div>
-            </div>
+        <div className="w-full mb-8">
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-[18px]  text-black whitespace-nowrap">
+              Step 1 of 3
+            </span>
+            <span className="text-[18px]  text-gray-600 whitespace-nowrap">
+              ID Card Verification
+            </span>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-end">
-            <div
-              className="mt-1 bg-gray-300 rounded-full"
-              style={{ width: "100px", height: "4px" }}
-            ></div>
-          </div>
-          <div className="flex-1 flex flex-col items-center">
-            <div className="w-[100px]">
-              <span className="block text-sm font-semibold text-gray-400 text-right">
-                Verify ID Card
-              </span>
-              <div className="mt-1 h-[4px] bg-gray-300 rounded-full"></div>
-            </div>
+
+          <div className="mt-2 flex items-center gap-6">
+            <div className="h-1.5 w-[120px] rounded-full bg-blue-600" />
+            <div className="h-1.5 w-30 rounded-full bg-gray-300" />
+            <div className="h-1.5 w-30 rounded-full bg-gray-300" />
           </div>
         </div>
+
         <div className="mb-6 flex flex-col items-center text-center">
           <h2
             className="font-bold"
@@ -86,7 +73,7 @@ export default function VerifyIdView({
           <Image
             src="/id-accept/card-sample.svg"
             alt="ID Card Illustration"
-            width={160} 
+            width={160}
             height={160}
             className="w-full h-full object-contain"
           />
@@ -150,7 +137,7 @@ export default function VerifyIdView({
               </svg>
             </span>
             <span className="text-gray-600" style={{ fontSize: "13px" }}>
-              Please make sure you are in a well-lit area for optimal results.
+              Place your ID card within the camera frame.
             </span>
           </div>
           <div className="flex items-center">
@@ -181,7 +168,38 @@ export default function VerifyIdView({
               </svg>
             </span>
             <span className="text-gray-600" style={{ fontSize: "13px" }}>
-              Place your ID card within the camera frame.
+              Please make sure your camera is steady to avoid blurry images.
+            </span>
+          </div>
+          <div className="flex items-center">
+            <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
+              <svg
+                className="w-4 h-4 text-gray-600"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="11"
+                  fill="#fff"
+                  stroke="#9ca3af"
+                  strokeWidth="2"
+                />
+                <text
+                  x="12"
+                  y="17"
+                  textAnchor="middle"
+                  fontSize="16"
+                  fill="#9ca3af"
+                  fontWeight="bold"
+                >
+                  !
+                </text>
+              </svg>
+            </span>
+            <span className="text-gray-600" style={{ fontSize: "13px" }}>
+              Please make sure you are in a well-lit area for optimal results.
             </span>
           </div>
         </div>
