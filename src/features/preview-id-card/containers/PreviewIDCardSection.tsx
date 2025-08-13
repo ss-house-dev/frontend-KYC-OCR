@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import FormIdCard from "../components/FormIdCard";
 import {
   uploadIdCardOcr,
@@ -17,7 +17,7 @@ const defaultFormValues = {
   expiryDateThai: "",
   firstNameThai: "",
   lastNameThai: "",
-  birthdateThai: "",
+  birthDateThai: "",
   address: "",
   laserId: "",
 };
@@ -110,7 +110,7 @@ export default function VerifyIdentityScreen() {
     <FormIdCard
       handleSubmit={handleSubmit}
       onSubmit={onSubmit}
-      control={control}          // ✅ ต้องส่ง control ให้ Controller
+      control={control}    
       errors={errors}
       watch={watch}
       capturedImage={
