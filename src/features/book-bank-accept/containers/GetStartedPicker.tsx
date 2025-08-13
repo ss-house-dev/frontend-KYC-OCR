@@ -34,7 +34,7 @@ export default function GetStartedPicker({
       setPreviewSrc(dataUrl);
       setSheetOpen(false);
     }
-    e.target.value = ""; // reset เพื่อเลือกไฟล์เดิมซ้ำได้
+    e.target.value = ""; 
   };
 
   const pickCamera = () => cameraInputRef.current?.click();
@@ -55,7 +55,7 @@ export default function GetStartedPicker({
 
   return (
     <>
-      {/* ปุ่ม Get Started */}
+    
       <button
         onClick={openSheet}
         disabled={!isChecked}
@@ -72,7 +72,7 @@ export default function GetStartedPicker({
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg"
         capture="environment"
         className="hidden"
         onChange={onFileChange}
@@ -80,7 +80,7 @@ export default function GetStartedPicker({
       <input
         ref={galleryInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/่jpg"
         className="hidden"
         onChange={onFileChange}
       />

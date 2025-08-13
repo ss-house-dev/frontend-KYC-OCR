@@ -1,77 +1,31 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import IdCardScanner from '@/components/scan-idcard/IdCardScanner';
-import Preview from '@/components/scan-idcard/Preview'; // สมมติว่ามีคอมโพเนนต์นี้อยู่
+import React, { useState } from "react";
+import IdCardScannerContainer from "@/features/scan-id-card-owen/containers/ScanIDCardSection";
 
 const ScanIdCardPage = () => {
-  const [status, setStatus] = useState<'capturing' | 'preview' | 'processing'>('capturing');
-  const [error, setError] = useState<string | null>(null);
-  const [croppedImage, setCroppedImage] = useState<string | null>(null);
-  const [frameColor, setFrameColor] = useState<'red' | 'green'>('red'); // <-- แก้ไข Type ให้ตรง
-  const [sharpnessMsg, setSharpnessMsg] = useState('กำลังเตรียมกล้อง...');
-  const router = useRouter();
+    const [statusMessage, setStatusMessage] = useState("Please hold steady");
+    const [statusColor, setStatusColor] = useState<"red" | "green">("green");
 
-  const handleCapture = (image: string) => {
-    setCroppedImage(image);
-    setStatus('preview');
-  };
+    const handleCapture = (imageDataUrl: string) => {
+        console.log("Image captured!", imageDataUrl.substring(0, 30) + "...");
+    };
 
-  // --- ส่วนที่แก้ไข ---
-  // รับค่ามา 2 ตัว (message และ newColor) เพื่ออัปเดต state ทั้งสอง
-  const handleStatusChange = (message: string, newColor: 'red' | 'green') => {
-    setSharpnessMsg(message);
-    setFrameColor(newColor);
-  };
-  // --- สิ้นสุดส่วนที่แก้ไข ---
+    const handleStatusChange = (message: string, color: "red" | "green") => {
+        setStatusMessage(message);
+        setStatusColor(color);
+    };
 
-  const handleRetry = () => {
-    setStatus('capturing');
-    setCroppedImage(null);
-    setError(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!croppedImage) {
-      setError('กรุณาถ่ายภาพบัตร');
-      return;
-    }
-    setStatus('processing');
-    try {
-      // Your submission logic here
-      console.log("Submitting image...");
-      setTimeout(() => {
-        router.push('/next-step');
-      }, 2000);
-    } catch (err) {
-      setError('เกิดข้อผิดพลาดในการส่งข้อมูล');
-      setStatus('preview');
-    }
-  };
-
-  return (
-    <main >
-      <div >
-        {status === 'capturing' ? (
-          <IdCardScanner
-            onCapture={handleCapture}
-            onStatusChange={handleStatusChange}
-            frameColor={frameColor}
-            sharpnessMsg={sharpnessMsg}
-          />
-        ) : (
-          <Preview
-            croppedImage={croppedImage}
-            error={error}
-            onRetry={handleRetry}
-            onSubmit={handleSubmit}
-            isProcessing={status === 'processing'} // ส่งสถานะ processing ไปด้วย
-          />
-        )}
-      </div>
-    </main>
-  );
+    return (
+        <main>
+            <IdCardScannerContainer
+                onCapture={handleCapture}
+                onStatusChange={handleStatusChange}
+                frameColor={statusColor}
+                sharpnessMsg={statusMessage}
+            />
+        </main>
+    );
 };
 
 export default ScanIdCardPage;
