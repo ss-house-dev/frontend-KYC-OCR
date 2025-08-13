@@ -2,32 +2,23 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import VerifyBookBankView from "../components/VerifyBookBankView";
 
-export default function VerifyBookBankContainer() {
-  const [isChecked, setIsChecked] = useState(false);
-
+export default function GetStartedPicker({
+  isChecked,
+  onCapture,
+}: {
+  isChecked: boolean;
+  onCapture: (img: string) => void;
+}) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
-
   const router = useRouter();
 
-
-  const handleCheckboxChange = (checked: boolean) => setIsChecked(checked);
-
-
-  const handleStartScan = () => {
-    if (!isChecked) return;
-    setSheetOpen(true);
-  };
-
-
+  const openSheet = () => { if (isChecked) setSheetOpen(true); };
   const closeSheet = () => setSheetOpen(false);
-  const pickCamera = () => cameraInputRef.current?.click();
-  const pickGallery = () => galleryInputRef.current?.click();
 
   const fileToDataURL = (file: File) =>
     new Promise<string>((resolve) => {
@@ -40,33 +31,44 @@ export default function VerifyBookBankContainer() {
     const file = e.target.files?.[0];
     if (file) {
       const dataUrl = await fileToDataURL(file);
-      setPreviewSrc(dataUrl); 
+      setPreviewSrc(dataUrl);
       setSheetOpen(false);
     }
-    e.target.value = ""; 
+    e.target.value = ""; // reset เพื่อเลือกไฟล์เดิมซ้ำได้
   };
+
+  const pickCamera = () => cameraInputRef.current?.click();
+  const pickGallery = () => galleryInputRef.current?.click();
 
   const cancelPreview = () => {
     setPreviewSrc(null);
-    setSheetOpen(true); 
+    setSheetOpen(true);
   };
 
   const usePhoto = () => {
     if (!previewSrc) return;
-    sessionStorage.setItem("capturedBookBankImage", previewSrc);
+    onCapture(previewSrc);
+    sessionStorage.setItem("capturedIdCardImage", previewSrc);
     sessionStorage.setItem("imageSource", "upload");
-    router.push("/preview-book-bank");
+    router.push("/preview-id-card");
   };
 
   return (
     <>
-      <VerifyBookBankView
-        isChecked={isChecked}
-        onCheckboxChange={handleCheckboxChange}
-        onStartScan={handleStartScan}
-        onBack={() => router.back()}
-      />
+      {/* ปุ่ม Get Started */}
+      <button
+        onClick={openSheet}
+        disabled={!isChecked}
+        className={`w-full py-3 rounded-lg text-white text-base transition-colors duration-300 ${
+          isChecked
+            ? "bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#246AEC] hover:to-[#1F4293]"
+            : "bg-gray-400 cursor-not-allowed"
+        }`}
+      >
+        Get Started
+      </button>
 
+      {/* hidden inputs */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -83,22 +85,18 @@ export default function VerifyBookBankContainer() {
         onChange={onFileChange}
       />
 
+      {/* Action Sheet */}
       {sheetOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4"
           onClick={closeSheet}
         >
-          <div
-            className="w-full max-w-md space-y-3"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()}>
             <div className="rounded-2xl bg-white shadow">
               <div className="px-5 pt-4 pb-2 text-center">
-                <div className="text-sm font-semibold text-gray-500">
-                  Upload Photo
-                </div>
+                <div className="text-sm font-semibold text-gray-500">A Short Title is Best</div>
                 <div className="mt-1 text-sm text-gray-400">
-                  Take a picture or choose from gallery.
+                  A message should be a short, complete sentence.
                 </div>
               </div>
               <div className="border-t border-gray-200" />
@@ -127,15 +125,12 @@ export default function VerifyBookBankContainer() {
         </div>
       )}
 
+      {/* Preview Modal */}
       {previewSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white overflow-hidden">
             <div className="max-h-[70vh] bg-black flex items-center justify-center">
-              <img
-                src={previewSrc}
-                alt="Preview"
-                className="max-h-[70vh] w-full object-contain"
-              />
+              <img src={previewSrc} alt="Preview" className="max-h-[70vh] w-full object-contain" />
             </div>
             <div className="flex gap-3 p-4">
               <button
