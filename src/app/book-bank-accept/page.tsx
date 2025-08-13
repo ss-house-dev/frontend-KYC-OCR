@@ -1,5 +1,5 @@
-import VerifyIdContainer from "@/features/book-bank-accept/containers/VerifyBookBankContainer";
-
+import VerifyBookBankContainer from "@/features/book-bank-accept/containers/VerifyBookBankContainer";
+//
 export default function VerifyPage() {
-  return <VerifyIdContainer />;
+  return <VerifyBookBankContainer />;
 }

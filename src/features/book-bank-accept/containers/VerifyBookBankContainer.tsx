@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import VerifyBookBankView from "../components/VerifyBookBankView";
 
-export default function VerifyIdContainer() {
+export default function VerifyBookBankContainer() {
   
   const [isChecked, setIsChecked] = useState(false);
   const router = useRouter();
