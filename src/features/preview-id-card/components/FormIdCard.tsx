@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+
 import {
   UseFormRegister,
   FieldErrors,
@@ -12,6 +13,7 @@ import FormField from "@/features/preview-id-card/components/FormField";
 import ProgressLoading from "./ProgressLoading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from "react";
 
 const IconInfo = () => (
   <svg
@@ -53,6 +55,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   isLoading,
   loadingProgress,
 }: FormIdCardProps<TFieldValues>) => {
+  const formValues = watch();
+  
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
@@ -76,7 +80,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         {/* --- Form Fields --- */}
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <FormField
-            fieldName={"idCard" as Path<TFieldValues>}
+            fieldName={"data.idNumber" as Path<TFieldValues>}
             label="ID Number"
             placeholder="Enter 13-digit Citizen ID number"
             register={register}
@@ -99,7 +103,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             }}
           />
           <FormField
-            fieldName={"dateOfIssue" as Path<TFieldValues>}
+            fieldName={"data.issueDateThai" as Path<TFieldValues>}
             label="Date of Issue"
             placeholder="DD-MM-YYYY"
             type="date"
@@ -110,7 +114,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             }}
           />
           <FormField
-            fieldName={"dateOfExpiry" as Path<TFieldValues>}
+            fieldName={"data.expiryDateThai" as Path<TFieldValues>}
             label="Date of Expiry"
             placeholder="DD-MM-YYYY"
             type="date"
@@ -121,7 +125,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             }}
           />
           <FormField
-            fieldName={"laserId" as Path<TFieldValues>}
+            fieldName={"data.laserId" as Path<TFieldValues>}
             label="Laser ID"
             placeholder="Enter Laser ID number"
             register={register}
@@ -139,7 +143,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         </div>
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <FormField
-            fieldName={"firstName" as Path<TFieldValues>}
+            fieldName={"data.firstNameThai" as Path<TFieldValues>}
             label="First name"
             placeholder="Enter your First name"
             register={register}
@@ -151,7 +155,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             }}
           />
           <FormField
-            fieldName={"lastName" as Path<TFieldValues>}
+            fieldName={"data.lastNameThai" as Path<TFieldValues>}
             label="Last name"
             placeholder="Enter your Last name"
             register={register}
@@ -163,7 +167,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             }}
           />
           <FormField
-            fieldName={"dateOfBirth" as Path<TFieldValues>}
+            fieldName={"data.birthdateThai" as Path<TFieldValues>}
             label="Date of Birth"
             placeholder="DD-MM-YYYY"
             type="date"
@@ -175,7 +179,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           />
         </div>
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
-          <Label htmlFor="address" className="text-sm">
+          <Label htmlFor="data.address" className="text-sm">
             Address
             <span className="text-red-500 ml-[1px]">*</span>
           </Label>

@@ -1,0 +1,1 @@
+export * from "@/features/preview-id-card/services/update-id-card";
