@@ -196,7 +196,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <FormSelect
             fieldName={"titleThai" as Path<TFieldValues>}
             label="Name Title"
-            control={control} // ✅ Controller ใช้กับ FormSelect
+            control={control}
             errors={errors}
             validationRules={{ required: "กรุณาเลือกคำนำหน้าชื่อ" }}
           />
@@ -223,11 +223,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 type="text"
                 value={field.value}
                 control={control}
-                onChange={(e) => {
-                  const value = e.target.value.slice(0, 50); // ตัดเกิน 50 ตัว
-                  field.onChange(value);
-                }}
-                maxLength={50} // สำหรับ HTML input
+                maxLength={50}
                 errors={errors}
               />
             )}
@@ -252,10 +248,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 type="text"
                 control={control}
                 value={field.value}
-                onChange={(e) => {
-                  const value = e.target.value.slice(0, 50); // ตัดเกิน 50 ตัว
-                  field.onChange(value);
-                }}
                 maxLength={50}
                 errors={errors}
               />
@@ -308,14 +300,13 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                   value={field.value}
                   onChange={field.onChange}
                 />
-                <span className="text-xs text-muted-foreground">
-                  {field.value ? field.value.length : 0}/{addressMaxLength}
-                </span>
-                {errors.address && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.address.message as string}
-                  </p>
-                )}
+                <div className="text-sm text-muted-foreground min-h-[1rem]">
+                  {errors.address ? (
+                    <span className="text-destructive">{errors.address.message as string}</span>
+                  ) : (
+                    <span>{field.value ? field.value.length : 0} / 200</span>
+                  )}
+                </div>
               </>
             )}
           />

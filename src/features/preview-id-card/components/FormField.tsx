@@ -33,21 +33,27 @@ const FormField = <TFieldValues extends FieldValues>({
   ignoreChars,
   ...rest
 }: FormFieldProps<TFieldValues>) => {
+  const maxLen =
+    (validationRules?.maxLength &&
+      typeof validationRules.maxLength === "object" &&
+      validationRules.maxLength.value) ||
+    maxLength;
+
   return (
-    <Controller
+<Controller
       name={fieldName}
       control={control}
       rules={validationRules}
       render={({ field }) => {
-        const currentValue = field.value || "";
+        const val = field.value || "";
+
+        // นับตัวอักษรโดยไม่นับตัวที่อยู่ใน ignoreChars
         const charCount =
-          typeof currentValue === "string"
+          typeof val === "string"
             ? ignoreChars && ignoreChars.length > 0
-              ? currentValue.replace(
-                  new RegExp(`[${ignoreChars.join("")}]`, "g"),
-                  ""
-                ).length
-              : currentValue.length
+              ? val.replace(new RegExp(`[${ignoreChars.join("")}]`, "g"), "")
+                  .length
+              : val.length
             : 0;
 
         return (
@@ -63,24 +69,22 @@ const FormField = <TFieldValues extends FieldValues>({
 
             <Input
               id={fieldName}
-              {...field}
-              {...(ignoreChars ? {} : { maxLength })}
+              value={val}
+              onChange={(e) => {
+                let inputVal = e.target.value;
+                if (maxLen) inputVal = inputVal.slice(0, maxLen);
+                field.onChange(inputVal);
+              }}
               {...rest}
             />
 
             <div className="text-xs text-muted-foreground min-h-[1rem]">
-              {fieldName !== "firstNameThai" &&
-              fieldName !== "lastNameThai" &&
-              errors[fieldName] ? (
+              {errors[fieldName] ? (
                 <span className="text-destructive text-sm">
                   {errors[fieldName]?.message as string}
                 </span>
               ) : (
-                maxLength && (
-                  <span>
-                    {charCount}/{maxLength}
-                  </span>
-                )
+                maxLen && <span>{charCount}/{maxLen}</span>
               )}
             </div>
           </div>

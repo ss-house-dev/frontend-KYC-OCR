@@ -37,7 +37,6 @@ const base64StringToFile = (base64String: string, filename: string): File => {
 export default function VerifyIdentityScreen() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const {
     handleSubmit,
@@ -59,7 +58,7 @@ export default function VerifyIdentityScreen() {
         idNumber: ocrData.idNumber || "", 
         firstNameThai: ocrData.firstNameThai || "", 
         lastNameThai: ocrData.lastNameThai || "", 
-        birthdateThai: ocrData.birthDateThai || "", 
+        birthDateThai: ocrData.birthDateThai || "", 
         issueDateThai: ocrData.issueDateThai || "", 
         expiryDateThai: ocrData.expiryDateThai || "", 
         address: ocrData.address || "",

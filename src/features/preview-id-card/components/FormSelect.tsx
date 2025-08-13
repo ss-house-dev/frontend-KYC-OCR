@@ -5,7 +5,6 @@ import {
   FieldValues,
   Path,
   RegisterOptions,
-  UseFormWatch,
   Control,
   Controller,
 } from "react-hook-form";
@@ -23,7 +22,7 @@ interface FormSelectProps<TFieldValues extends FieldValues> {
   label: string;
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
-  watch?: UseFormWatch<TFieldValues>;
+  defaultValue?: string;
   validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
 }
 
@@ -32,24 +31,23 @@ const FormSelect = <TFieldValues extends FieldValues>({
   label,
   control,
   errors,
-  watch,
+  defaultValue = "",
   validationRules,
 }: FormSelectProps<TFieldValues>) => {
-  const titleValue = watch ? watch(fieldName) : "";
-
   return (
     <div className="space-y-1">
-      <Label>{label}</Label>
+      <Label htmlFor={fieldName}>{label}</Label>
       <Controller
         name={fieldName}
         control={control}
         rules={validationRules}
+        // defaultValue={defaultValue} 
         render={({ field }) => (
           <Select
-            value={field.value}
+            value={field.value || ""}
             onValueChange={(value) => field.onChange(value)}
           >
-            <SelectTrigger>
+            <SelectTrigger id={fieldName}>
               <SelectValue placeholder="เลือกคำนำหน้าชื่อ" />
             </SelectTrigger>
             <SelectContent>
