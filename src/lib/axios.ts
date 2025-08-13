@@ -35,6 +35,8 @@ const TestUploader = () => {
   };
 };
 
+export default TestUploader;
+
 //get
 axios
   .get("https://kyra-kyc.ddns.net/ocr/idcard")

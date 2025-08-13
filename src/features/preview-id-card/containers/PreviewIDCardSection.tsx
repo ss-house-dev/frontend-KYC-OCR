@@ -5,24 +5,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import FormIdCard from "../components/FormIdCard";
-import { uploadIdCardOcr } from "@/features/preview-id-card/services/update-id-card";
-import TestUploader from "@/app/testapi/page";
-
-// ฟังก์ชันสำหรับแปลง Base64 Data URL กลับเป็น File object
-const base64StringToFile = (base64String: string, filename: string): File => {
-  const arr = base64String.split(",");
-  const mimeMatch = arr[0].match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-
-  return new File([u8arr], filename, { type: mime });
-};
+import { uploadIdCardOcr, OcrResponse } from "@/features/preview-id-card/services/ocr";
 
 const defaultFormValues = {
   idNumber: "",
@@ -37,82 +20,86 @@ const defaultFormValues = {
 
 type PreviewIdCardForm = typeof defaultFormValues;
 
+const base64StringToFile = (base64String: string, filename: string): File => {
+  const [meta, data] = base64String.split(",");
+  const mimeMatch = meta.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+  const bstr = atob(data);
+  const u8 = new Uint8Array(bstr.length);
+  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+  return new File([u8], filename, { type: mime });
+};
+
 export default function VerifyIdentityScreen() {
-  const [isLoading, setIsLoading] = useState(true); // ใช้ State นี้เป็นตัวควบคุมหลัก
-  const [loadingProgress, setLoadingProgress] = useState(0); // เก็บไว้สำหรับ UI animation
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
-    reset, // เราจะใช้ reset เพื่อเติมข้อมูลลงฟอร์ม
+    reset,
     watch,
-  } = useForm({
+  } = useForm<PreviewIdCardForm>({
     defaultValues: defaultFormValues,
     mode: "onBlur",
   });
-  
-  const queryClient = useQueryClient();
 
-  // Mutations
-  const mutation = useMutation({
-    mutationFn: TestUploader,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["todos"] });
+
+  const ocrMutation = useMutation({
+    mutationKey: ["uploadIdCardOcr"],
+    mutationFn: (file: File) => uploadIdCardOcr(file, setLoadingProgress),
+    onSuccess: (ocrData: OcrResponse) => {
+      console.log("Onsuccess")
+      reset({
+        idNumber: ocrData.id_number || "",
+        firstNameThai: ocrData.first_name_th || "",
+        lastNameThai: ocrData.last_name_th || "",
+        birthdateThai: ocrData.date_of_birth_th || "",
+        issueDateThai: ocrData.issue_date_th || "",
+        expiryDateThai: ocrData.expiry_date_th || "",
+        address: ocrData.address || "",
+        titleThai: "", 
+      });
+    },
+    onError: (err) => {
+      console.error("OCR upload failed:", err);
+      alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+    },
+    onSettled: () => {
+      setIsLoading(false);
     },
   });
 
-  // useEffect จะทำหน้าที่หลักในการดึงรูป, อัปโหลด, และเติมข้อมูลลงฟอร์ม
   useEffect(() => {
-    // 1. สร้างฟังก์ชัน async เพื่อเรียก API ภายใน useEffect
-    const processImageFromSession = async () => {
-      // 2. ใช้ key ของ sessionStorage ให้ตรงกัน
+    const run = async () => {
       const imageSrc = sessionStorage.getItem("capturedIdCardImage");
       if (!imageSrc) {
         router.replace("/");
         return;
       }
-
       try {
-        // 3. แปลง Base64 เป็น File และเรียก Service
-        const imageFile = base64StringToFile(
-          imageSrc,
-          "idcard_from_session.jpg"
-        );
-        const ocrData = await uploadIdCardOcr(imageFile);
-        console.log("API Response Data:", ocrData);
-
-        // 4. ใช้ reset() เพื่ออัปเดตค่าในฟอร์มด้วยข้อมูลจาก OCR
-        // **สำคัญ:** ต้องแก้ชื่อ field จาก ocrData ให้ตรงกับชื่อใน defaultFormValues
-        reset({
-          idNumber: ocrData.id_number || "",
-          firstNameThai: ocrData.first_name_th || "",
-          lastNameThai: ocrData.last_name_th || "",
-          birthdateThai: ocrData.date_of_birth_th || "",
-          issueDateThai: ocrData.issue_date_th || "",
-          expiryDateThai: ocrData.expiry_date_th || "",
-          address: ocrData.address || "",
-        });
-      } catch (error) {
-        console.error("OCR upload failed:", error);
-        alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-        // อาจจะ redirect กลับไปหน้าถ่ายรูป
-        // router.replace("/");
-      } finally {
-        // 5. เมื่อกระบวนการทั้งหมดเสร็จสิ้น ให้หยุดการ loading
+        const file = base64StringToFile(imageSrc, "idcard_from_session.jpg");
+        setIsLoading(true);
+        setLoadingProgress(0);
+        ocrMutation.mutate(file);
+      } catch (e) {
+        console.error(e);
         setIsLoading(false);
       }
     };
-
-    processImageFromSession();
-  }, [router, reset]); // ใส่ reset ใน dependency array
+    run();
+  }, [router]);
 
   const onSubmit = (data: PreviewIdCardForm) => {
-    console.log("Form submitted successfully:", data);
-    // TODO: ทำการส่งข้อมูลฟอร์มที่ผู้ใช้ยืนยันแล้วไปยัง API ต่อไป
+    console.log("Form submitted:", data);
     alert("บันทึกข้อมูลสำเร็จ!");
   };
+
+  
+
 
   return (
     <FormIdCard
@@ -121,9 +108,9 @@ export default function VerifyIdentityScreen() {
       register={register}
       errors={errors}
       watch={watch}
-      capturedImage={sessionStorage.getItem("capturedIdCardImage")}
+      capturedImage={typeof window !== "undefined" ? sessionStorage.getItem("capturedIdCardImage") : null}
       isValid={isValid}
-      isLoading={isLoading}
+      isLoading={isLoading || ocrMutation.isPending}
       loadingProgress={loadingProgress}
     />
   );
