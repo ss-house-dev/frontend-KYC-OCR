@@ -14,6 +14,7 @@ import ProgressLoading from "./ProgressLoading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import React, { useState, useEffect } from "react";
+import { register } from "next/dist/next-devtools/userspace/pages/pages-dev-overlay-setup";
 
 const IconInfo = () => (
   <svg
@@ -55,8 +56,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   isLoading,
   loadingProgress,
 }: FormIdCardProps<TFieldValues>) => {
-  const formValues = watch();
-  
+  const addressValue = watch("address" as Path<TFieldValues>);
+  const addressCurrentLength = addressValue ? addressValue.length : 0;
+  const addressMaxLength = 200; // Define the max length here
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
@@ -80,13 +82,15 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         {/* --- Form Fields --- */}
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <FormField
-            fieldName={"data.idNumber" as Path<TFieldValues>}
+            fieldName={"idNumber" as Path<TFieldValues>}
             label="ID Number"
             placeholder="Enter 13-digit Citizen ID number"
+            type="text"
             register={register}
             errors={errors}
             watch={watch}
             maxLength={13}
+            readOnly={true}
             ignoreChars={["-"]}
             validationRules={{
               required: "Unable to extact data. Kindly rescan your document.",
@@ -103,34 +107,37 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             }}
           />
           <FormField
-            fieldName={"data.issueDateThai" as Path<TFieldValues>}
+            fieldName={"issueDateThai" as Path<TFieldValues>}
             label="Date of Issue"
             placeholder="DD-MM-YYYY"
-            type="date"
+            type="text"
             register={register}
             errors={errors}
+            readOnly={true}
             validationRules={{
-              required: "Unable to extact data. Kindly rescan your document.",
+              required: "Unable to extract data. Kindly rescan your document.",
             }}
           />
+
           <FormField
-            fieldName={"data.expiryDateThai" as Path<TFieldValues>}
+            fieldName={"expiryDateThai" as Path<TFieldValues>}
             label="Date of Expiry"
             placeholder="DD-MM-YYYY"
-            type="date"
+            type="text"
             register={register}
             errors={errors}
+            readOnly={true}
             validationRules={{
               required: "Unable to extact data. Kindly rescan your document.",
             }}
           />
           <FormField
-            fieldName={"data.laserId" as Path<TFieldValues>}
+            fieldName={"laserId" as Path<TFieldValues>}
             label="Laser ID"
             placeholder="Enter Laser ID number"
             register={register}
             errors={errors}
-            watch={watch}
+            type="text"
             maxLength={14}
             validationRules={{
               required: "Laser ID is required",
@@ -143,52 +150,58 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         </div>
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <FormField
-            fieldName={"data.firstNameThai" as Path<TFieldValues>}
+            fieldName={"firstNameThai" as Path<TFieldValues>}
             label="First name"
             placeholder="Enter your First name"
             register={register}
             errors={errors}
-            watch={watch}
+            type="text"
             maxLength={50}
             validationRules={{
               required: "This field is needed",
             }}
           />
           <FormField
-            fieldName={"data.lastNameThai" as Path<TFieldValues>}
+            fieldName={"lastNameThai" as Path<TFieldValues>}
             label="Last name"
             placeholder="Enter your Last name"
             register={register}
             errors={errors}
-            watch={watch}
+            type="text"
             maxLength={50}
             validationRules={{
               required: "This field is needed",
             }}
           />
           <FormField
-            fieldName={"data.birthdateThai" as Path<TFieldValues>}
+            fieldName={"birthdateThai" as Path<TFieldValues>}
             label="Date of Birth"
             placeholder="DD-MM-YYYY"
-            type="date"
+            type="text"
             register={register}
             errors={errors}
+            readOnly={true}
             validationRules={{
               required: "Unable to extact data. Kindly rescan your document.",
             }}
           />
         </div>
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
-          <Label htmlFor="data.address" className="text-sm">
-            Address
-            <span className="text-red-500 ml-[1px]">*</span>
-          </Label>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="address" className="text-sm">
+              Address
+              <span className="text-red-500 ml-[1px]">*</span>
+            </Label>
+            <span className="text-xs text-muted-foreground">
+              {addressCurrentLength}/{addressMaxLength}
+            </span>
+          </div>
           <Textarea
             id="address"
             placeholder="Enter your Address"
             {...register("address" as Path<TFieldValues>, {
               required: "This field is needed",
-              maxLength: 100,
+              maxLength: addressMaxLength,
             })}
             className="h-24 resize-y mt-1 bg-muted"
           />

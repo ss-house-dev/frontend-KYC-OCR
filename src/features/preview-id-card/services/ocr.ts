@@ -1,13 +1,14 @@
 import axios from "axios";
 
 export type OcrResponse = {
-  id_number?: string;
-  first_name_th?: string;
-  last_name_th?: string;
-  date_of_birth_th?: string;
-  issue_date_th?: string;
-  expiry_date_th?: string;
+  idNumber?: string;
+  firstNameThai?: string;
+  lastNameThai?: string;
+  birthDateThai?: string;
+  issueDateThai?: string;
+  expiryDateThai?: string;
   address?: string;
+  titleThai?: string;
 };
 
 export async function uploadIdCardOcr(
