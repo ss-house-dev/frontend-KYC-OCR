@@ -14,6 +14,7 @@ const defaultFormValues = {
   lastName: "",
   dateOfBirth: "",
   address: "",
+  errors: [{ field: "", message: "" }],
 };
 
 type PreviewIdCardForm = typeof defaultFormValues;

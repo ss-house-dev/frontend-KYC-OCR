@@ -4,6 +4,7 @@ export type OcrResponse = {
   accountNumber?: string;
   accountNameThai?: string;
   branchNameThai?: string;
+  errors: { field: string; message: string }[];
 };
 
 export async function uploadBookBankOcr(

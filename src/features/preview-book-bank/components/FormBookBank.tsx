@@ -4,6 +4,7 @@ import {
   FieldErrors,
   FieldValues,
   UseFormHandleSubmit,
+  UseFormWatch,
   Controller,
   Control,
 } from "react-hook-form";
@@ -42,25 +43,32 @@ interface BookBankFormValues {
   accountName: string;
   accountNo: string;
 }
-
 interface FormBookBankProps {
   handleSubmit: UseFormHandleSubmit<BookBankFormValues>;
   onSubmit: (data: BookBankFormValues) => void;
   register: UseFormRegister<BookBankFormValues>;
   errors: FieldErrors<BookBankFormValues>;
   control: Control<BookBankFormValues>;
+  watch?: UseFormWatch<BookBankFormValues>;
   bankOptions: { value: string; label: string; image: string }[];
+  capturedImage: string | null;
   isValid: boolean;
+  isLoading: boolean;
+  loadingProgress: number;
 }
 
 const FormBookBank = <TFieldValues extends FieldValues>({
   handleSubmit,
   onSubmit,
-  register,
-  errors,
+  watch,
   control,
+  errors,
+  register,
+  capturedImage,
   bankOptions,
   isValid,
+  isLoading,
+  loadingProgress,
 }: FormBookBankProps) => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-6 max-w-md mx-auto">
