@@ -1,6 +1,6 @@
 "use client";
 
-import IdCardScanner from "@/components/scan-idcard/IdCardScanner";
+import VerifyPage from "@/app/id-accept/page";
 import { useState } from "react";
 
 export default function Home() {
@@ -26,13 +26,7 @@ export default function Home() {
 
   return (
     <main>
-      {/* <IdCardOcrUploader /> */}
-      <IdCardScanner
-        onCapture={handleCapture}
-        onStatusChange={handleStatusChange}
-        frameColor={frameColor}
-        sharpnessMsg={sharpnessMsg}
-      />
+      <VerifyPage />
     </main>
   );
 }
