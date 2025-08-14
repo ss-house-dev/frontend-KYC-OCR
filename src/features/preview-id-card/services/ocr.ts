@@ -9,6 +9,7 @@ export type OcrResponse = {
   expiryDateThai?: string;
   address?: string;
   titleThai?: string;
+  errors: { field: string; message: string }[];
 };
 
 export async function uploadIdCardOcr(

@@ -1,6 +1,6 @@
 "use client";
 
-import React , {useEffect}from "react";
+import React, { useEffect } from "react";
 import {
   FieldErrors,
   FieldValues,
@@ -40,7 +40,10 @@ const FormSelect = <TFieldValues extends FieldValues>({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={fieldName}>{label}</Label>
+      <Label htmlFor={fieldName}>
+        {label}
+        <span className="text-red-500 ml-[1px]">*</span>
+      </Label>
       <Controller
         name={fieldName}
         control={control}

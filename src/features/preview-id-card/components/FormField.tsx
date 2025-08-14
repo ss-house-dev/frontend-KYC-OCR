@@ -59,9 +59,7 @@ const FormField = <TFieldValues extends FieldValues>({
             <div className="flex justify-between items-center">
               <Label htmlFor={fieldName} className="text-sm">
                 {label}
-                {validationRules?.required && (
                   <span className="text-red-500 ml-[1px]">*</span>
-                )}
               </Label>
             </div>
 

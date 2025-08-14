@@ -36,7 +36,8 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
   handleSubmit: UseFormHandleSubmit<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
   watch?: UseFormWatch<TFieldValues>;
-  control: Control<TFieldValues>; 
+  canSubmit: boolean;
+  control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
   capturedImage: string | null;
   isValid: boolean;
@@ -48,15 +49,14 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   handleSubmit,
   onSubmit,
   watch,
+  canSubmit,
   control,
   errors,
   capturedImage,
-  isValid,
   isLoading,
   loadingProgress,
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
-  const addressMaxLength = 200;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
@@ -101,7 +101,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 label="ID Number"
                 placeholder="Enter 13-digit Citizen ID number"
                 type="text"
-                control={control} // ✅ ต้องส่ง control ให้ Controller
+                control={control}
                 value={field.value}
                 onChange={field.onChange}
                 disabled
@@ -301,7 +301,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 />
                 <div className="text-sm text-muted-foreground min-h-[1rem]">
                   {errors.address ? (
-                    <span className="text-destructive">{errors.address.message as string}</span>
+                    <span className="text-destructive">
+                      {errors.address.message as string}
+                    </span>
                   ) : (
                     <span>{field.value ? field.value.length : 0} / 200</span>
                   )}
@@ -315,9 +317,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
       <div className="mt-6">
         <button
           type="submit"
-          disabled={!isValid}
+          disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            isValid
+            canSubmit
               ? "bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#1A377A]"
               : "bg-gray-400"
           }`}
