@@ -1,26 +1,24 @@
-// next.config.ts (โค้ดนี้ถูกต้องแล้ว)
-
 import type { NextConfig } from "next";
-import { RuleSetRule } from "webpack";
 
 const nextConfig: NextConfig = {
-  webpack(config) {
-    const fileLoaderRule = config.module.rules.find(
-      (rule: RuleSetRule): rule is RuleSetRule =>
-        typeof rule === 'object' && rule !== null && 'test' in rule && rule.test instanceof RegExp && rule.test.test(".svg")
-    );
+  // output: "standalone",
+  reactStrictMode: true,
+  poweredByHeader: false,
 
-    config.module.rules.push(
+  webpack(config) {
+    config.module.rules.unshift(
+      {
+        test: /\.svg$/i,
+        resourceQuery: /url/,
+        type: "asset",
+      },
       {
         test: /\.svg$/i,
         issuer: /\.[jt]sx?$/,
+        resourceQuery: { not: [/url/] },
         use: ["@svgr/webpack"],
       }
     );
-
-    if (fileLoaderRule) {
-        fileLoaderRule.exclude = /\.svg$/i;
-    }
 
     return config;
   },
