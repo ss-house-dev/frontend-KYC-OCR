@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/ocr/:path*',
-        destination: 'https://kyra-kyc.ddns.net/ocr/:path*',
+        destination: 'http://kyra-kyc.ddns.net:3207/ocr/:path*',
       },
     ];
   },
