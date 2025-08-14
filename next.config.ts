@@ -1,14 +1,26 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  async rewrites() {
-    return [
+  // output: "standalone",
+  reactStrictMode: true,
+  poweredByHeader: false,
+
+  webpack(config) {
+    config.module.rules.unshift(
       {
-        source: '/ocr/:path*',
-        destination: 'http://kyra-kyc.ddns.net:3207/ocr/:path*',
+        test: /\.svg$/i,
+        resourceQuery: /url/,
+        type: "asset",
       },
-    ];
+      {
+        test: /\.svg$/i,
+        issuer: /\.[jt]sx?$/,
+        resourceQuery: { not: [/url/] },
+        use: ["@svgr/webpack"],
+      }
+    );
+
+    return config;
   },
 };
 

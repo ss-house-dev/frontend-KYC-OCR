@@ -1,13 +1,14 @@
 "use client";
 
-import ScanIdCardPage from "@/app/scan-id-card/page";
+import VerifyPage from "@/app/id-accept/page";
+import { useState } from "react";
 
 export default function Home() {
 
 
   return (
-    <main >
-      <ScanIdCardPage/>
+    <main>
+      <VerifyPage />
     </main>
   );
 }

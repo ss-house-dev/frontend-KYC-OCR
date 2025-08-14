@@ -8,8 +8,6 @@ import { FrameSVG } from "@/features/scan-id-card/components/FrameSVG";
 import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask";
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
 
-declare const cv: any;
-
 const videoConstraints = {
   width: 1280,
   height: 720,
@@ -106,6 +104,7 @@ export default function ScanIDCardSection({
     cvs.height = cam.video.videoHeight;
     ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
 
+<<<<<<< HEAD
     let src, gray, laplacian, meanStdDev, stdDev, edges, contours, hierarchy;
     try {
       src = cv.imread(cvs);
@@ -130,6 +129,43 @@ export default function ScanIDCardSection({
       stdDev = new cv.Mat();
       cv.meanStdDev(laplacian, meanStdDev, stdDev);
       const sharpness = stdDev.data64F[0] ** 2;
+=======
+    let src: CVMat | undefined,
+      gray: CVMat | undefined,
+      laplacian: CVMat | undefined,
+      meanMat: CVMat | undefined,
+      stdDev: CVMat | undefined,
+      edges: CVMat | undefined,
+      contours: CVMatVector | undefined,
+      hierarchy: CVMat | undefined;
+
+    try {
+      src = cv.imread(cvs);
+      gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
+      const mean = cv.mean(gray)[0];
+      if (mean < 60) {
+        setReadyToShoot(false);
+        onStatusChange("Image is too dark. Please try again.", "red");
+        return;
+      }
+      if (mean > 200) {
+        setReadyToShoot(false);
+        onStatusChange("Image is too bright. Please try again.", "red");
+        return;
+      }
+
+      laplacian = new cv.Mat();
+      cv.Laplacian(gray, laplacian, cv.CV_64F);
+
+      // CHANGED: ใช้ CV_64F และอ่านค่าแบบปลอดภัย
+      meanMat = new cv.Mat(1, 1, cv.CV_64F);
+      stdDev = new cv.Mat(1, 1, cv.CV_64F);
+      cv.meanStdDev(laplacian, meanMat, stdDev);
+      const sigma = stdDev.data64F?.[0] ?? 0;
+      const sharpness = sigma ** 2;
+>>>>>>> origin/dev
 
       if (sharpness < 80) {
         setReadyToShoot(false);
@@ -177,7 +213,11 @@ export default function ScanIDCardSection({
       src?.delete();
       gray?.delete();
       laplacian?.delete();
+<<<<<<< HEAD
       meanStdDev?.delete();
+=======
+      meanMat?.delete();
+>>>>>>> origin/dev
       stdDev?.delete();
       edges?.delete();
       contours?.delete();
