@@ -10,7 +10,7 @@ import {
 } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
 import FormSelect from "@/features/preview-id-card/components/FormSelect";
-import ProgressLoading from "./ProgressLoading";
+import ProgressLoading from "../../../components/ProgressLoading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
