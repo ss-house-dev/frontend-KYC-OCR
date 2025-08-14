@@ -1,15 +1,19 @@
-import React from "react";
 import {
-  UseFormRegister,
-  FieldErrors,
+  Control,
+  Controller,
   UseFormWatch,
+  FieldErrors,
   FieldValues,
+  Path,
   UseFormHandleSubmit,
   SubmitHandler,
-  Path,
 } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
-import ProgressLoading from "./ProgressLoading";
+import FormSelect from "@/features/preview-id-card/components/FormSelect";
+import ProgressLoading from "../../../components/ProgressLoading";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import React, { useState } from "react";
 
 const IconInfo = () => (
   <svg
@@ -31,9 +35,10 @@ const IconInfo = () => (
 interface FormIdCardProps<TFieldValues extends FieldValues> {
   handleSubmit: UseFormHandleSubmit<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
-  register: UseFormRegister<TFieldValues>;
+  watch?: UseFormWatch<TFieldValues>;
+  canSubmit: boolean;
+  control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
-  watch: UseFormWatch<TFieldValues>;
   capturedImage: string | null;
   isValid: boolean;
   isLoading: boolean;
@@ -43,14 +48,16 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
 const FormIdCard = <TFieldValues extends FieldValues>({
   handleSubmit,
   onSubmit,
-  register,
-  errors,
   watch,
+  canSubmit,
+  control,
+  errors,
   capturedImage,
-  isValid,
   isLoading,
-  loadingProgress
+  loadingProgress,
 }: FormIdCardProps<TFieldValues>) => {
+  const [laserCharCount, setLaserCharCount] = useState(0);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
@@ -60,123 +67,249 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           securely.
         </p>
       </div>
+
       {isLoading ? (
         <ProgressLoading progress={loadingProgress} />
       ) : (
-        <img
-          src={capturedImage!}
-          alt="Thai National ID Card"
-          className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6]"
-        />
+        capturedImage && (
+          <img
+            src={capturedImage}
+            alt="Thai National ID Card"
+            className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
+          />
+        )
       )}
 
       <div className="space-y-4">
-        {/* --- Form Fields --- */}
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
-          <FormField
-            fieldName={"idCard" as Path<TFieldValues>}
-            label="ID Card"
-            register={register}
-            errors={errors}
-            watch={watch}
-            maxLength={13}
-            ignoreChars={["-"]}
-            validationRules={{
-              required: "Unable to extact data. Kindly rescan your document.",
+          <Controller
+            name={"idNumber" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "Unable to extract data. Kindly rescan your document.",
+              maxLength: 13,
               validate: (value: string) => {
                 const digitsOnly = value.replace(/-/g, "");
-                if (digitsOnly.length > 13) {
-                  return "ID Card must be 13 digits";
-                }
-                if (value.length > 0 && !/^[0-9-]+$/.test(value)) {
-                  return "ID Card can only contain digits and hyphens";
-                }
+                if (digitsOnly.length > 13) return false;
+                if (value.length > 0 && !/^[0-9-]+$/.test(value)) return false;
                 return true;
               },
             }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"idNumber" as Path<TFieldValues>}
+                label="ID Number"
+                placeholder="Enter 13-digit Citizen ID number"
+                type="text"
+                control={control}
+                value={field.value}
+                onChange={field.onChange}
+                disabled
+                maxLength={13}
+                ignoreChars={["-"]}
+                errors={errors}
+              />
+            )}
           />
-          <FormField
-            fieldName={"dateOfIssue" as Path<TFieldValues>}
-            label="Date of Issue"
-            type="date"
-            register={register}
-            errors={errors}
-            validationRules={{
-              required: "Unable to extact data. Kindly rescan your document.",
+
+          <Controller
+            name={"issueDateThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "Unable to extract data. Kindly rescan your document.",
             }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"issueDateThai" as Path<TFieldValues>}
+                label="Date of Issue"
+                placeholder="DD-MM-YY"
+                type="text"
+                disabled
+                value={field.value}
+                control={control}
+                onChange={field.onChange}
+                errors={errors}
+              />
+            )}
           />
-          <FormField
-            fieldName={"dateOfExpiry" as Path<TFieldValues>}
-            label="Date of Expiry"
-            type="date"
-            register={register}
-            errors={errors}
-            validationRules={{
-              required: "Unable to extact data. Kindly rescan your document.",
+
+          <Controller
+            name={"expiryDateThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "Unable to extract data. Kindly rescan your document.",
             }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"expiryDateThai" as Path<TFieldValues>}
+                label="Date of Expiry"
+                placeholder="DD-MM-YY"
+                type="text"
+                disabled
+                value={field.value}
+                control={control}
+                onChange={field.onChange}
+                errors={errors}
+              />
+            )}
           />
-          <FormField
-            fieldName={"laserId" as Path<TFieldValues>}
-            label="Laser ID"
-            placeholder="Enter Laser ID number"
-            register={register}
+
+          <Controller
+            name={"laserId" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: true,
+              pattern: /^[A-Za-z]{2}\d-\d{7}-\d{2}$/,
+            }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"laserId" as Path<TFieldValues>}
+                label="Laser ID"
+                control={control}
+                placeholder="Enter Laser ID number"
+                type="text"
+                value={field.value}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/-/g, "");
+                  setLaserCharCount(value.length);
+                  let formatted = "";
+                  if (value.length > 0)
+                    formatted +=
+                      value.slice(0, 3) + (value.length > 3 ? "-" : "");
+                  if (value.length > 3)
+                    formatted +=
+                      value.slice(3, 10) + (value.length > 10 ? "-" : "");
+                  if (value.length > 10) formatted += value.slice(10, 12);
+                  e.target.value = formatted;
+                  field.onChange(e);
+                }}
+                maxLength={12}
+                ignoreChars={["-"]}
+                errors={errors}
+              />
+            )}
+          />
+        </div>
+
+        <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
+          <FormSelect
+            fieldName={"titleThai" as Path<TFieldValues>}
+            label="Name Title"
+            control={control}
             errors={errors}
-            watch={watch}
-            maxLength={14}
-            validationRules={{
-              required: "Laser ID is required",
+            validationRules={{ required: "This field is needed." }}
+          />
+
+          <Controller
+            name={"firstNameThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "This field is needed",
               maxLength: {
-                value: 14,
-                message: "Laser ID must be 14 characters",
+                value: 50,
+                message: "Cannot exceed 50 characters",
+              },
+              pattern: {
+                value: /^[\u0E00-\u0E7F]+$/,
+                message: "Invalid format. Please enter the correct characters.",
               },
             }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"firstNameThai" as Path<TFieldValues>}
+                label="First name"
+                placeholder="Enter your First name"
+                type="text"
+                value={field.value}
+                control={control}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
+
+          <Controller
+            name={"lastNameThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "This field is needed",
+              maxLength: 50,
+              pattern: {
+                value: /^[\u0E00-\u0E7F]+$/,
+                message: "Invalid format. Please enter the correct characters.",
+              },
+            }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"lastNameThai" as Path<TFieldValues>}
+                label="Last name"
+                placeholder="Enter your Last name"
+                type="text"
+                control={control}
+                value={field.value}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
+
+          <Controller
+            name={"birthDateThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "Unable to extract data. Kindly rescan your document.",
+            }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"birthDateThai" as Path<TFieldValues>}
+                label="Date of Birth"
+                placeholder="DD-MM-YY"
+                type="text"
+                disabled
+                value={field.value}
+                control={control}
+                onChange={field.onChange}
+                errors={errors}
+              />
+            )}
           />
         </div>
-        <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
-          <FormField
-            fieldName={"fullName" as Path<TFieldValues>}
-            label="Full name"
-            register={register}
-            errors={errors}
-            watch={watch}
-            maxLength={50}
-            validationRules={{
-              required: "This field is needed",
-            }}
-          />
-          <FormField
-            fieldName={"lastName" as Path<TFieldValues>}
-            label="Last name"
-            register={register}
-            errors={errors}
-            watch={watch}
-            maxLength={50}
-            validationRules={{
-              required: "This field is needed",
-            }}
-          />
-          <FormField
-            fieldName={"dateOfBirth" as Path<TFieldValues>}
-            label="Date of Birth"
-            type="date"
-            register={register}
-            errors={errors}
-            validationRules={{
-              required: "Unable to extact data. Kindly rescan your document.",
-            }}
-          />
-        </div>
+
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4">
-          <FormField
-            fieldName={"address" as Path<TFieldValues>}
-            label="Address"
-            register={register}
-            errors={errors}
-            watch={watch}
-            maxLength={100}
-            validationRules={{
+          <Label htmlFor="address" className="text-sm">
+            Address <span className="text-red-500 ml-[1px]">*</span>
+          </Label>
+          <Controller
+            name={"address" as Path<TFieldValues>}
+            control={control}
+            rules={{
               required: "This field is needed",
+              maxLength: {
+                value: 200,
+                message: "Address must be 200 characters or less",
+              },
             }}
+            render={({ field }) => (
+              <>
+                <Textarea
+                  id="address"
+                  placeholder="Enter your Address"
+                  maxLength={200}
+                  className="h-24 resize-y mt-1 mb-1 bg-muted"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+                <div className="text-sm text-muted-foreground min-h-[1rem]">
+                  {errors.address ? (
+                    <span className="text-destructive">
+                      {errors.address.message as string}
+                    </span>
+                  ) : (
+                    <span>{field.value ? field.value.length : 0} / 200</span>
+                  )}
+                </div>
+              </>
+            )}
           />
         </div>
       </div>
@@ -184,9 +317,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
       <div className="mt-6">
         <button
           type="submit"
-          disabled={!isValid}
+          disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            isValid
+            canSubmit
               ? "bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#1A377A]"
               : "bg-gray-400"
           }`}

@@ -15,7 +15,6 @@ const ProgressLoading: React.FC<ProgressLoadingProps> = ({ progress }) => {
     <div className="w-full h-48 bg-white rounded-xl mb-5 border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
       <div className="relative w-24 h-24">
         <svg className="w-full h-full" viewBox="0 0 100 100">
-          {/* วงกลมพื้นหลัง */}
           <circle
             className="text-gray-200"
             strokeWidth="10"
