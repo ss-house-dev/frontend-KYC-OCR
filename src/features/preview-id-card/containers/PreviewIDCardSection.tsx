@@ -9,7 +9,6 @@ import {
   uploadIdCardOcr,
   OcrResponse,
 } from "@/features/preview-id-card/services/ocr";
-import router from "next/dist/shared/lib/router/router";
 
 const defaultFormValues = {
   idNumber: "",
@@ -78,11 +77,13 @@ export default function VerifyIdentityScreen() {
         });
       });
     },
-    onError: (err) => {
-      console.error("OCR upload failed:", err);
-      alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-    },
+    //alert error
+    // onError: (err) => {
+    //   console.error("OCR upload failed:", err);
+    //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+    // },
   });
+
   // mockdata
   // const ocrMutation = useMutation({
   //   mutationKey: ["uploadIdCardOcr"],
@@ -130,7 +131,6 @@ export default function VerifyIdentityScreen() {
       const imageSrc = sessionStorage.getItem("capturedIdCardImage");
 
       if (!imageSrc) {
-        // ถ้าไม่มีรูปใน session → กลับหน้าแรก
         router.replace("/");
         return;
       }
@@ -139,7 +139,7 @@ export default function VerifyIdentityScreen() {
       if (imageSrc) {
         try {
           const file = base64StringToFile(imageSrc, "idcard_from_session.jpg");
-          // ocrMutation.mutate(file);
+          ocrMutation.mutate(file);
         } catch (e) {
           console.error("Failed to process image from sessionStorage:", e);
           alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
@@ -150,10 +150,10 @@ export default function VerifyIdentityScreen() {
           "No image in session. Falling back to test image '/idcard.jpg'"
         );
         try {
-          const response = await fetch("/idcard.jpg");
+          const response = await fetch(imageSrc);
           const blob = await response.blob();
-          const file = new File([blob], "idcard.jpg", { type: blob.type });
-          // ocrMutation.mutate(file);
+          const file = new File([blob], imageSrc, { type: blob.type });
+          ocrMutation.mutate(file);
         } catch (fetchError) {
           console.error("Failed to fetch test image:", fetchError);
           alert("ไม่พบรูปภาพสำหรับทดสอบ");
