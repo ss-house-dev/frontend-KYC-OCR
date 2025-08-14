@@ -8,7 +8,7 @@ import FormIdCard from "../components/FormIdCard";
 import {
   uploadIdCardOcr,
   OcrResponse,
-} from "@/features/preview-id-card/services/ocr";
+} from "@/features/preview-id-card/services/ocr-id-card";
 
 const defaultFormValues = {
   idNumber: "",
@@ -77,54 +77,12 @@ export default function VerifyIdentityScreen() {
         });
       });
     },
-    //alert error
+    //alert error ไว้ใช้ใน sprint หน้า
     // onError: (err) => {
     //   console.error("OCR upload failed:", err);
     //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
     // },
   });
-
-  // mockdata
-  // const ocrMutation = useMutation({
-  //   mutationKey: ["uploadIdCardOcr"],
-  //   mutationFn: async () => {
-  //     await new Promise((res) => setTimeout(res, 500)); // delay จำลอง
-  //     return {
-  //       idNumber: "1-23456-7890-12-3",
-  //       firstNameThai: "ไอรินทร์",
-  //       lastNameThai: "เมษะสิทธิโรจน์",
-  //       birthDateThai: "01-01-1980",
-  //       issueDateThai: "01-01-2020",
-  //       expiryDateThai: "20-08-2025",
-  //       address: "310/11",
-  //       titleThai: "นาง",
-  //       // errors: [
-  //       //   { field: "firstNameThai", message: "This field is needed" },
-  //       //   { field: "lastNameThai", message: null },
-  //       //   { field: "expiryDateThai", message: null },
-  //       // ],
-  //     } as OcrResponse;
-  //   },
-  //   onSuccess: (ocrData) => {
-  //     reset({
-  //       idNumber: ocrData.idNumber || "",
-  //       firstNameThai: ocrData.firstNameThai || "",
-  //       lastNameThai: ocrData.lastNameThai || "",
-  //       birthDateThai: ocrData.birthDateThai || "",
-  //       issueDateThai: ocrData.issueDateThai || "",
-  //       expiryDateThai: ocrData.expiryDateThai || "",
-  //       address: ocrData.address || "",
-  //       titleThai: ocrData.titleThai || "",
-  //     });
-
-  //     (ocrData.errors || []).forEach((err) => {
-  //       setError(err.field as Path<PreviewIdCardForm>, {
-  //         type: "manual",
-  //         message: err.message,
-  //       });
-  //     });
-  //   },
-  // });
 
   useEffect(() => {
     const processImageOnMount = async () => {
@@ -134,8 +92,6 @@ export default function VerifyIdentityScreen() {
         router.replace("/");
         return;
       }
-      // mockdata
-      // ocrMutation.mutate();
       if (imageSrc) {
         try {
           const file = base64StringToFile(imageSrc, "idcard_from_session.jpg");

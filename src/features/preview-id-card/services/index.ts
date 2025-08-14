@@ -1,1 +1,1 @@
-export * from "@/features/preview-id-card/services/update-id-card";
+export * from "@/features/preview-id-card/services/ocr-id-card";
