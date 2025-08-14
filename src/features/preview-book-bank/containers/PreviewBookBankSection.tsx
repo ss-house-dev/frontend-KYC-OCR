@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Path, useForm } from "react-hook-form";
 import FormBookBank from "../components/FormBookBank";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { uploadBookBankOcr, OcrResponse } from "../services";
 
@@ -38,122 +38,112 @@ export default function BookBankPage() {
   const router = useRouter();
   const [canSubmit, setCanSubmit] = useState(false);
 
-  const BookBankPage = () => {
-    const {
-      handleSubmit,
-      watch,
-      reset,
-      register,
-      control,
-      formState: { errors, isValid },
-    } = useForm<BookBankFormValues>({
-      defaultValues: defaultFormValues,
-      mode: "onChange",
-    });
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    register,
+    control,
+    formState: { errors, isValid },
+  } = useForm<BookBankFormValues>({
+    defaultValues: defaultFormValues,
+    mode: "onChange",
+  });
 
-    const ocrMutation = useMutation({
-      mutationKey: ["uploadBookBankOcr"],
-      mutationFn: (file: File) => uploadBookBankOcr(file, setLoadingProgress),
-      onSuccess: (ocrData: OcrResponse) => {
-        console.log("OCR Success, resetting form with:", ocrData);
-        reset({
-          branchNameThai: ocrData.branchNameThai || "",
-          accountNameThai: ocrData.accountNameThai || "",
-          accountNumber: ocrData.accountNumber || "",
-        });
-        // set API errors into form
-        // (ocrData.errors || []).forEach((err) => {
-        //   setError(err.field as Path<PreviewIdCardForm>, {
-        //     type: "manual",
-        //     message: err.message,
-        //   });
-        // });
-      },
+  const ocrMutation = useMutation({
+    mutationKey: ["uploadBookBankOcr"],
+    mutationFn: (file: File) => uploadBookBankOcr(file, setLoadingProgress),
+    onSuccess: (ocrData: OcrResponse) => {
+      console.log("OCR Success, resetting form with:", ocrData);
+      reset({
+        branchNameThai: ocrData.branchNameThai || "",
+        accountNameThai: ocrData.accountNameThai || "",
+        accountNumber: ocrData.accountNumber || "",
+      });
+      // set API errors into form
+      // (ocrData.errors || []).forEach((err) => {
+      //   setError(err.field as Path<PreviewIdCardForm>, {
+      //     type: "manual",
+      //     message: err.message,
+      //   });
+      // });
+    },
 
-      onError: (err) => {
-        console.error("OCR upload failed:", err);
-        alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-      },
-    });
+    onError: (err) => {
+      console.error("OCR upload failed:", err);
+      alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+    },
+  });
 
-    useEffect(() => {
-      const processImageOnMount = async () => {
-        const imageSrc = sessionStorage.getItem("capturedIdCardImage");
+  useEffect(() => {
+    const processImageOnMount = async () => {
+      const dataUrl = sessionStorage.getItem("capturedIdCardImage");
 
-        if (!imageSrc) {
+      if (!dataUrl) {
+        router.replace("/book-bank-accept");
+        return;
+      }
+      // mockdata
+      // ocrMutation.mutate();
+      if (dataUrl) {
+        try {
+          const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
+          ocrMutation.mutate(file);
+        } catch (e) {
+          console.error("Failed to process image from sessionStorage:", e);
+          alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
           router.replace("/");
-          return;
         }
-        // mockdata
-        // ocrMutation.mutate();
-        if (imageSrc) {
-          try {
-            const file = base64StringToFile(
-              imageSrc,
-              "idcard_from_session.jpg"
-            );
-            ocrMutation.mutate(file);
-          } catch (e) {
-            console.error("Failed to process image from sessionStorage:", e);
-            alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
-            router.replace("/");
-          }
-        } else {
-          console.warn(
-            "No image in session. Falling back to test image '/idcard.jpg'"
-          );
-          try {
-            const response = await fetch(imageSrc);
-            const blob = await response.blob();
-            const file = new File([blob], imageSrc, { type: blob.type });
-            ocrMutation.mutate(file);
-          } catch (fetchError) {
-            console.error("Failed to fetch test image:", fetchError);
-            alert("ไม่พบรูปภาพสำหรับทดสอบ");
-            router.replace("/");
-          }
+      } else {
+        console.warn(
+          "No image in session. Falling back to test image '/idcard.jpg'"
+        );
+        try {
+          const response = await fetch(dataUrl);
+          const blob = await response.blob();
+          const file = new File([blob], dataUrl, { type: blob.type });
+          ocrMutation.mutate(file);
+        } catch (fetchError) {
+          console.error("Failed to fetch test image:", fetchError);
+          alert("ไม่พบรูปภาพสำหรับทดสอบ");
+          router.replace("/");
         }
-      };
-      processImageOnMount();
-    }, []);
-
-    const watchedValues = watch();
-
-    useEffect(() => {
-      const allFieldsFilled = Object.values(watchedValues).every(
-        (value) => value !== "" && value !== null && value !== undefined
-      );
-      const noErrors = Object.keys(errors).length === 0;
-
-      setCanSubmit(allFieldsFilled && noErrors);
-    }, [watchedValues, errors]);
-
-    const onSubmit = (data: BookBankFormValues) => {
-      console.log("Form submitted:", data);
-      alert("บันทึกข้อมูลสำเร็จ!");
+      }
     };
+    processImageOnMount();
+  }, []);
 
-    return (
-      <>
-        <FormBookBank
-          handleSubmit={handleSubmit}
-          onSubmit={onSubmit}
-          register={register}
-          errors={errors}
-          watch={watch}
-          control={control}
-          canSubmit={canSubmit}
-          capturedImage={
-            typeof window !== "undefined"
-              ? sessionStorage.getItem("capturedIdCardImage")
-              : null
-          }
-          bankOptions={bankOptions}
-          isValid={isValid}
-          isLoading={ocrMutation.isPending}
-          loadingProgress={loadingProgress}
-        />
-      </>
+  const watchedValues = watch();
+
+  useEffect(() => {
+    const allFieldsFilled = Object.values(watchedValues).every(
+      (value) => value !== "" && value !== null && value !== undefined
     );
+    const noErrors = Object.keys(errors).length === 0;
+
+    setCanSubmit(allFieldsFilled && noErrors);
+  }, [watchedValues, errors]);
+
+  const onSubmit = (data: BookBankFormValues) => {
+    console.log("Form submitted:", data);
+    alert("บันทึกข้อมูลสำเร็จ!");
   };
+
+  return (
+    <>
+      <FormBookBank
+        onSubmit={handleSubmit(onSubmit)}
+        register={register}
+        watch={watch}
+        control={control}
+        errors={errors}
+        capturedImage={sessionStorage.getItem("capturedIdCardImage")}
+        bankOptions={bankOptions}
+        isValid={isValid}
+        canSubmit={canSubmit}
+        isLoading={ocrMutation.isPending}
+        loadingProgress={loadingProgress}
+      />
+    </>
+  );
 }

@@ -7,18 +7,11 @@ import {
   UseFormWatch,
   Controller,
   Control,
+  Path,
 } from "react-hook-form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import Image from "next/image";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import * as SelectPrimitive from "@radix-ui/react-select";
-import { ConfirmButton } from "@/components/ui/confirmbutton";
+import ProgressLoading from "@/components/ProgressLoading";
+import FormSelectBookBank from "./FormSelectBookBank";
+import FormFieldBookBank from "./FormFieldBookBank";
 
 const IconInfo = () => (
   <svg
@@ -43,13 +36,13 @@ interface BookBankFormValues {
   accountName: string;
   accountNo: string;
 }
-interface FormBookBankProps {
-  handleSubmit: UseFormHandleSubmit<BookBankFormValues>;
-  onSubmit: (data: BookBankFormValues) => void;
-  register: UseFormRegister<BookBankFormValues>;
-  errors: FieldErrors<BookBankFormValues>;
-  control: Control<BookBankFormValues>;
-  watch?: UseFormWatch<BookBankFormValues>;
+interface FormBookBankProps<TFieldValues extends FieldValues> {
+  onSubmit: ReturnType<UseFormHandleSubmit<TFieldValues>>;
+  register: UseFormRegister<TFieldValues>;
+  watch: UseFormWatch<TFieldValues>;
+  control: Control<TFieldValues>;
+  canSubmit: boolean;
+  errors: FieldErrors<TFieldValues>;
   bankOptions: { value: string; label: string; image: string }[];
   capturedImage: string | null;
   isValid: boolean;
@@ -58,7 +51,6 @@ interface FormBookBankProps {
 }
 
 const FormBookBank = <TFieldValues extends FieldValues>({
-  handleSubmit,
   onSubmit,
   watch,
   control,
@@ -67,92 +59,128 @@ const FormBookBank = <TFieldValues extends FieldValues>({
   capturedImage,
   bankOptions,
   isValid,
+  canSubmit,
   isLoading,
   loadingProgress,
-}: FormBookBankProps) => {
+}: FormBookBankProps<TFieldValues>) => {
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-6 max-w-md mx-auto">
+    <form onSubmit={onSubmit} className="p-6 max-w-md mx-auto">
       <div className="bg-white rounded-xl shadow-md p-6">
         <div className="space-y-6">
-          <div className="border-2 border-dashed border-blue-400 rounded-lg p-1 mb-6">
-            <div className="bg-gray-200 h-48 flex items-center justify-center rounded-md">
-              <p className="text-gray-500">[Image Preview]</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bank">Select a bank</Label>
-            <Controller
-              name="bank"
-              control={control}
-              defaultValue=""
-              render={({ field }) => {
-                const selectedBank = bankOptions.find(
-                  (b) => b.value === field.value
-                );
+            {isLoading ? (
+              <ProgressLoading progress={loadingProgress} />
+            ) : (
+              capturedImage && (
+                <img
+                  src={capturedImage}
+                  alt="Thai National ID Card"
+                  className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
+                />
+              )
+            )}
 
-                return (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      {selectedBank ? (
-                        <div className="flex items-center gap-4">
-                          <Image
-                            src={selectedBank.image}
-                            alt={`${selectedBank.label} logo`}
-                            className="h-8 w-8 rounded-full object-contain"
-                          />
-                          <span className="font-medium">
-                            {selectedBank.label}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500">เลือกธนาคาร</span>
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bankOptions.map((bank) => (
-                        <SelectItem key={bank.value} value={bank.value}>
-                          <div className="flex items-center gap-4">
-                            <Image
-                              src={bank.image}
-                              alt={`${bank.label} logo`}
-                              width={32}
-                              height={32}
-                              className="rounded-full object-contain"
-                            />
-                            <SelectPrimitive.ItemText>
-                              {bank.label}
-                            </SelectPrimitive.ItemText>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              }}
+          <div className="space-y-2">
+            <FormSelectBookBank
+              fieldName={"bookbankOption" as Path<TFieldValues>}
+              label="Name Title"
+              control={control}
+              errors={errors}
+              validationRules={{ required: "This field is needed." }}
             />
           </div>
 
           {/* === ช่อง Branch === */}
-          <div className="space-y-2">
-            <Label htmlFor="branch">Branch</Label>
-            <Input id="branch" {...register("branch")} />
-          </div>
+          <Controller
+            name={"branchNameThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "Unable to extract data. Kindly rescan your document.",
+              pattern: {
+                value: /^[\u0E00-\u0E7F]+$/,
+                message: "Invalid format. Please enter the correct characters.",
+              },
+            }}
+            render={({ field }) => (
+              <FormFieldBookBank
+                fieldName={"branchNameThai" as Path<TFieldValues>}
+                label="Branch"
+                placeholder="Enter Branch"
+                type="text"
+                value={field.value}
+                control={control}
+                errors={errors}
+              />
+            )}
+          />
 
           {/* === ช่อง Account Name === */}
-          <div className="space-y-2">
-            <Label htmlFor="accountName">Account Name</Label>
-            <Input id="accountName" {...register("accountName")} />
-          </div>
+          <Controller
+            name={"accountNameThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "Unable to extract data. Kindly rescan your document.",
+              pattern: {
+                value: /^[\u0E00-\u0E7F]+$/,
+                message: "Invalid format. Please enter the correct characters.",
+              },
+            }}
+            render={({ field }) => (
+              <FormFieldBookBank
+                fieldName={"accountNameThai" as Path<TFieldValues>}
+                label="Account Name"
+                placeholder="Enter Name"
+                type="text"
+                value={field.value}
+                control={control}
+                errors={errors}
+              />
+            )}
+          />
 
           {/* === ช่อง Account No. === */}
-          <div className="space-y-2">
-            <Label htmlFor="accountNo">Account No.</Label>
-            <Input id="accountNo" {...register("accountNo")} />
-          </div>
+          <Controller
+            name={"accountNumber" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "Unable to extract data. Kindly rescan your document.",
+              maxLength: 13,
+              validate: (value: string) => {
+                const digitsOnly = value.replace(/-/g, "");
+                if (digitsOnly.length > 13) return false;
+                if (value.length > 0 && !/^[0-9-]+$/.test(value)) return false;
+                return true;
+              },
+
+            }}
+            render={({ field }) => (
+              <FormFieldBookBank
+                fieldName={"accountNumber" as Path<TFieldValues>}
+                label="Account No."
+                placeholder="Enter Account no."
+                type="text"
+                control={control}
+                value={field.value}
+                onChange={field.onChange}
+                errors={errors}
+                disabled
+              />
+            )}
+          />
         </div>
       </div>
-
-      <ConfirmButton disabled={!isValid} />
+      <div className="mt-6">
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
+            canSubmit
+              ? "bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#1A377A]"
+              : "bg-gray-400"
+          }`}
+        >
+          Confirm
+        </button>
+      </div>
     </form>
   );
 };
