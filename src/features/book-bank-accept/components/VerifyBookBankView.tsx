@@ -26,52 +26,52 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" />
   </svg>
 );
-interface VerifyIdViewProps {
+interface VerifyBookBankViewProps {
   isChecked: boolean;
   onCheckboxChange: (checked: boolean) => void;
   onStartScan: () => void;
   onBack: () => void;
 }
 
-export default function VerifyIdView({
+export default function VerifyBookBankView({
   isChecked,
   onCheckboxChange,
   onStartScan,
-}: VerifyIdViewProps) {
+}: VerifyBookBankViewProps) {
   return (
     <div className="flex flex-col h-screen bg-white font-inter">
       <main className="flex-grow flex flex-col p-6 pt-8">
         <div className="w-full mb-8">
           <div className="flex items-baseline justify-between gap-4">
-            <span className="text-[18px]  text-black whitespace-nowrap">
+            <span className="text-[18px]  text-gray-600 whitespace-nowrap">
               Step 1 of 3
             </span>
             <span className="text-[18px]  text-gray-600 whitespace-nowrap">
-              ID Card Verification
+              Add Book Bank
             </span>
           </div>
 
           <div className="mt-2 flex items-center gap-6">
             <div className="h-1.5 w-[120px] rounded-full bg-blue-600" />
-            <div className="h-1.5 w-30 rounded-full bg-gray-300" />
-            <div className="h-1.5 w-30 rounded-full bg-gray-300" />
+            <div className="h-1.5 w-[120px] rounded-full bg-blue-600" />
+            <div className="h-1.5 w-[120px] rounded-full bg-blue-600" />
           </div>
         </div>
 
         <div className="mb-6 flex flex-col items-center text-center">
           <h2
-            className="font-bold"
-            style={{ color: "#0F2D73", fontSize: "20px" }}
+            className="font-bold m-0 inline whitespace-nowrap"
+            style={{ color: "#0F2D73", fontSize: "20px", lineHeight: "20px" }}
           >
-            Please have your ID card ready
+            Please have your Book Bank ready.
           </h2>
           <p className="text-gray-500 mt-1 text-sm">
-            Make sure your ID card is clearly visible.
+            Make sure your Book Bank is clearly visible.
           </p>
         </div>
         <div className="w-40 h-40 mx-auto my-4">
           <Image
-            src="/id-accept/card-sample.svg"
+            src="\book-bank-accept\book-bank-sample.svg"
             alt="ID Card Illustration"
             width={160}
             height={160}
@@ -81,7 +81,7 @@ export default function VerifyIdView({
         <div className="grid grid-cols-3 gap-3 my-4">
           <div className="flex items-center justify-center">
             <Image
-              src="\id-accept\card-sample-correct.svg"
+              src="\book-bank-accept\book-bank-sample-correct.svg"
               alt="Correct Example"
               width={100}
               height={75}
@@ -90,7 +90,7 @@ export default function VerifyIdView({
           </div>
           <div className="flex items-center justify-center">
             <Image
-              src="\id-accept\card-sample-blurry.svg"
+              src="\book-bank-accept\book-bank-sample-blurry.svg"
               alt="Blurry Example"
               width={100}
               height={75}
@@ -99,7 +99,7 @@ export default function VerifyIdView({
           </div>
           <div className="flex items-center justify-center">
             <Image
-              src="\id-accept\card-sample-glare.svg"
+              src="\book-bank-accept\book-bank-sample-glare.svg"
               alt="Glare Example"
               width={100}
               height={75}
@@ -137,7 +137,7 @@ export default function VerifyIdView({
               </svg>
             </span>
             <span className="text-gray-600" style={{ fontSize: "13px" }}>
-              Place your ID card within the camera frame.
+              Place your Book Bank within the camera frame.
             </span>
           </div>
           <div className="flex items-center">
@@ -202,6 +202,44 @@ export default function VerifyIdView({
               Please make sure you are in a well-lit area for optimal results.
             </span>
           </div>
+          <div className="flex items-center">
+            <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full">
+              <svg
+                className="w-4 h-4 text-gray-600"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="11"
+                  fill="#fff"
+                  stroke="#9ca3af"
+                  strokeWidth="2"
+                />
+                <text
+                  x="12"
+                  y="17"
+                  textAnchor="middle"
+                  fontSize="16"
+                  fill="#9ca3af"
+                  fontWeight="bold"
+                >
+                  !
+                </text>
+              </svg>
+            </span>
+
+            <span className="text-[13px] text-gray-600">
+              You’re allowed to upload{" "}
+              <a
+                href="https://www.facebook.com/wyp.ch23/about"
+                className="text-[#007AFF] hover:underline focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 rounded-sm"
+              >
+                E-book bank
+              </a>
+            </span>
+          </div>
         </div>
       </main>
       <footer className="p-6  bg-white">
@@ -209,40 +247,44 @@ export default function VerifyIdView({
           htmlFor="consent-checkbox"
           className="flex items-start space-x-3 cursor-pointer"
         >
-          <div className="round relative flex-shrink-0 mt-1">
+          <div className="relative flex-shrink-0 mt-1">
             <input
               id="consent-checkbox"
               type="checkbox"
               checked={isChecked}
               onChange={(e) => onCheckboxChange(e.target.checked)}
-              className="hidden"
+              className="sr-only"
             />
+
             <label
-              htmlFor="c</svg>onsent-checkbox"
-              className="block bg-white border border-gray-300 rounded-full cursor-pointer h-5 w-5 absolute left-0 top-0"
+              htmlFor="consent-checkbox"
+              className="block h-5 w-5 absolute left-0 top-0 cursor-pointer border rounded-[6px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1849D6]/40"
               style={{
-                borderColor: isChecked ? "#1849D6" : "#ccc",
+                borderColor: isChecked ? "#1849D6" : "#D1D5DB",
                 backgroundColor: isChecked ? "#1849D6" : "#fff",
               }}
             >
               <span
+                aria-hidden="true"
                 style={{
-                  borderLeft: `2px solid ${isChecked ? "#fff" : "#9ca3af "}`,
-                  borderBottom: `2px solid ${isChecked ? "#fff" : "#9ca3af "}`,
-                  content: '""',
-                  height: "6px",
-                  left: "3px",
-                  opacity: isChecked ? 1 : 0.5,
                   position: "absolute",
-                  top: "5px",
-                  transform: "rotate(-45deg)",
-                  width: "12px",
-                  display: "block",
+                  top: "1px",
+                  left: "5px",
+                  width: "8px",
+                  height: "12px",
+                  borderRight: `2px solid ${
+                    isChecked ? "#fff" : "transparent"
+                  }`,
+                  borderBottom: `2px solid ${
+                    isChecked ? "#fff" : "transparent"
+                  }`,
+                  transform: "rotate(45deg)",
                   pointerEvents: "none",
                 }}
               />
             </label>
           </div>
+
           <svg
             className="h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
             xmlns="http://www.w3.org/2000/svg"
@@ -256,22 +298,22 @@ export default function VerifyIdView({
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
           <span className="text-sm text-black" style={{ fontSize: "14px" }}>
-            I consent to the collection and verification of my national ID
-            information for the purposes of identity verification and AML
-            compliance.
+            I consent to Kyra KYC processing my personal and biometric data for
+            identity verification, AML compliance, and as per its privacy
+            policy.
           </span>
         </label>
         <div className="mt-4"></div>
         <button
           onClick={onStartScan}
           disabled={!isChecked}
-          className={`w-full py-3 rounded-lg text-white font-bold text-base transition-colors duration-300 ${
+          className={`w-full py-3 rounded-lg text-white  text-base transition-colors duration-300 ${
             isChecked
               ? "bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#246AEC] hover:to-[#1F4293]"
               : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Start Scanning
+          Get Started
         </button>
       </footer>
     </div>
