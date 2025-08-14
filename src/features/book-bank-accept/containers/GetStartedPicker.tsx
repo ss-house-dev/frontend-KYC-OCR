@@ -48,9 +48,9 @@ export default function GetStartedPicker({
   const usePhoto = () => {
     if (!previewSrc) return;
     onCapture(previewSrc);
-    sessionStorage.setItem("capturedIdCardImage", previewSrc);
+    sessionStorage.setItem("capturedBookBankImage", previewSrc);
     sessionStorage.setItem("imageSource", "upload");
-    router.push("/preview-id-card");
+    router.push("/preview-book-bank");
   };
 
   return (
@@ -126,7 +126,7 @@ export default function GetStartedPicker({
       )}
 
       {/* Preview Modal */}
-      {previewSrc && (
+      {/* {previewSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white overflow-hidden">
             <div className="max-h-[70vh] bg-black flex items-center justify-center">
@@ -148,7 +148,7 @@ export default function GetStartedPicker({
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </>
   );
 }
