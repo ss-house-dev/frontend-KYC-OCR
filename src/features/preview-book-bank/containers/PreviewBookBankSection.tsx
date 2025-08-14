@@ -6,10 +6,8 @@ import FormBookBank from "../components/FormBookBank";
 import { useRouter } from "next/router";
 import {
   useMutation,
-  useQueryClient,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
+} from "@tanstack/react-query";
+import { uploadBookBankOcr } from "../services";
 
 const defaultValues = {
   bank: "",
@@ -40,59 +38,54 @@ const {
   mode: "onChange",
 });
 
-// const ocrMutation = useMutation({
-//   mutationKey: ["uploadIdCardOcr"],
-//   mutationFn: (file: File) => uploadIdCardOcr(file, setLoadingProgress),
-//   onSuccess: (ocrData: OcrResponse) => {
-//     console.log("OCR Success, resetting form with:", ocrData);
-//     reset({
-//       idNumber: ocrData.idNumber || "",
-//       firstNameThai: ocrData.firstNameThai || "",
-//       lastNameThai: ocrData.lastNameThai || "",
-//       birthDateThai: ocrData.birthDateThai || "",
-//       issueDateThai: ocrData.issueDateThai || "",
-//       expiryDateThai: ocrData.expiryDateThai || "",
-//       address: ocrData.address || "",
-//       titleThai: ocrData.titleThai || "",
-//     });
-//   },
-//   onError: (err) => {
-//     console.error("OCR upload failed:", err);
-//     alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-//   },
-// });
+const ocrMutation = useMutation({
+  mutationKey: ["uploadBookBankOcr"],
+  mutationFn: (file: File) => uploadBookBankOcr(file, setLoadingProgress),
+  onSuccess: (ocrData: OcrResponse) => {
+    console.log("OCR Success, resetting form with:", ocrData);
+    reset({
+      accountNumber: ocrData.accountNumber || "",
+      accountNameThai: ocrData.accountNameThai || "",
+      branchNameThai: ocrData.branchNameThai || "",
+    });
+  },
+  onError: (err) => {
+    console.error("OCR upload failed:", err);
+    alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+  },
+});
 
-// useEffect(() => {
-//   const processImageOnMount = async () => {
-//     const imageSrc = sessionStorage.getItem("capturedIdCardImage");
+useEffect(() => {
+  const processImageOnMount = async () => {
+    const imageSrc = sessionStorage.getItem("capturedIdCardImage");
 
-//     if (imageSrc) {
-//       try {
-//         // const file = base64StringToFile(imageSrc, "idcard_from_session.jpg");
-//         // ocrMutation.mutate(file);
-//       } catch (e) {
-//         console.error("Failed to process image from sessionStorage:", e);
-//         alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
-//         router.replace("/");
-//       }
-//     } else {
-//       console.warn(
-//         "No image in session. Falling back to test image '/idcard.jpg'"
-//       );
-//       try {
-//         const response = await fetch("/idcard.jpg");
-//         const blob = await response.blob();
-//         const file = new File([blob], "idcard.jpg", { type: blob.type });
-//         // ocrMutation.mutate(file);
-//       } catch (fetchError) {
-//         console.error("Failed to fetch test image:", fetchError);
-//         alert("ไม่พบรูปภาพสำหรับทดสอบ");
-//         router.replace("/");
-//       }
-//     }
-//   };
-//   processImageOnMount();
-// }, []);
+    if (imageSrc) {
+      try {
+        // const file = base64StringToFile(imageSrc, "idcard_from_session.jpg");
+        // ocrMutation.mutate(file);
+      } catch (e) {
+        console.error("Failed to process image from sessionStorage:", e);
+        alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
+        router.replace("/");
+      }
+    } else {
+      console.warn(
+        "No image in session. Falling back to test image '/idcard.jpg'"
+      );
+      try {
+        const response = await fetch("/idcard.jpg");
+        const blob = await response.blob();
+        const file = new File([blob], "idcard.jpg", { type: blob.type });
+        // ocrMutation.mutate(file);
+      } catch (fetchError) {
+        console.error("Failed to fetch test image:", fetchError);
+        alert("ไม่พบรูปภาพสำหรับทดสอบ");
+        router.replace("/");
+      }
+    }
+  };
+  processImageOnMount();
+}, []);
 
 const BookBankPage = () => {
   const {
