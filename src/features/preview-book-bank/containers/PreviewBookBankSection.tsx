@@ -37,6 +37,7 @@ export default function BookBankPage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
   const [canSubmit, setCanSubmit] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const {
     handleSubmit,
@@ -75,16 +76,17 @@ export default function BookBankPage() {
     },
   });
 
+
   useEffect(() => {
     const processImageOnMount = async () => {
-      const dataUrl = sessionStorage.getItem("capturedIdCardImage");
+      const dataUrl = sessionStorage.getItem("capturedBookBankImage");
 
       if (!dataUrl) {
         router.replace("/book-bank-accept");
         return;
       }
-      // mockdata
-      // ocrMutation.mutate();
+      if (dataUrl) setPreviewImage(dataUrl);
+      
       if (dataUrl) {
         try {
           const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
@@ -92,7 +94,7 @@ export default function BookBankPage() {
         } catch (e) {
           console.error("Failed to process image from sessionStorage:", e);
           alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
-          router.replace("/");
+          router.replace("/book-bank-accept");
         }
       } else {
         console.warn(
@@ -106,7 +108,7 @@ export default function BookBankPage() {
         } catch (fetchError) {
           console.error("Failed to fetch test image:", fetchError);
           alert("ไม่พบรูปภาพสำหรับทดสอบ");
-          router.replace("/");
+          router.replace("/book-bank-accept");
         }
       }
     };
@@ -137,7 +139,7 @@ export default function BookBankPage() {
         watch={watch}
         control={control}
         errors={errors}
-        capturedImage={sessionStorage.getItem("capturedIdCardImage")}
+        capturedImage={previewImage}
         bankOptions={bankOptions}
         isValid={isValid}
         canSubmit={canSubmit}

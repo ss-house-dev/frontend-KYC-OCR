@@ -67,17 +67,17 @@ const FormBookBank = <TFieldValues extends FieldValues>({
     <form onSubmit={onSubmit} className="p-6 max-w-md mx-auto">
       <div className="bg-white rounded-xl shadow-md p-6">
         <div className="space-y-6">
-            {isLoading ? (
-              <ProgressLoading progress={loadingProgress} />
-            ) : (
-              capturedImage && (
-                <img
-                  src={capturedImage}
-                  alt="Thai National ID Card"
-                  className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
-                />
-              )
-            )}
+          {isLoading ? (
+            <ProgressLoading progress={loadingProgress} />
+          ) : (
+            capturedImage && (
+              <img
+                src={capturedImage}
+                alt="Book Bank"
+                className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
+              />
+            )
+          )}
 
           <div className="space-y-2">
             <FormSelectBookBank
@@ -150,7 +150,6 @@ const FormBookBank = <TFieldValues extends FieldValues>({
                 if (value.length > 0 && !/^[0-9-]+$/.test(value)) return false;
                 return true;
               },
-
             }}
             render={({ field }) => (
               <FormFieldBookBank
