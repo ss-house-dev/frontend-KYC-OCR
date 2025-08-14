@@ -2,243 +2,247 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
-import { useRouter } from 'next/navigation';
-import { CaptureButton } from "@/features/scan-id-card/components/CaptureButton";
+import { useRouter } from "next/navigation";
+import { CaptureButton } from "@/features/scan-id-card-owen/components/CaptureButton";
+import { FrameSVG } from "@/features/scan-id-card-owen/components/FrameSVG";
+import { BoxShadowMask } from "@/features/scan-id-card-owen/components/BoxShadowMask";
+import { ScanHeader } from "@/features/scan-id-card-owen/components/ScanHeader";
 
-// ให้ TypeScript ทราบว่า cv จะมีอยู่
 declare const cv: any;
 
 const videoConstraints = {
-    width: 1280,
-    height: 720,
-    facingMode: "environment",
-};
-
-// กรอบมุมโค้ง
-const FrameSVG = ({ color }: { color: "red" | "green" }) => {
-    const stroke = color === "green" ? "#22c55e" : "#ef4444";
-    return (
-        <svg className="w-full h-full" viewBox="0 0 300 190" fill="none">
-            <path
-                d="M25 3H8C5.24 3 3 5.24 3 8V25M3 187V165C3 187 5.24 187 8 187H25
-           M275 3H292C294.76 3 297 5.24 297 8V25M297 187V165C297 187 294.76 187 292 187H275"
-                stroke={stroke}
-                strokeWidth="4"
-                strokeLinecap="round"
-            />
-        </svg>
-    );
+  width: 1280,
+  height: 720,
+  facingMode: "environment",
 };
 
 interface Props {
-    onCapture: (img: string) => void;
-    onStatusChange: (msg: string, color: "red" | "green") => void;
-    frameColor: "red" | "green";
-    sharpnessMsg: string;
+  onCapture: (img: string) => void;
+  onStatusChange: (msg: string, color: "red" | "green") => void;
+  frameColor: "red" | "green";
+  sharpnessMsg: string;
 }
 
-export default function IdCardScanner({
-    onCapture,
-    onStatusChange,
-    frameColor,
-    sharpnessMsg,
+/** ครอปจาก HTMLVideoElement: กรอบกลาง 88% อัตราส่วน 8.8:5.6 */
+function cropCenterFromVideo(
+  video: HTMLVideoElement,
+  opts = { maxRatio: 0.88, aspectW: 8.8, aspectH: 5.6 }
+) {
+  const W = video.videoWidth;
+  const H = video.videoHeight;
+  if (!W || !H) return null;
+
+  const maxW = W * opts.maxRatio;
+  const maxH = H * opts.maxRatio;
+  const ar = opts.aspectW / opts.aspectH;
+
+  let cropW = Math.min(maxW, maxH * ar);
+  let cropH = cropW / ar;
+
+  cropW = Math.round(cropW);
+  cropH = Math.round(cropH);
+
+  const cropX = Math.round((W - cropW) / 2);
+  const cropY = Math.round((H - cropH) / 2);
+
+  const cvs = document.createElement("canvas");
+  const ctx = cvs.getContext("2d");
+  if (!ctx) return null;
+
+  cvs.width = cropW;
+  cvs.height = cropH;
+
+  ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+  return cvs.toDataURL("image/jpeg", 0.92);
+}
+
+export default function ScanIDCardSection({
+  onCapture,
+  onStatusChange,
+  frameColor,
+  sharpnessMsg,
 }: Props) {
-    const webcamRef = useRef<Webcam>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [cvReady, setCvReady] = useState(false);
-    const [readyToShoot, setReadyToShoot] = useState(false); // true เฉพาะข้อ 4
-    const timer = useRef<NodeJS.Timeout | null>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cvReady, setCvReady] = useState(false);
+  const [readyToShoot, setReadyToShoot] = useState(false);
+  const timer = useRef<NodeJS.Timeout | null>(null);
 
-    /* ---------- โหลด OpenCV ---------- */
-    useEffect(() => {
+  // โหลด OpenCV
+  useEffect(() => {
+    if (typeof cv !== "undefined") {
+      setCvReady(true);
+      return;
+    }
+    const id = "opencv-script";
+    if (document.getElementById(id)) return;
+    const s = document.createElement("script");
+    s.id = id;
+    s.src = "https://docs.opencv.org/4.9.0/opencv.js";
+    s.async = true;
+    s.onload = () => {
+      const iv = setInterval(() => {
         if (typeof cv !== "undefined") {
-            setCvReady(true);
-            return;
+          clearInterval(iv);
+          setCvReady(true);
         }
-        const id = "opencv-script";
-        if (document.getElementById(id)) return;
-        const s = document.createElement("script");
-        s.id = id;
-        s.src = "https://docs.opencv.org/4.9.0/opencv.js";
-        s.async = true;
-        s.onload = () => {
-            const iv = setInterval(() => {
-                if (typeof cv !== "undefined") {
-                    clearInterval(iv);
-                    setCvReady(true);
-                }
-            }, 100);
-        };
-        s.onerror = () => onStatusChange("Unable to load OpenCV", "red");
-        document.body.appendChild(s);
-    }, [onStatusChange]);
-
-    /* ---------- วิเคราะห์เฟรมกล้องทุก 0.7 วิ ---------- */
-    const analyse = useCallback(() => {
-        const cam = webcamRef.current;
-        const cvs = canvasRef.current;
-        if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4)
-            return;
-
-        const ctx = cvs.getContext("2d", { willReadFrequently: true });
-        if (!ctx) return;
-        cvs.width = cam.video.videoWidth;
-        cvs.height = cam.video.videoHeight;
-        ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
-
-        try {
-            const src = cv.imread(cvs);
-            const gray = new cv.Mat();
-            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-            /* ---------- 2 : Too dark / 3 : Too bright ---------- */
-            const mean = cv.mean(gray)[0];
-            if (mean < 60) {
-                setReadyToShoot(false);
-                onStatusChange("Too dark, Can’t read the card", "red");
-                src.delete();
-                gray.delete();
-                return;
-            }
-            if (mean > 200) {
-                setReadyToShoot(false);
-                onStatusChange("Too bright, Can’t read the card", "red");
-                src.delete();
-                gray.delete();
-                return;
-            }
-
-            /* ---------- ตรวจหาบัตรในเฟรม ---------- */
-            const edges = new cv.Mat();
-            cv.Canny(gray, edges, 50, 150);
-            const contours = new cv.MatVector();
-            const hierarchy = new cv.Mat();
-            cv.findContours(
-                edges,
-                contours,
-                hierarchy,
-                cv.RETR_EXTERNAL,
-                cv.CHAIN_APPROX_SIMPLE
-            );
-
-            let found = false;
-            for (let i = 0; i < contours.size(); i++) {
-                const c = contours.get(i);
-                const peri = cv.arcLength(c, true);
-                const approx = new cv.Mat();
-                cv.approxPolyDP(c, approx, 0.03 * peri, true);
-
-                if (approx.rows === 4) {
-                    const r = cv.boundingRect(approx);
-                    const ratio = r.width / r.height;
-                    // เงื่อนไขขนาด/อัตราส่วนของบัตร
-                    if (r.width > 200 && r.height > 100 && ratio > 1.4 && ratio < 1.9) {
-                        found = true;
-                        break;
-                    }
-                }
-                approx.delete();
-            }
-
-            if (found) {
-                /* ---------- 4 : Ready to capture ---------- */
-                setReadyToShoot(true);
-                onStatusChange("Ready to capture", "green");
-            } else {
-                /* ---------- 1 : ยังไม่อยู่ในกรอบ ---------- */
-                setReadyToShoot(false);
-                onStatusChange("Please keep your card in frame", "red");
-            }
-
-            // clean
-            src.delete();
-            gray.delete();
-            edges.delete();
-            contours.delete();
-            hierarchy.delete();
-        } catch (e) {
-            console.error(e);
-            setReadyToShoot(false);
-            onStatusChange("An error occurred during analysis", "red");
-        }
-    }, [cvReady, onStatusChange]);
-
-    useEffect(() => {
-        if (cvReady) {
-            timer.current = setInterval(analyse, 700);
-        }
-        return () => {
-            if (timer.current) {
-                clearInterval(timer.current); // <- คืนค่า void แน่นอน
-            }
-        };
-    }, [cvReady, analyse]);
-
-    const router = useRouter();
-
-    /* ---------- กดถ่าย ---------- */
-    const shoot = () => {
-        const img = webcamRef.current?.getScreenshot();
-        if (img) {
-            onCapture(img);
-            // บันทึกรูปลง sessionStorage แล้วไปหน้า preview
-            sessionStorage.setItem('capturedIdCardImage', img);
-            sessionStorage.setItem('imageSource', 'camera');
-            router.push('/preview-id-card');
-        }
+      }, 100);
     };
+    s.onerror = () => onStatusChange("Unable to load OpenCV", "red");
+    document.body.appendChild(s);
+  }, [onStatusChange]);
 
-    /* ---------- UI ---------- */
-    return (
-        <div className="relative w-full h-full min-h-screen bg-black ">
-            <Webcam
-                ref={webcamRef}
-                audio={false}
-                screenshotFormat="image/jpeg"
-                videoConstraints={videoConstraints}
-                className="absolute inset-0 w-full h-full object-cover"
-            />
-            <canvas ref={canvasRef} className="hidden" />
+  // วิเคราะห์ภาพ
+  const analyse = useCallback(() => {
+    const cam = webcamRef.current;
+    const cvs = canvasRef.current;
+    if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4) return;
 
-            {/* กรอบ/รูเบลอ */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[88vw] max-w-[420px] aspect-[8.8/5.6] z-10 p-[3%]">
-                {/* mask ทำให้รอบนอกทึบ/เบลอ */}
-                <div
-                    className="absolute inset-0 rounded-[25px] pointer-events-none"
-                    style={{ boxShadow: "0 0 0 2000px rgba(0,0,0,0.55)" }}
-                />
+    const ctx = cvs.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
 
-                {/* กรอบข้อความ */}
-                <div className="absolute -top-20 left-2 right-2 flex justify-center z-30">
-                    <div
-                        className={`inline-block border-2 border-dashed ${frameColor === "green" ? "border-green-500" : "border-red-500"
-                            } text-center p-2 rounded-lg`}
-                    >
-                        <p className="text-white font-semibold text-sm">{sharpnessMsg}</p>
-                    </div>
-                </div>
+    cvs.width = cam.video.videoWidth;
+    cvs.height = cam.video.videoHeight;
+    ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
 
-                {/* กรอบมุมโค้ง */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-[89%] h-[89%]">
-                        <FrameSVG color={frameColor} />
-                    </div>
-                </div>
+    let src, gray, laplacian, meanStdDev, stdDev, edges, contours, hierarchy;
+    try {
+      src = cv.imread(cvs);
+      gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-                {/* รูปไกด์บัตร */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <img
-                        src="/CARD IDENT.svg"
-                        className="w-10/12 h-10/12 object-contain filter invert brightness-200"
-                    />
-                </div>
+      const mean = cv.mean(gray)[0];
+      if (mean < 60) {
+        setReadyToShoot(false);
+        onStatusChange("Image is too dark. Please try again.", "red");
+        return;
+      }
+      if (mean > 200) {
+        setReadyToShoot(false);
+        onStatusChange("Image is too bright. Please try again.", "red");
+        return;
+      }
 
-                {/* ปุ่มถ่าย – แสดงเฉพาะเมื่อ ready */}
-                <CaptureButton
-                    onClick={shoot}
-                    isReady={readyToShoot}
-                />
-            </div>
+      laplacian = new cv.Mat();
+      cv.Laplacian(gray, laplacian, cv.CV_64F);
+      meanStdDev = new cv.Mat();
+      stdDev = new cv.Mat();
+      cv.meanStdDev(laplacian, meanStdDev, stdDev);
+      const sharpness = stdDev.data64F[0] ** 2;
+
+      if (sharpness < 80) {
+        setReadyToShoot(false);
+        onStatusChange("Image is too blurry. Please try again.", "red");
+        return;
+      }
+
+      edges = new cv.Mat();
+      cv.Canny(gray, edges, 50, 150);
+      contours = new cv.MatVector();
+      hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+      let found = false;
+      for (let i = 0; i < contours.size(); i++) {
+        const c = contours.get(i);
+        const peri = cv.arcLength(c, true);
+        const approx = new cv.Mat();
+        cv.approxPolyDP(c, approx, 0.03 * peri, true);
+
+        if (approx.rows === 4) {
+          const r = cv.boundingRect(approx);
+          const ratio = r.width / r.height;
+          if (r.width > 200 && r.height > 100 && ratio > 1.4 && ratio < 1.9) {
+            found = true;
+            approx.delete();
+            break;
+          }
+        }
+        approx.delete();
+      }
+
+      if (found) {
+        setReadyToShoot(true);
+        onStatusChange("Image is ready to capture.", "green");
+      } else {
+        setReadyToShoot(false);
+        onStatusChange("Place and align your ID card in the frame.", "red");
+      }
+    } catch (e) {
+      console.error(e);
+      setReadyToShoot(false);
+      onStatusChange("An error occurred during analysis", "red");
+    } finally {
+      src?.delete();
+      gray?.delete();
+      laplacian?.delete();
+      meanStdDev?.delete();
+      stdDev?.delete();
+      edges?.delete();
+      contours?.delete();
+      hierarchy?.delete();
+    }
+  }, [cvReady, onStatusChange]);
+
+  useEffect(() => {
+    if (cvReady) {
+      timer.current = setInterval(analyse, 700);
+    }
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [cvReady, analyse]);
+
+  const router = useRouter();
+
+  // ถ่าย + ครอปเฉพาะกรอบกลาง
+  const shoot = () => {
+    const videoEl = (webcamRef.current?.video ?? null) as HTMLVideoElement | null;
+    if (!videoEl) return;
+
+    const imgData = cropCenterFromVideo(videoEl, {
+      maxRatio: 0.88,
+      aspectW: 8.8,
+      aspectH: 5.6,
+    });
+    if (!imgData) return;
+
+    onCapture(imgData);
+    sessionStorage.setItem("capturedIdCardImage", imgData);
+    sessionStorage.setItem("imageSource", "camera");
+    router.push("/preview-id-card");
+  };
+
+  return (
+    <div className="relative w-full h-full min-h-screen bg-black ">
+      <Webcam
+        ref={webcamRef}
+        audio={false}
+        mirrored={false}
+        screenshotFormat="image/jpeg"
+        videoConstraints={videoConstraints}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      <canvas ref={canvasRef} className="hidden" />
+
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[88vw] max-w-[420px] aspect-[8.8/5.6] z-10 p-[3%]">
+        <BoxShadowMask
+          radius={14}
+          inset={{ top: "-0.5%", right: "4%", bottom: "-0.5%", left: "4%" }}
+          opacity={0.55}
+        />
+
+        <ScanHeader sharpnessMsg={sharpnessMsg} />
+
+        <div className="absolute inset-0 z-20 pointer-events-none">
+          <div className="relative w-full h-full">
+            <FrameSVG color={frameColor} overscanPct={0.05} />
+          </div>
         </div>
-    );
+
+        <CaptureButton onClick={shoot} isReady={readyToShoot} />
+      </div>
+    </div>
+  );
 }
