@@ -3,12 +3,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
 import { useRouter } from "next/navigation";
-import { CaptureButton } from "@/features/scan-id-card-owen/components/CaptureButton";
-import { FrameSVG } from "@/features/scan-id-card-owen/components/FrameSVG";
-import { BoxShadowMask } from "@/features/scan-id-card-owen/components/BoxShadowMask";
-import { ScanHeader } from "@/features/scan-id-card-owen/components/ScanHeader";
-
-declare const cv: any;
+import { CaptureButton } from "@/features/scan-id-card/components/CaptureButton";
+import { FrameSVG } from "@/features/scan-id-card/components/FrameSVG";
+import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask";
+import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
 
 const videoConstraints = {
   width: 1280,
@@ -106,7 +104,15 @@ export default function ScanIDCardSection({
     cvs.height = cam.video.videoHeight;
     ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
 
-    let src, gray, laplacian, meanStdDev, stdDev, edges, contours, hierarchy;
+    let src: CVMat | undefined,
+      gray: CVMat | undefined,
+      laplacian: CVMat | undefined,
+      meanMat: CVMat | undefined,
+      stdDev: CVMat | undefined,
+      edges: CVMat | undefined,
+      contours: CVMatVector | undefined,
+      hierarchy: CVMat | undefined;
+
     try {
       src = cv.imread(cvs);
       gray = new cv.Mat();
@@ -126,10 +132,13 @@ export default function ScanIDCardSection({
 
       laplacian = new cv.Mat();
       cv.Laplacian(gray, laplacian, cv.CV_64F);
-      meanStdDev = new cv.Mat();
-      stdDev = new cv.Mat();
-      cv.meanStdDev(laplacian, meanStdDev, stdDev);
-      const sharpness = stdDev.data64F[0] ** 2;
+
+      // CHANGED: ใช้ CV_64F และอ่านค่าแบบปลอดภัย
+      meanMat = new cv.Mat(1, 1, cv.CV_64F);
+      stdDev = new cv.Mat(1, 1, cv.CV_64F);
+      cv.meanStdDev(laplacian, meanMat, stdDev);
+      const sigma = stdDev.data64F?.[0] ?? 0;
+      const sharpness = sigma ** 2;
 
       if (sharpness < 80) {
         setReadyToShoot(false);
@@ -177,7 +186,7 @@ export default function ScanIDCardSection({
       src?.delete();
       gray?.delete();
       laplacian?.delete();
-      meanStdDev?.delete();
+      meanMat?.delete();
       stdDev?.delete();
       edges?.delete();
       contours?.delete();
