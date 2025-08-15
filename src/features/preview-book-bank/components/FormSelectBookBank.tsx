@@ -35,9 +35,9 @@ const FormSelect = <TFieldValues extends FieldValues>({
   validationRules,
 }: FormSelectProps<TFieldValues>) => {
   const bankOptions = [
-    { value: "kbank", label: "KBANK", image: "/logobank/KBANK.jpg" },
-    { value: "scb", label: "SCB", image: "/logobank/SCB.png" },
-    { value: "ktb", label: "KTB", image: "/logobank/KTB.png" },
+    { value: "kbank", label: "KBANK", image: "/logo-bank/kbank.jpg" },
+    { value: "scb", label: "SCB", image: "/logo-bank/scb.png" },
+    { value: "ktb", label: "KTB", image: "/logo-bank/ktb.png" },
   ];
 
   return (

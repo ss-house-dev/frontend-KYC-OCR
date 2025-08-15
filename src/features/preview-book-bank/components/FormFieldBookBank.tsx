@@ -49,7 +49,7 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
 
           <Input
             id={fieldName}
-            {...field} // ใช้ value, onChange, onBlur, ref ที่ react-hook-form จัดการให้
+            {...field}
             {...rest}
           />
 

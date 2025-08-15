@@ -45,6 +45,7 @@ export default function BookBankPage() {
     reset,
     register,
     control,
+    setError,
     formState: { errors, isValid },
   } = useForm<BookBankFormValues>({
     defaultValues: defaultFormValues,
@@ -62,18 +63,17 @@ export default function BookBankPage() {
         accountNumber: ocrData.accountNumber || "",
       });
       // set API errors into form
-      // (ocrData.errors || []).forEach((err) => {
-      //   setError(err.field as Path<PreviewIdCardForm>, {
-      //     type: "manual",
-      //     message: err.message,
-      //   });
-      // });
+      (ocrData.errors || []).forEach((err) => {
+        setError(err.field as Path<BookBankFormValues>, {
+          type: "manual",
+          message: err.message,
+        });
+      });
     },
-
-    onError: (err) => {
-      console.error("OCR upload failed:", err);
-      alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-    },
+    // onError: (err) => {
+    //   console.error("OCR upload failed:", err);
+    //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+    // },
   });
 
 
