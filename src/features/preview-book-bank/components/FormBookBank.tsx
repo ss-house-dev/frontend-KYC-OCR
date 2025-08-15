@@ -96,7 +96,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
             rules={{
               required: "Unable to extract data. Kindly rescan your document.",
               pattern: {
-                value: /^[\u0E00-\u0E7F]+$/,
+                value: /^[\u0E00-\u0E7F ]+$/,
                 message: "Invalid format. Please enter the correct characters.",
               },
             }}
@@ -120,7 +120,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
             rules={{
               required: "Unable to extract data. Kindly rescan your document.",
               pattern: {
-                value: /^[\u0E00-\u0E7F]+$/,
+                value: /^[\u0E00-\u0E7F ]+$/,
                 message: "Invalid format. Please enter the correct characters.",
               },
             }}
