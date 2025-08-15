@@ -30,6 +30,7 @@ export default function Home() {
           </h1>
         </header>
         <main>
+          
           <PreviewIDCardSection />
         </main>
       </div>

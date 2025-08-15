@@ -1,0 +1,1 @@
+export * from "@/features/preview-id-card/services/ocr-id-card";

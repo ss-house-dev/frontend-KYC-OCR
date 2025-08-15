@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import VerifyIdView from "../components/VerifyIdView";
 
 export default function VerifyIdContainer() {
-  
   const [isChecked, setIsChecked] = useState(false);
   const router = useRouter();
 
@@ -15,12 +14,12 @@ export default function VerifyIdContainer() {
 
   const handleStartScan = () => {
     if (!isChecked) return;
-    console.log("Navigating to scanner page...");
+    router.push("/scan-id-card"); 
   };
-  
+
   const handleBack = () => {
     router.back();
-  }
+  };
 
   return (
     <VerifyIdView
