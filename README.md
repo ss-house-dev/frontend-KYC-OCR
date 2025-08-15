@@ -4,7 +4,7 @@ pnpm dlx shadcn@latest init
 **axios** 
 pnpm add axios
 **Tanstack query** 
-pnpm add @tanstack/react-start @tanstack/react-router vite
+pnpm add @tanstack/react-query @tanstack/react-query-devtools
 **React hook form** 
 pnpm add react-hook-form
 **Zod validation** 
@@ -17,6 +17,8 @@ pnpm add -D @svgr/webpack
 pnpm add @tensorflow/tfjs @tensorflow-models/coco-ssd
 
 pnpm add -D eslint-plugin-react-hooks
+
+
 
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
