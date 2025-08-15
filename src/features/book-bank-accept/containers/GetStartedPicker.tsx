@@ -40,19 +40,6 @@ export default function GetStartedPicker({
   const pickCamera = () => cameraInputRef.current?.click();
   const pickGallery = () => galleryInputRef.current?.click();
 
-  const cancelPreview = () => {
-    setPreviewSrc(null);
-    setSheetOpen(true);
-  };
-
-  const usePhoto = () => {
-    if (!previewSrc) return;
-    onCapture(previewSrc);
-    sessionStorage.setItem("capturedIdCardImage", previewSrc);
-    sessionStorage.setItem("imageSource", "upload");
-    router.push("/preview-id-card");
-  };
-
   return (
     <>
     
@@ -121,31 +108,6 @@ export default function GetStartedPicker({
             >
               Cancel
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Preview Modal */}
-      {previewSrc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white overflow-hidden">
-            <div className="max-h-[70vh] bg-black flex items-center justify-center">
-              <img src={previewSrc} alt="Preview" className="max-h-[70vh] w-full object-contain" />
-            </div>
-            <div className="flex gap-3 p-4">
-              <button
-                onClick={cancelPreview}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Retake / Choose again
-              </button>
-              <button
-                onClick={usePhoto}
-                className="flex-1 py-2 rounded-lg bg-[#007AFF] text-white hover:opacity-90"
-              >
-                Use Photo
-              </button>
-            </div>
           </div>
         </div>
       )}

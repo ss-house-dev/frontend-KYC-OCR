@@ -15,15 +15,12 @@ export default function VerifyBookBankContainer() {
 
   const router = useRouter();
 
-
   const handleCheckboxChange = (checked: boolean) => setIsChecked(checked);
-
 
   const handleStartScan = () => {
     if (!isChecked) return;
     setSheetOpen(true);
   };
-
 
   const closeSheet = () => setSheetOpen(false);
   const pickCamera = () => cameraInputRef.current?.click();
@@ -40,23 +37,28 @@ export default function VerifyBookBankContainer() {
     const file = e.target.files?.[0];
     if (file) {
       const dataUrl = await fileToDataURL(file);
-      setPreviewSrc(dataUrl); 
+      // setPreviewSrc(dataUrl);
       setSheetOpen(false);
+
+      sessionStorage.setItem("capturedBookBankImage", dataUrl);
+      sessionStorage.setItem("imageSource", "upload");
+
+      router.push("/preview-book-bank");
     }
-    e.target.value = ""; 
+    e.target.value = "";
   };
 
-  const cancelPreview = () => {
-    setPreviewSrc(null);
-    setSheetOpen(true); 
-  };
+  // const cancelPreview = () => {
+  //   setPreviewSrc(null);
+  //   setSheetOpen(true);
+  // };
 
-  const usePhoto = () => {
-    if (!previewSrc) return;
-    sessionStorage.setItem("capturedBookBankImage", previewSrc);
-    sessionStorage.setItem("imageSource", "upload");
-    router.push("/preview-book-bank");
-  };
+  // const usePhoto = () => {
+  //   if (!previewSrc) return;
+  //   sessionStorage.setItem("capturedBookBankImage", previewSrc);
+  //   sessionStorage.setItem("imageSource", "upload");
+  //   router.push("/preview-book-bank");
+  // };
 
   return (
     <>
@@ -123,34 +125,6 @@ export default function VerifyBookBankContainer() {
             >
               Cancel
             </button>
-          </div>
-        </div>
-      )}
-
-      {previewSrc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white overflow-hidden">
-            <div className="max-h-[70vh] bg-black flex items-center justify-center">
-              <img
-                src={previewSrc}
-                alt="Preview"
-                className="max-h-[70vh] w-full object-contain"
-              />
-            </div>
-            <div className="flex gap-3 p-4">
-              <button
-                onClick={cancelPreview}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Retake / Choose again
-              </button>
-              <button
-                onClick={usePhoto}
-                className="flex-1 py-2 rounded-lg bg-[#007AFF] text-white hover:opacity-90"
-              >
-                Use Photo
-              </button>
-            </div>
           </div>
         </div>
       )}
