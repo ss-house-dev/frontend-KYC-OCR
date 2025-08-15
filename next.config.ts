@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+/** @type {import('next').NextConfig} */
+
 const nextConfig: NextConfig = {
-  // output: "standalone",
+  output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
 
@@ -21,6 +23,14 @@ const nextConfig: NextConfig = {
     );
 
     return config;
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/ocr/:path*',
+        destination: 'http://kyra-kyc.ddns.net:3207/ocr/:path*',
+      },
+    ];
   },
 };
 

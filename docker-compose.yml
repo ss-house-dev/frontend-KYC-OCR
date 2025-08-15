@@ -1,4 +1,4 @@
-version: "3.9"
+# version: "3.9"
 services:
   web:
     image: gumon.dev/ss-house/frontend-kyra:0.1.0
