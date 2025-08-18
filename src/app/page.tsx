@@ -1,14 +1,7 @@
 "use client";
 
-import VerifyPage from "@/app/id-accept/page";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-
-
-  return (
-    <main>
-      <VerifyPage />
-    </main>
-  );
+  redirect("/id-accept");
 }
-
