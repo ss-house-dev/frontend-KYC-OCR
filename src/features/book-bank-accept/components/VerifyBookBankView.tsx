@@ -309,7 +309,7 @@ export default function VerifyBookBankView({
           disabled={!isChecked}
           className={`w-full py-3 rounded-lg text-white  text-base transition-colors duration-300 ${
             isChecked
-              ? "bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#246AEC] hover:to-[#1F4293]"
+              ? "bg-[#2152b6]"
               : "bg-gray-400 cursor-not-allowed"
           }`}
         >

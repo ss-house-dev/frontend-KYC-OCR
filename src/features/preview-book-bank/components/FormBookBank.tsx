@@ -173,7 +173,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
             canSubmit
-              ? "bg-gradient-to-b from-[#1F4293] to-[#246AEC] hover:from-[#1A377A]"
+              ? "bg-[#2152b6]"
               : "bg-gray-400"
           }`}
         >
