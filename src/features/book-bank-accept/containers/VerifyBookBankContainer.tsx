@@ -97,10 +97,10 @@ export default function VerifyBookBankContainer() {
             <div className="rounded-2xl bg-white shadow">
               <div className="px-5 pt-4 pb-2 text-center">
                 <div className="text-sm font-semibold text-gray-500">
-                  Upload Photo
+                  A Short Title is Best
                 </div>
                 <div className="mt-1 text-sm text-gray-400">
-                  Take a picture or choose from gallery.
+                  A message should be a short, complete sentence.
                 </div>
               </div>
               <div className="border-t border-gray-200" />
@@ -108,7 +108,7 @@ export default function VerifyBookBankContainer() {
                 onClick={pickCamera}
                 className="w-full px-5 py-3 text-[#007AFF] text-center hover:bg-gray-50"
               >
-                Take a Picture
+                Take a picture
               </button>
               <div className="border-t border-gray-200" />
               <button

@@ -39,7 +39,9 @@ export default function VerifyIdView({
   onStartScan,
 }: VerifyIdViewProps) {
   return (
-    <div className="flex flex-col h-screen bg-white font-inter">
+
+    <div className="flex flex-col min-h-screen bg-white font-inter">
+      <div className="mx-auto w-full max-w-[480px] flex min-h-screen flex-col">
       <main className="flex-grow flex flex-col p-6 pt-8">
         <div className="w-full mb-8">
           <div className="flex items-baseline justify-between gap-4">
@@ -209,40 +211,44 @@ export default function VerifyIdView({
           htmlFor="consent-checkbox"
           className="flex items-start space-x-3 cursor-pointer"
         >
-          <div className="round relative flex-shrink-0 mt-1">
+          <div className="relative flex-shrink-0 mt-1">
             <input
               id="consent-checkbox"
               type="checkbox"
               checked={isChecked}
               onChange={(e) => onCheckboxChange(e.target.checked)}
-              className="hidden"
+              className="sr-only"
             />
+
             <label
-              htmlFor="c</svg>onsent-checkbox"
-              className="block bg-white border border-gray-300 rounded-full cursor-pointer h-5 w-5 absolute left-0 top-0"
+              htmlFor="consent-checkbox"
+              className="block h-5 w-5 absolute left-0 top-0 cursor-pointer border rounded-[6px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1849D6]/40"
               style={{
-                borderColor: isChecked ? "#1849D6" : "#ccc",
+                borderColor: isChecked ? "#1849D6" : "#D1D5DB",
                 backgroundColor: isChecked ? "#1849D6" : "#fff",
               }}
             >
               <span
+                aria-hidden="true"
                 style={{
-                  borderLeft: `2px solid ${isChecked ? "#fff" : "#9ca3af "}`,
-                  borderBottom: `2px solid ${isChecked ? "#fff" : "#9ca3af "}`,
-                  content: '""',
-                  height: "6px",
-                  left: "3px",
-                  opacity: isChecked ? 1 : 0.5,
                   position: "absolute",
-                  top: "5px",
-                  transform: "rotate(-45deg)",
-                  width: "12px",
-                  display: "block",
+                  top: "1px",
+                  left: "5px",
+                  width: "8px",
+                  height: "12px",
+                  borderRight: `2px solid ${
+                    isChecked ? "#fff" : "transparent"
+                  }`,
+                  borderBottom: `2px solid ${
+                    isChecked ? "#fff" : "transparent"
+                  }`,
+                  transform: "rotate(45deg)",
                   pointerEvents: "none",
                 }}
               />
             </label>
           </div>
+
           <svg
             className="h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
             xmlns="http://www.w3.org/2000/svg"
@@ -256,24 +262,23 @@ export default function VerifyIdView({
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
           <span className="text-sm text-black" style={{ fontSize: "14px" }}>
-            I consent to the collection and verification of my national ID
-            information for the purposes of identity verification and AML
-            compliance.
+            I consent to Kyra KYC processing my personal and biometric data for
+            identity verification, AML compliance, and as per its privacy
+            policy.
           </span>
         </label>
         <div className="mt-4"></div>
         <button
           onClick={onStartScan}
           disabled={!isChecked}
-          className={`w-full py-3 rounded-lg text-white font-bold text-base transition-colors duration-300 ${
-            isChecked
-              ? "bg-[#2152b6]"
-              : "bg-gray-400 cursor-not-allowed"
+          className={`w-full py-3 rounded-lg text-white  text-base transition-colors duration-300 ${
+            isChecked ? "bg-[#2152b6]" : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Start Scanning
+          Get Started
         </button>
       </footer>
+      </div>
     </div>
   );
 }
