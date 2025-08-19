@@ -17,7 +17,9 @@ export default function GetStartedPicker({
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const openSheet = () => { if (isChecked) setSheetOpen(true); };
+  const openSheet = () => {
+    if (isChecked) setSheetOpen(true);
+  };
   const closeSheet = () => setSheetOpen(false);
 
   const fileToDataURL = (file: File) =>
@@ -34,7 +36,7 @@ export default function GetStartedPicker({
       setPreviewSrc(dataUrl);
       setSheetOpen(false);
     }
-    e.target.value = ""; 
+    e.target.value = "";
   };
 
   const pickCamera = () => cameraInputRef.current?.click();
@@ -42,7 +44,6 @@ export default function GetStartedPicker({
 
   return (
     <>
-    
       <button
         onClick={openSheet}
         disabled={!isChecked}
@@ -78,10 +79,15 @@ export default function GetStartedPicker({
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4"
           onClick={closeSheet}
         >
-          <div className="w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="w-full max-w-md space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="rounded-2xl bg-white shadow">
               <div className="px-5 pt-4 pb-2 text-center">
-                <div className="text-sm font-semibold text-gray-500">A Short Title is Best</div>
+                <div className="text-sm font-semibold text-gray-500">
+                  A Short Title is Best
+                </div>
                 <div className="mt-1 text-sm text-gray-400">
                   A message should be a short, complete sentence.
                 </div>
@@ -91,7 +97,7 @@ export default function GetStartedPicker({
                 onClick={pickCamera}
                 className="w-full px-5 py-3 text-[#007AFF] text-center hover:bg-gray-50"
               >
-                Take a Picture
+                Take a picture
               </button>
               <div className="border-t border-gray-200" />
               <button
