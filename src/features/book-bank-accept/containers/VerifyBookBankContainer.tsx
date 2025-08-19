@@ -4,11 +4,19 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import VerifyBookBankView from "../components/VerifyBookBankView";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/heif",
+  "image/webp",
+  "image/jpg",
+];
+
 export default function VerifyBookBankContainer() {
   const [isChecked, setIsChecked] = useState(false);
-
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -26,39 +34,31 @@ export default function VerifyBookBankContainer() {
   const pickCamera = () => cameraInputRef.current?.click();
   const pickGallery = () => galleryInputRef.current?.click();
 
-  const fileToDataURL = (file: File) =>
-    new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
-    });
-
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const dataUrl = await fileToDataURL(file);
-      // setPreviewSrc(dataUrl);
-      setSheetOpen(false);
-
-      sessionStorage.setItem("capturedBookBankImage", dataUrl);
-      sessionStorage.setItem("imageSource", "upload");
-
-      router.push("/preview-book-bank");
+  const handleFile = (file: File) => {
+    if (file.size > MAX_FILE_SIZE) {
+      alert("ไฟล์ใหญ่เกิน 10 MB กรุณาเลือกรูปที่เล็กกว่า 10 MB");
+      return;
     }
-    e.target.value = "";
+
+    if (file.type && !ALLOWED_TYPES.includes(file.type)) {
+      alert("รองรับเฉพาะ JPEG, PNG, HEIC/HEIF, JPG และ WEBP เท่านั้น");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+
+    sessionStorage.setItem("capturedBookBankImageURL", objectUrl);
+    sessionStorage.setItem("imageSource", "upload");
+
+    setSheetOpen(false);
+    router.push("/preview-book-bank");
   };
 
-  // const cancelPreview = () => {
-  //   setPreviewSrc(null);
-  //   setSheetOpen(true);
-  // };
-
-  // const usePhoto = () => {
-  //   if (!previewSrc) return;
-  //   sessionStorage.setItem("capturedBookBankImage", previewSrc);
-  //   sessionStorage.setItem("imageSource", "upload");
-  //   router.push("/preview-book-bank");
-  // };
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+    e.target.value = "";
+  };
 
   return (
     <>
@@ -77,10 +77,11 @@ export default function VerifyBookBankContainer() {
         className="hidden"
         onChange={onFileChange}
       />
+
       <input
         ref={galleryInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/heic,image/heif,image/webp,image/jpg"
         className="hidden"
         onChange={onFileChange}
       />
@@ -97,10 +98,10 @@ export default function VerifyBookBankContainer() {
             <div className="rounded-2xl bg-white shadow">
               <div className="px-5 pt-4 pb-2 text-center">
                 <div className="text-sm font-semibold text-gray-500">
-                  A Short Title is Best
+                  Upload Your Document Photo
                 </div>
                 <div className="mt-1 text-sm text-gray-400">
-                  A message should be a short, complete sentence.
+                  Supports images up to 10 MB.
                 </div>
               </div>
               <div className="border-t border-gray-200" />
