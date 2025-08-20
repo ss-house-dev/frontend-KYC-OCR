@@ -18,6 +18,7 @@ pnpm add @tensorflow/tfjs @tensorflow-models/coco-ssd
 
 pnpm add -D eslint-plugin-react-hooks
 
+pnpm add @mediapipe/face_detection @mediapipe/face_mesh @mediapipe/camera_utils @mediapipe/drawing_utils
 
 
 
