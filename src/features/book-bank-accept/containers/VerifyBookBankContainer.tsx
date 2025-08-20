@@ -24,7 +24,6 @@ export default function VerifyBookBankContainer() {
   const router = useRouter();
 
   const handleCheckboxChange = (checked: boolean) => setIsChecked(checked);
-
   const handleStartScan = () => {
     if (!isChecked) return;
     setSheetOpen(true);
@@ -34,30 +33,51 @@ export default function VerifyBookBankContainer() {
   const pickCamera = () => cameraInputRef.current?.click();
   const pickGallery = () => galleryInputRef.current?.click();
 
-  const handleFile = (file: File) => {
-    if (file.size > MAX_FILE_SIZE) {
-      alert("ไฟล์ใหญ่เกิน 10 MB กรุณาเลือกรูปที่เล็กกว่า 10 MB");
-      return;
-    }
+  const fileToDataURL = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
-    if (file.type && !ALLOWED_TYPES.includes(file.type)) {
-      alert("รองรับเฉพาะ JPEG, PNG, HEIC/HEIF, JPG และ WEBP เท่านั้น");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-
-    sessionStorage.setItem("capturedBookBankImageURL", objectUrl);
-    sessionStorage.setItem("imageSource", "upload");
-
-    setSheetOpen(false);
-    router.push("/preview-book-bank");
-  };
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleFile(file);
-    e.target.value = "";
+
+    try {
+      if (!file) return;
+
+      // validate: ไฟล์ใหญ่เกิน/ชนิดไม่รองรับ (iOS บางเครื่องให้ type = "" ก็ปล่อยผ่าน)
+      if (file.size > MAX_FILE_SIZE) {
+        alert("ไฟล์ใหญ่เกิน 10 MB กรุณาเลือกรูปที่เล็กกว่า 10 MB");
+        return;
+      }
+      if (file.type && !ALLOWED_TYPES.includes(file.type)) {
+        alert("รองรับเฉพาะ JPEG, PNG, HEIC/HEIF, JPG และ WEBP เท่านั้น");
+        return;
+      }
+
+      const dataUrl = await fileToDataURL(file);
+
+      // เก็บรูปใหม่ทับของเดิม
+      try {
+        sessionStorage.setItem("capturedBookBankImage", dataUrl);
+        sessionStorage.setItem("imageSource", "upload");
+      } catch (err) {
+        console.warn("sessionStorage unavailable:", err);
+        alert("เบราว์เซอร์ไม่อนุญาตให้เก็บรูปชั่วคราว");
+        return;
+      }
+
+      setSheetOpen(false);
+
+      // บังคับรี-mount หน้า preview ทุกครั้ง
+      const v = Date.now().toString();
+      router.push(`/preview-book-bank?v=${v}`);
+    } finally {
+      // ให้เลือกไฟล์ชื่อเดิมซ้ำได้
+      e.target.value = "";
+    }
   };
 
   return (
