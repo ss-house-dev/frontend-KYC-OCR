@@ -219,9 +219,9 @@ export default function ScanIDCardSection({
     if (!videoEl) return;
 
     const imgData = cropCenterFromVideo(videoEl, {
-      maxRatio: 0.33,
-      aspectW: 85.6,
-      aspectH: 53.98,
+      maxRatio: 0.85,
+      aspectW: 8.8,
+      aspectH: 5.6,
     });
     if (!imgData) return;
 
