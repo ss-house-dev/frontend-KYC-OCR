@@ -47,7 +47,7 @@ export default function VerifyFaceView() {
               priority
             />
             <p className="text-[14px] leading-5 text-gray-700">
-              Hold your phone slightly above eye level during scanning for a
+              Hold your phone slightly above eye level while scanning for a
               clear view of your face.
             </p>
           </li>
@@ -73,7 +73,7 @@ export default function VerifyFaceView() {
               className="rounded-md object-contain"
             />
             <p className="text-[14px] leading-5 text-gray-700">
-              Avoid overly bright or dark lighting and do not shoot against the
+              Avoid overly bright or dark lighting and do not scan against the
               light.
             </p>
           </li>
