@@ -58,7 +58,7 @@ export function VideoCanvas({
       ref={canvasRef}
       width={CONFIG.DISPLAY.WIDTH}
       height={CONFIG.DISPLAY.HEIGHT}
-      className="rounded-xl shadow-md bg-black"
+      className="w-full h-full object-cover"
     />
   );
 }

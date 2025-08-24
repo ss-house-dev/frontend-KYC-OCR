@@ -40,10 +40,10 @@ export default function ScanFaceSection() {
   }, [setupCamera]);
 
   return (
-    <div className="w-full flex flex-col items-center gap-3 p-4">
+    <div className="relative w-full h-full min-h-screen bg-black">
       <div
-        className="relative"
-        style={{ width: CONFIG.DISPLAY.WIDTH, height: CONFIG.DISPLAY.HEIGHT }}
+        className="fixed inset-0 flex items-center justify-center bg-black"
+        // style={{ width: CONFIG.DISPLAY.WIDTH, height: CONFIG.DISPLAY.HEIGHT }}
       >
         <video ref={videoRef} playsInline className="hidden" muted autoPlay />
         <VideoCanvas
@@ -53,7 +53,7 @@ export default function ScanFaceSection() {
           videoElement={videoRef.current || undefined}
         />
       </div>
-      <StatusBar state={state} />
+      {/* <StatusBar state={state} /> */}
     </div>
   );
 }

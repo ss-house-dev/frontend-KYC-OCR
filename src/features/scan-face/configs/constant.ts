@@ -6,8 +6,8 @@ const SHARPEN_KERNEL: number[][] = [
 
 export const CONFIG = {
   DISPLAY: {
-    WIDTH: 640,
-    HEIGHT: 480,
+    WIDTH: 1280,
+    HEIGHT: 720,
   },
   SHARPEN: {
     ENABLED: true,
