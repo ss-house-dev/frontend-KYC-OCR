@@ -1,29 +1,28 @@
 "use client";
 
 import dynamic from "next/dynamic";
-const FailModal = dynamic(() => import("../components/FailModal"), { ssr: false });
+const FailModal = dynamic(() => import("../components/FailModal"), {
+  ssr: false,
+});
 
 import React, { useRef, useEffect, useState } from "react";
 import { useFaceMesh } from "../hooks/useFaceMesh";
 import { VideoCanvas } from "../components/VideoCanvas";
 import { StatusBar } from "../components/StatusBar";
+import ScanOverlayHUD from "../components/ScanOverlayHUD";
 import { CONFIG } from "../configs/constant";
 import Image from "next/image";
-
+import { Step1Validator } from "../utils/validators/step1Validator";
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const {
-    state,
-    detectionResult,
-    setupCamera,
-    failed,
-    restartFromSetup,
-  } = useFaceMesh(videoRef, canvasRef);
+  const { state, detectionResult, setupCamera, failed, restartFromSetup } =
+    useFaceMesh(videoRef, canvasRef);
 
   const [frameSrc, setFrameSrc] = useState("/scan-face/frame-face-white.svg");
+  const [step1Valid, setStep1Valid] = useState(true);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -47,17 +46,43 @@ export default function ScanFaceSection() {
     };
   }, [setupCamera]);
 
-    useEffect(() => {
-    if (!detectionResult.landmarks) {
-      setFrameSrc("/scan-face/frame-face-red.svg"); // ไม่มีหน้า -> กรอบแดง
-    } else {
-      setFrameSrc("/scan-face/frame-face-white.svg"); // พบหน้า -> กรอบปกติ
+  // ใช้ Step1Validator ตรวจสอบใบหน้า แล้วเปลี่ยนกรอบ
+  useEffect(() => {
+    if (!detectionResult.bbox) {
+      setFrameSrc("/scan-face/frame-face-red.svg");
+      setStep1Valid(false);
+
+      // ให้มือถือสั่น 300ms
+      if (navigator.vibrate) {
+        navigator.vibrate(300);
+      }
+      return;
+    }
+
+    const validation = Step1Validator.validateStep1(
+      detectionResult.landmarks ? 1 : 0,
+      detectionResult.brightness ?? 0,
+      detectionResult.bbox,
+      CONFIG.DISPLAY.WIDTH,
+      CONFIG.DISPLAY.HEIGHT
+    );
+
+    setStep1Valid(validation.isValid);
+    setFrameSrc(
+      validation.isValid
+        ? "/scan-face/frame-face-white.svg"
+        : "/scan-face/frame-face-red.svg"
+    );
+
+    // สั่นเมื่อ invalid
+    if (!validation.isValid && navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]);
     }
   }, [detectionResult]);
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
-      <div className="fixed inset-0 flex items-center justify-center bg-black">
+      <div className="fixed inset-0 bg-black">
         <video ref={videoRef} playsInline className="hidden" muted autoPlay />
         <VideoCanvas
           canvasRef={canvasRef}
@@ -65,19 +90,25 @@ export default function ScanFaceSection() {
           detectionResult={detectionResult}
           videoElement={videoRef.current || undefined}
         />
-        <Image
-          src={frameSrc}
-          alt="face-outline"
-          width={500}
-          height={500}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-120 object-contain pointer-events-none"
+        <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-[88vw] max-w-[420px] aspect-[8.8/5.6] z-10 p-[3%]">
+          <Image
+            src={frameSrc}
+            alt="face-outline"
+            width={500}
+            height={500}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-120 object-contain pointer-events-none"
+          />
+        </div>
+        <StatusBar state={state} step1Valid={step1Valid} />
+        <ScanOverlayHUD
+          state={state}
+          detection={detectionResult}
+          visible={true}
         />
+
+        {/* กด Try again → หยุด session เก่าและเริ่มใหม่ตั้งแต่ Setup */}
+        <FailModal open={failed} onRetry={restartFromSetup} />
       </div>
-
-      <StatusBar state={state} />
-
-      {/* กด Try again → หยุด session เก่าและเริ่มใหม่ตั้งแต่ Setup */}
-      <FailModal open={failed} onRetry={restartFromSetup} />
     </div>
   );
 }

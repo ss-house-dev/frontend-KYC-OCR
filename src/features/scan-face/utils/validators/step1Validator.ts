@@ -6,7 +6,7 @@ export class Step1Validator {
     if (faceCount === 0) {
       return {
         isValid: false,
-        message: "No face found",
+        message: "No face found.",
         color: "red",
       };
     }
@@ -49,7 +49,7 @@ export class Step1Validator {
     if (sizeMin >= CONFIG.FACE_SIZE.NEAR_THRESHOLD) {
       return {
         isValid: false,
-        message: `Move your face back. (${w}x${h})`,
+        message: `Move your face back.`,
         color: "red",
       };
     }
@@ -57,14 +57,14 @@ export class Step1Validator {
     if (sizeMin < CONFIG.FACE_SIZE.FAR_THRESHOLD) {
       return {
         isValid: false,
-        message: `Move your face closer. (${w}x${h})`,
+        message: `Move your face closer.`,
         color: "red",
       };
     }
 
     return {
       isValid: true,
-      message: `OK | Medium (${w}x${h})`,
+      message: `OK | Medium `,
       color: "white",
     };
   }
@@ -95,7 +95,7 @@ export class Step1Validator {
 
     return {
       isValid: false,
-      message: "Center your face",
+      message: "Please keep your face in frame.",
       color: "yellow",
     };
   }

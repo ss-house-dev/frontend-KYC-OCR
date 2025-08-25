@@ -14,6 +14,9 @@ import {
   drawLandmarks,
 } from "../utils/canvasDraw";
 
+// ตั้งค่าใน .env.local ตอน dev: NEXT_PUBLIC_SHOW_OVERLAY=1
+const SHOW_OVERLAY = process.env.NEXT_PUBLIC_SHOW_OVERLAY === "1";
+
 interface VideoCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   state: FaceScanState;
@@ -32,8 +35,7 @@ export function VideoCanvas({
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d")!;
-
-    // Clear and draw video frame
+    // ล้างแล้ววาดวิดีโอ
     ctx.save();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (CONFIG.CAMERA.MIRRORED_INPUT) {
@@ -43,7 +45,7 @@ export function VideoCanvas({
     ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    // Draw based on current step
+    // วาดตามขั้นตอน
     if (state.step === 1) {
       drawStep1(ctx, detectionResult, canvas.width, canvas.height);
     } else if (state.step === 2) {
@@ -58,7 +60,7 @@ export function VideoCanvas({
       ref={canvasRef}
       width={CONFIG.DISPLAY.WIDTH}
       height={CONFIG.DISPLAY.HEIGHT}
-      className="w-full h-full object-cover"
+      className="absolute inset-0 w-full h-full z-0"
     />
   );
 }
@@ -72,8 +74,10 @@ function drawStep1(
   const faceCount = detection.landmarks ? 1 : 0;
 
   if (faceCount === 0) {
-    alertFrame(ctx, "rgba(255,0,0,1)", 4);
-    banner(ctx, "No face found", 80);
+    if (SHOW_OVERLAY) {
+      alertFrame(ctx, "rgba(255,0,0,1)", 4);
+      banner(ctx, "No face found", 80);
+    }
     return;
   }
 
@@ -88,13 +92,15 @@ function drawStep1(
   );
 
   const [x, y, w, h] = detection.bbox;
-  roundedRect(ctx, x, y, w, h, 12, validation.color, 2);
 
-  if (validation.message) {
-    putLabel(ctx, validation.message, x, y);
+  // ป้ายข้อความ ปิดไว้
+  if (SHOW_OVERLAY) {
+    roundedRect(ctx, x, y, w, h, 12, validation.color, 2);
+    if (validation.message) {
+      putLabel(ctx, validation.message, x, y);
+    }
   }
 
-  // Draw sharpened PIP
   if (CONFIG.SHARPEN.ENABLED) {
     const pipW = 160,
       pipH = 120;
@@ -111,47 +117,38 @@ function drawStep2(
   detection: DetectionResult,
   state: FaceScanState
 ) {
-  banner(ctx, "Please follow the instructions", 60);
-
   if (!detection.landmarks || state.phase === "-") return;
 
-  // Draw landmarks if enabled
-  if (CONFIG.LANDMARKS.SHOW_IN_STEP2) {
+  // จุด landmark ปิดไว้
+  if (SHOW_OVERLAY && CONFIG.LANDMARKS.SHOW_IN_STEP2) {
     drawLandmarks(ctx, detection.landmarks, 1, "white");
   }
 
-  // Draw phase instruction
-  const instruction = Step2Validator.getPhaseInstruction(state.phase as any);
-  banner(ctx, instruction, 120);
-
-  // Draw progress counter
-  if (detection.yawDeg !== null || detection.pitchDeg !== null) {
-    const progress = Step2Validator.getPhaseProgress(
-      state.phase as any,
-      detection.yawDeg,
-      detection.pitchDeg
-    );
-    if (progress) {
-      ctx.save();
-      ctx.fillStyle = "white";
-      ctx.font = "16px system-ui";
-      ctx.fillText(progress, 10, 74);
-      ctx.restore();
-    }
+  // ปิดbanner
+  if (SHOW_OVERLAY) {
+    const instruction = Step2Validator.getPhaseInstruction(state.phase as any);
+    banner(ctx, instruction, 120);
   }
 
-  // Draw step and FPS info
-  ctx.save();
-  ctx.fillStyle = "white";
-  ctx.font = "16px system-ui";
-  ctx.fillText(`STEP: ${state.step}   PHASE: ${state.phase}`, 10, 52);
-  ctx.fillText(`FPS: ${state.fps}`, 10, 30);
-  ctx.restore();
+  // Progress text
+  if (SHOW_OVERLAY) {
+    if (detection.yawDeg !== null || detection.pitchDeg !== null) {
+      const progress = Step2Validator.getPhaseProgress(
+        state.phase as any,
+        detection.yawDeg,
+        detection.pitchDeg
+      );
+      if (progress) {
+        ctx.save();
+        ctx.fillStyle = "white";
+        ctx.font = "16px system-ui";
+        ctx.fillText(progress, 10, 74);
+        ctx.restore();
+      }
+    }
 
-  // Draw mouth instruction variations for mouth phase
-  if (state.phase === "mouth" && detection.marValue !== null) {
-    // This could be enhanced with more specific mouth state feedback
-    if (state.phase === "mouth") {
+    // ข้อความเฉพาะ phase ปาก
+    if (state.phase === "mouth" && detection.marValue !== null) {
       banner(ctx, "Now, please close your mouth", 150);
     }
   }
