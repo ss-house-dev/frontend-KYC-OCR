@@ -95,7 +95,8 @@ export default function ScanIDCardSection({
   const analyse = useCallback(() => {
     const cam = webcamRef.current;
     const cvs = canvasRef.current;
-    if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4) return;
+    if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4)
+      return;
 
     const ctx = cvs.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
@@ -150,7 +151,13 @@ export default function ScanIDCardSection({
       cv.Canny(gray, edges, 50, 150);
       contours = new cv.MatVector();
       hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      cv.findContours(
+        edges,
+        contours,
+        hierarchy,
+        cv.RETR_EXTERNAL,
+        cv.CHAIN_APPROX_SIMPLE
+      );
 
       let found = false;
       for (let i = 0; i < contours.size(); i++) {
@@ -207,11 +214,12 @@ export default function ScanIDCardSection({
 
   // ถ่าย + ครอปเฉพาะกรอบกลาง
   const shoot = () => {
-    const videoEl = (webcamRef.current?.video ?? null) as HTMLVideoElement | null;
+    const videoEl = (webcamRef.current?.video ??
+      null) as HTMLVideoElement | null;
     if (!videoEl) return;
 
     const imgData = cropCenterFromVideo(videoEl, {
-      maxRatio: 0.88,
+      maxRatio: 0.85,
       aspectW: 8.8,
       aspectH: 5.6,
     });

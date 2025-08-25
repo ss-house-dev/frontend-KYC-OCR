@@ -4,11 +4,19 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import VerifyBookBankView from "../components/VerifyBookBankView";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/heif",
+  "image/webp",
+  "image/jpg",
+];
+
 export default function VerifyBookBankContainer() {
   const [isChecked, setIsChecked] = useState(false);
-
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -16,7 +24,6 @@ export default function VerifyBookBankContainer() {
   const router = useRouter();
 
   const handleCheckboxChange = (checked: boolean) => setIsChecked(checked);
-
   const handleStartScan = () => {
     if (!isChecked) return;
     setSheetOpen(true);
@@ -27,38 +34,51 @@ export default function VerifyBookBankContainer() {
   const pickGallery = () => galleryInputRef.current?.click();
 
   const fileToDataURL = (file: File) =>
-    new Promise<string>((resolve) => {
+    new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
       reader.readAsDataURL(file);
     });
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+
+    try {
+      if (!file) return;
+
+      // validate: ไฟล์ใหญ่เกิน/ชนิดไม่รองรับ (iOS บางเครื่องให้ type = "" ก็ปล่อยผ่าน)
+      if (file.size > MAX_FILE_SIZE) {
+        alert("ไฟล์ใหญ่เกิน 10 MB กรุณาเลือกรูปที่เล็กกว่า 10 MB");
+        return;
+      }
+      if (file.type && !ALLOWED_TYPES.includes(file.type)) {
+        alert("รองรับเฉพาะ JPEG, PNG, HEIC/HEIF, JPG และ WEBP เท่านั้น");
+        return;
+      }
+
       const dataUrl = await fileToDataURL(file);
-      // setPreviewSrc(dataUrl);
+
+      // เก็บรูปใหม่ทับของเดิม
+      try {
+        sessionStorage.setItem("capturedBookBankImage", dataUrl);
+        sessionStorage.setItem("imageSource", "upload");
+      } catch (err) {
+        console.warn("sessionStorage unavailable:", err);
+        alert("เบราว์เซอร์ไม่อนุญาตให้เก็บรูปชั่วคราว");
+        return;
+      }
+
       setSheetOpen(false);
 
-      sessionStorage.setItem("capturedBookBankImage", dataUrl);
-      sessionStorage.setItem("imageSource", "upload");
-
-      router.push("/preview-book-bank");
+      // บังคับรี-mount หน้า preview ทุกครั้ง
+      const v = Date.now().toString();
+      router.push(`/preview-book-bank?v=${v}`);
+    } finally {
+      // ให้เลือกไฟล์ชื่อเดิมซ้ำได้
+      e.target.value = "";
     }
-    e.target.value = "";
   };
-
-  // const cancelPreview = () => {
-  //   setPreviewSrc(null);
-  //   setSheetOpen(true);
-  // };
-
-  // const usePhoto = () => {
-  //   if (!previewSrc) return;
-  //   sessionStorage.setItem("capturedBookBankImage", previewSrc);
-  //   sessionStorage.setItem("imageSource", "upload");
-  //   router.push("/preview-book-bank");
-  // };
 
   return (
     <>
@@ -77,10 +97,11 @@ export default function VerifyBookBankContainer() {
         className="hidden"
         onChange={onFileChange}
       />
+
       <input
         ref={galleryInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/heic,image/heif,image/webp,image/jpg"
         className="hidden"
         onChange={onFileChange}
       />
@@ -97,10 +118,10 @@ export default function VerifyBookBankContainer() {
             <div className="rounded-2xl bg-white shadow">
               <div className="px-5 pt-4 pb-2 text-center">
                 <div className="text-sm font-semibold text-gray-500">
-                  Upload Photo
+                  Upload Your Document Photo
                 </div>
                 <div className="mt-1 text-sm text-gray-400">
-                  Take a picture or choose from gallery.
+                  Supports images up to 10 MB.
                 </div>
               </div>
               <div className="border-t border-gray-200" />
@@ -108,7 +129,7 @@ export default function VerifyBookBankContainer() {
                 onClick={pickCamera}
                 className="w-full px-5 py-3 text-[#007AFF] text-center hover:bg-gray-50"
               >
-                Take a Picture
+                Take a picture
               </button>
               <div className="border-t border-gray-200" />
               <button
