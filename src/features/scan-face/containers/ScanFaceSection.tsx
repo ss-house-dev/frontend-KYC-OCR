@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useFaceMesh } from "../hooks/useFaceMesh";
 import { VideoCanvas } from "../components/VideoCanvas";
 import { StatusBar } from "../components/StatusBar";
@@ -15,6 +15,8 @@ export default function ScanFaceSection() {
     videoRef,
     canvasRef
   );
+
+  const [frameSrc, setFrameSrc] = useState("/scan-face/frame-face-white.svg");
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -40,6 +42,14 @@ export default function ScanFaceSection() {
     };
   }, [setupCamera]);
 
+    useEffect(() => {
+    if (!detectionResult.landmarks) {
+      setFrameSrc("/scan-face/frame-face-red.svg"); // ไม่มีหน้า -> กรอบแดง
+    } else {
+      setFrameSrc("/scan-face/frame-face-white.svg"); // พบหน้า -> กรอบปกติ
+    }
+  }, [detectionResult]);
+
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
       <div
@@ -54,7 +64,7 @@ export default function ScanFaceSection() {
           videoElement={videoRef.current || undefined}
         />
         <Image
-          src="/scan-face/frame-face-white.svg"
+          src={frameSrc}
           alt="face-outline"
           width={500}
           height={500}
