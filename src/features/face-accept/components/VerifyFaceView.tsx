@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function VerifyFaceView() {
   const [isChecked, setIsChecked] = useState(false);
+  const router = useRouter();
 
   const onCheckboxChange = (checked: boolean) => setIsChecked(checked);
 
   const onStartScan = () => {
     if (!isChecked) return;
     console.log("Start scan");
+    router.push("/scan-face");
   };
 
   return (
