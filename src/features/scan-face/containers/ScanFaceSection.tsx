@@ -5,6 +5,7 @@ import { useFaceMesh } from "../hooks/useFaceMesh";
 import { VideoCanvas } from "../components/VideoCanvas";
 import { StatusBar } from "../components/StatusBar";
 import { CONFIG } from "../configs/constant";
+import Image from "next/image";
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,8 +53,15 @@ export default function ScanFaceSection() {
           detectionResult={detectionResult}
           videoElement={videoRef.current || undefined}
         />
+        <Image
+          src="/scan-face/frame-face-white.svg"
+          alt="face-outline"
+          width={500}
+          height={500}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-120 object-contain pointer-events-none"
+        />
       </div>
-      {/* <StatusBar state={state} /> */}
+      <StatusBar state={state} />
     </div>
   );
 }
