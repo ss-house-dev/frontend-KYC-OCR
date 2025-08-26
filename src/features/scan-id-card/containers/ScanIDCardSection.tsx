@@ -7,6 +7,25 @@ import { CaptureButton } from "@/features/scan-id-card/components/CaptureButton"
 import { FrameSVG } from "@/features/scan-id-card/components/FrameSVG";
 import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask";
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
+import Link from "next/link";
+
+const IconArrowLeft = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-6 h-6"
+    aria-hidden="true"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.75 19.5L8.25 12l7.5-7.5"
+    />
+  </svg>
+);
 
 const videoConstraints = {
   width: 1280,
@@ -233,6 +252,18 @@ export default function ScanIDCardSection({
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black ">
+      <Link
+        href="/id-accept"
+        aria-label="Back"
+        className="fixed left-4 top-4 z-40 text-white p-2
+             focus-visible:outline focus-visible:outline-2
+             focus-visible:outline-offset-2 focus-visible:outline-[#2152b6]"
+        style={{ top: "max(env(safe-area-inset-top, 0px), 1rem)" }}
+      >
+        <IconArrowLeft />
+        <span className="sr-only">Back</span>
+      </Link>
+
       <Webcam
         ref={webcamRef}
         audio={false}
