@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { LM, FaceScanState, DetectionResult } from "../configs/type";
 import { CONFIG } from "../configs/constant";
-import { FailureCenter, RetryKey } from "../utils/retry/RetryGuard";
 import {
   FaceMeshState,
   EMAManager,
@@ -9,17 +8,34 @@ import {
   StepProcessor,
 } from "../utils/faceMesh";
 
-/* ===== Fail-logic สำหรับการนับผิด (ไม่กระทบลอจิกตรวจจริง) ===== */
-const FAILURE_SAMPLING_MS = 800; // จำกัดความถี่การนับ ต่อคีย์
-const CENTER_TOL = 0.15;
-const YAW_ENTER_DEG = 8;
-const PITCH_ENTER_DEG = 8;
-// Fallback absolute เฉพาะใช้ "นับผิด/ถูก"
-const BLINK_ABS_THRESH = 0.18; // EAR ต่ำกว่านี้ = blink
-const MAR_OPEN_ABS = 0.55;     // MAR สูงกว่านี้ = mouth open
-type HitMap = Partial<Record<RetryKey, number>>;
-/* =============================================================== */
+import {
+  cropFaceToDataURL,
+  shouldCapture,
+  cropFacePortraitToDataURL,
+} from "../utils/capture";
+import {
+  MovementGroup,
+  Phase,
+  MOVEMENT_TO_PHASES,
+  randomTwoGroups,
+  groupOfPhase,
+} from "../utils/movements";
+import { captureStore } from "../state/captureStore";
 
+/* ===== Timeout ต่อขั้น ===== */
+const STEP_TIMEOUT_MS = 30_000;
+
+/* ===== ลำดับเฟสมาตรฐานของเครื่อง ===== */
+const PHASE_ORDER: Phase[] = [
+  "yaw_left",
+  "yaw_right",
+  "pitch_up",
+  "pitch_down",
+  "blink",
+  "mouth",
+];
+
+/* ===== ค่าเริ่มต้นของ detection ===== */
 const INITIAL_DET: DetectionResult = {
   landmarks: null,
   bbox: null,
@@ -41,36 +57,26 @@ export function useFaceMesh(
     isReady: false,
   });
 
-  // ===== Failed popup state =====
-  const failureCenterRef = useRef(new FailureCenter(10)); // เพดานพลาด 10
   const [failed, setFailed] = useState(false);
   const failedRef = useRef(false);
-  useEffect(() => { failedRef.current = failed; }, [failed]);
+  useEffect(() => {
+    failedRef.current = failed;
+  }, [failed]);
 
-  // กันนับถี่เกิน
-  const lastHitAtRef = useRef<HitMap>({});
-  const guardedHit = useCallback((key: RetryKey, success: boolean) => {
-    const now = performance.now();
-    const last = lastHitAtRef.current[key] ?? 0;
-    if (now - last < FAILURE_SAMPLING_MS) {
-      return failureCenterRef.current.isLocked();
-    }
-    lastHitAtRef.current[key] = now;
-    failureCenterRef.current.hit(key, success);
-    return failureCenterRef.current.isLocked();
-  }, []);
+  const [detectionResult, setDetectionResult] =
+    useState<DetectionResult>(INITIAL_DET);
 
-  const [detectionResult, setDetectionResult] = useState<DetectionResult>(INITIAL_DET);
+  // จบครบ 2 กลุ่ม -> ให้ container พาไปหน้า face-verification
+  const [done, setDone] = useState(false);
 
-  // ===== Session-scoped refs (กัน BindingError) =====
+  /* ===== session refs ===== */
   const faceMeshRef = useRef<any | null>(null);
   const cameraRef = useRef<any | null>(null);
   const processingRef = useRef(false);
-  const cleanupRef = useRef<(() => void) | null>(null);
-  const sessionIdRef = useRef(0);  // เพิ่มทุกครั้งที่ setup ใหม่
-  const closingRef = useRef(false); // กัน close ซ้ำจากหลายทาง
+  const sessionIdRef = useRef(0);
+  const closingRef = useRef(false);
 
-  // ====== Managers (จะ "สร้างใหม่ทั้งชุด" เมื่อเริ่มสแกนใหม่) ======
+  /* ===== managers ===== */
   const managers = useRef<{
     state: FaceMeshState;
     ema: EMAManager;
@@ -88,31 +94,52 @@ export function useFaceMesh(
     const emaObj = new EMAManager();
     const detector = new DetectionProcessor(stateObj, emaObj, setState);
     const stepProcessor = new StepProcessor(stateObj, emaObj);
-    managers.current = { state: stateObj, ema: emaObj, detector, stepProcessor };
+    managers.current = {
+      state: stateObj,
+      ema: emaObj,
+      detector,
+      stepProcessor,
+    };
   }, []);
+  useEffect(() => {
+    initManagers();
+  }, [initManagers]);
 
-  // init ครั้งแรก
-  useEffect(() => { initManagers(); }, [initManagers]);
+  /* ===== การสุ่ม movement 2 กลุ่ม ===== */
+  const selectedGroupsRef = useRef<MovementGroup[] | null>(null);
+  const allowedPhasesRef = useRef<Phase[]>([]);
+  const completedGroupsRef = useRef<Set<MovementGroup>>(new Set());
+  const prevPhaseRef = useRef<Phase | null>(null);
+
+  const [selectedGroups, setSelectedGroups] = useState<MovementGroup[] | null>(
+    null
+  );
+  const [completedGroups, setCompletedGroups] = useState<MovementGroup[]>([]);
+
+  /* ===== ตัวจับเวลา/สถานะขั้น ===== */
+  const stepStartAtRef = useRef<number | null>(null);
+  const prevStepRef = useRef<number>(0);
+
+  /* ===== แคปภาพ ===== */
+  const lastCapAtRef = useRef<Partial<Record<MovementGroup, number>>>({});
+  const CAP_INTERVAL_MS = 500; // หน่วง 500ms
+  const CAP_LIMIT_PER_GROUP = 10;
 
   const processDetectionResults = useCallback((results: any) => {
-    // ทิ้ง callback ถ้า session ถูกปิดไปแล้ว
-    if (
-      !canvasRef.current ||
-      !managers.current.detector ||
-      !managers.current.stepProcessor ||
-      !faceMeshRef.current
-    ) return;
+    if (!canvasRef.current || !videoRef.current) return;
+    if (!managers.current.detector || !managers.current.stepProcessor) return;
+    if (!faceMeshRef.current) return;
 
     const canvas = canvasRef.current;
+    const video = videoRef.current;
 
     // FPS
     const fps = managers.current.detector.calculateFPS();
     if (fps !== null) setState((prev) => ({ ...prev, fps }));
 
-    // landmarks
+    // Detection
     const landmarks: LM[] | null = results.multiFaceLandmarks?.[0] || null;
     let detectionData: DetectionResult;
-
     if (landmarks) {
       detectionData = managers.current.detector.processLandmarks(
         landmarks,
@@ -122,10 +149,9 @@ export function useFaceMesh(
       managers.current.ema.boxEma.reset();
       detectionData = { ...INITIAL_DET };
     }
-
     setDetectionResult(detectionData);
 
-    // ลอจิกเดิม: process step
+    // Step process
     const { currentStep } = managers.current.state;
     if (currentStep === 1) {
       managers.current.stepProcessor.processStep1(
@@ -137,103 +163,161 @@ export function useFaceMesh(
       managers.current.stepProcessor.processStep2(detectionData);
     }
 
-    // ====== เพิ่ม: นับพลาด/สำเร็จ แยก step × (facemesh|detector) ======
-    const centerOK = (() => {
-      const b = detectionData.bbox;
-      if (!b) return false;
-      const [xx, yy, ww, hh] = b;
-      const frameW = canvas.width, frameH = canvas.height;
-      const cx = xx + ww / 2, cy = yy + hh / 2;
-      const frameCx = frameW / 2, frameCy = frameH / 2;
-      return (
-        Math.abs(cx - frameCx) <= frameW * CENTER_TOL &&
-        Math.abs(cy - frameCy) <= frameH * CENTER_TOL
-      );
-    })();
-
-    let locked = false;
+    // เปลี่ยนขั้น → เริ่มจับเวลาใหม่ (เฉพาะ 1/2)
     const stepNow = managers.current.state.currentStep;
-    const subPhaseNow = managers.current.state.subPhase;
-
-    if (stepNow === 1) {
-      const fmOk = !!(detectionData.landmarks && detectionData.bbox);
-      const detOk = centerOK;
-
-      locked =
-        guardedHit("step1-facemesh", fmOk) ||
-        guardedHit("step1-detector", detOk);
-
-      if (locked) { setFailed(true); return; }
-    } else if (stepNow === 2) {
-      const y = detectionData.yawDeg;
-      const p = detectionData.pitchDeg;
-      const ear = detectionData.earValue;
-      const mar = detectionData.marValue;
-
-      let fmOk = true, detOk = true;
-
-      if (subPhaseNow === "yaw_left") {
-        fmOk = (y != null) && (y >= +YAW_ENTER_DEG);
-      } else if (subPhaseNow === "yaw_right") {
-        fmOk = (y != null) && (y <= -YAW_ENTER_DEG);
-      } else if (subPhaseNow === "pitch_up") {
-        fmOk = (p != null) && (p <= -PITCH_ENTER_DEG);
-      } else if (subPhaseNow === "pitch_down") {
-        fmOk = (p != null) && (p >= +PITCH_ENTER_DEG);
-      } else if (subPhaseNow === "blink") {
-        detOk = (ear != null) && ear <= BLINK_ABS_THRESH;  // (หรือ baseline ของคุณ)
-      } else if (subPhaseNow === "mouth") {
-        detOk = (mar != null) && mar >= MAR_OPEN_ABS;      // (หรือ base+delta ของคุณ)
+    if (prevStepRef.current !== stepNow) {
+      prevStepRef.current = stepNow;
+      if (stepNow === 1 || stepNow === 2) {
+        stepStartAtRef.current = performance.now();
+      } else {
+        stepStartAtRef.current = null;
       }
 
-      locked =
-        guardedHit("step2-facemesh", fmOk) ||
-        guardedHit("step2-detector", detOk);
+      // เข้าสtep2 → สุ่มกลุ่ม + ทำ allowedPhases โดย "กรองจากลำดับมาตรฐาน"
+      if (stepNow === 2) {
+        const groups = randomTwoGroups();
+        selectedGroupsRef.current = groups;
+        setSelectedGroups(groups);
 
-      if (locked) { setFailed(true); return; }
+        const allowed = PHASE_ORDER.filter((ph) =>
+          groups.includes(groupOfPhase(ph))
+        );
+        allowedPhasesRef.current = allowed;
+
+        completedGroupsRef.current.clear();
+        setCompletedGroups([]);
+
+        // เริ่มที่เฟสแรกของ allowed
+        if (allowed.length) {
+          managers.current.state.subPhase = allowed[0];
+          prevPhaseRef.current = allowed[0];
+        }
+
+        // เคลียร์ตัวจับเวลาแคป
+        lastCapAtRef.current = {};
+      }
     }
-    // ===============================================================
+
+    // Timeout ต่อขั้น (เฉพาะ Step 1/2)
+    if ((stepNow === 1 || stepNow === 2) && stepStartAtRef.current != null) {
+      const elapsed = performance.now() - stepStartAtRef.current;
+      if (elapsed >= STEP_TIMEOUT_MS) {
+        setFailed(true);
+        return;
+      }
+    }
+
+    if (stepNow >= 2 && captureStore.get().step1Sample == null) {
+      if (detectionData.bbox) {
+        const url = cropFacePortraitToDataURL(
+          video,
+          detectionData.bbox as any,
+          { targetSize: 320, quality: 0.92, scale: 1.5, yShiftRatio: -0.06 }
+        );
+        if (url) captureStore.setStep1Sample(url);
+      }
+    }
+
+    // --- ระหว่าง Step2 → แคปเฉพาะกลุ่มที่ถูกสุ่ม (พอร์ตเทรต) ---
+    if (stepNow === 2 && detectionData.bbox && selectedGroupsRef.current) {
+      const phaseNow = managers.current.state.subPhase as Phase;
+      const grp = groupOfPhase(phaseNow);
+      if (selectedGroupsRef.current.includes(grp)) {
+        const lastAt = lastCapAtRef.current[grp] ?? null;
+        if (shouldCapture(lastAt, CAP_INTERVAL_MS)) {
+          lastCapAtRef.current[grp] = performance.now();
+          const has = captureStore.get().movements[grp].length;
+          if (has < CAP_LIMIT_PER_GROUP) {
+            const url = cropFacePortraitToDataURL(
+              video,
+              detectionData.bbox as any,
+              { targetSize: 320, quality: 0.92, scale: 1.5, yShiftRatio: -0.06 }
+            );
+            if (url) captureStore.push(grp, url, CAP_LIMIT_PER_GROUP);
+          }
+        }
+      }
+    }
+
+    // บังคับให้ step2 อยู่ใน allowed เท่านั้น
+    if (stepNow === 2 && allowedPhasesRef.current.length > 0) {
+      const phaseNow = managers.current.state.subPhase as Phase;
+      if (!allowedPhasesRef.current.includes(phaseNow)) {
+        managers.current.state.subPhase = allowedPhasesRef.current[0];
+      }
+    }
+
+    // ==== ตรวจการ "เปลี่ยนเฟสจริง" เพื่อ mark ว่าจบกลุ่ม ====
+    if (stepNow === 2 && allowedPhasesRef.current.length > 0) {
+      const cur = managers.current.state.subPhase as Phase;
+      const prev = prevPhaseRef.current;
+
+      if (prev && prev !== cur) {
+        const prevGroup = groupOfPhase(prev);
+        const phasesOfPrev = MOVEMENT_TO_PHASES[prevGroup];
+        const isPrevLastOfGroup =
+          phasesOfPrev[phasesOfPrev.length - 1] === prev;
+        if (isPrevLastOfGroup) {
+          completedGroupsRef.current.add(prevGroup);
+          setCompletedGroups(Array.from(completedGroupsRef.current));
+        }
+      }
+      prevPhaseRef.current = cur;
+
+      // ครบสองกลุ่มแล้ว → DONE
+      if (completedGroupsRef.current.size >= 2) {
+        managers.current.state.currentStep = 3;
+        setDone(true);
+      }
+    }
+
+    // เผื่อกรณีเครื่องตั้ง currentStep=3 เอง 
+    if (managers.current.state.currentStep === 3 && !done) {
+      setDone(true);
+    }
 
     // Update UI state
     setState((prev) => ({
       ...prev,
       step: managers.current.state.currentStep,
-      phase: currentStep === 2 ? managers.current.state.subPhase : "-",
+      phase:
+        stepNow === 2
+          ? (managers.current.state.subPhase as Phase)
+          : ("-" as const),
     }));
   }, []);
 
-  // ปิด session ปัจจุบันให้ "ปลอดภัยและเรียกซ้ำได้" (idempotent)
+  // ปิด session ปลอดภัย/idempotent
   const stopCurrentSession = useCallback(async () => {
-    if (closingRef.current) return;   // กันปิดซ้ำ
+    if (closingRef.current) return;
     closingRef.current = true;
 
-    // ยกเลิก callback เก่าทั้งหมด
     sessionIdRef.current += 1;
 
     try {
-      // 1) หยุดกล้อง
-      try { cameraRef.current?.stop?.(); } catch {}
+      try {
+        cameraRef.current?.stop?.();
+      } catch {}
       cameraRef.current = null;
 
-      // 2) รอเฟรมค้างอยู่ให้จบ (สูงสุด ~1s)
       const t0 = performance.now();
       while (processingRef.current && performance.now() - t0 < 1000) {
         await new Promise((r) => setTimeout(r, 16));
       }
     } finally {
-      // 3) ปิด FaceMesh (กลืน error ถ้าโดนปิดซ้ำ)
-      try { faceMeshRef.current?.close?.(); } catch {}
+      try {
+        faceMeshRef.current?.close?.();
+      } catch {}
       faceMeshRef.current = null;
 
       processingRef.current = false;
-      cleanupRef.current = null;
       closingRef.current = false;
     }
   }, []);
 
+  // Setup camera + FaceMesh
   const setupCamera = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
-
     const mySessionId = ++sessionIdRef.current;
 
     try {
@@ -257,7 +341,7 @@ export function useFaceMesh(
       });
 
       faceMesh.onResults((res: any) => {
-        if (sessionIdRef.current !== mySessionId) return; // ทิ้ง callback เก่า
+        if (sessionIdRef.current !== mySessionId) return;
         processDetectionResults(res);
       });
 
@@ -291,36 +375,41 @@ export function useFaceMesh(
         },
         audio: false,
       });
-
       await cam.start();
       setState((prev) => ({ ...prev, isReady: true }));
 
-      // cleanup ของ session นี้: เรียก stopCurrentSession เสมอ
-      const cleanup = () => { void stopCurrentSession(); };
-      cleanupRef.current = cleanup;
-      return cleanup;
+      return () => {
+        void stopCurrentSession();
+      };
     } catch (error) {
       console.error("Camera setup error:", error);
       throw error;
     }
   }, [processDetectionResults, stopCurrentSession]);
 
-  // รีสตาร์ตทั้ง flow: stop เดิม → สร้าง managers ใหม่ → reset ทุกอย่าง → setup ใหม่
+  // Try again → กลับไปเริ่มใหม่จาก Setup เสมอ
   const restartFromSetup = useCallback(async () => {
-    // 1) ปิด session เดิมให้หมด
     await stopCurrentSession();
 
-    // 2) สร้าง managers ใหม่ทั้งชุด (สำคัญมาก เพื่อรีเซ็ตเฟส/ตัวตั้งเวลาภายใน)
     initManagers();
-
-    // 3) รีเซ็ตตัวนับ/ค่าหน้าจอ
-    failureCenterRef.current.resetAll();
-    lastHitAtRef.current = {};
     setFailed(false);
+    setDone(false);
     setDetectionResult({ ...INITIAL_DET });
     setState({ step: 1, phase: "-", fps: 0, isReady: false });
 
-    // 4) เริ่มกล้อง/FaceMesh ใหม่ (จะเข้าสtep 1 เสมอ)
+    selectedGroupsRef.current = null;
+    allowedPhasesRef.current = [];
+    completedGroupsRef.current = new Set();
+    setSelectedGroups(null);
+    setCompletedGroups([]);
+    prevPhaseRef.current = null;
+
+    stepStartAtRef.current = null;
+    prevStepRef.current = 0;
+
+    lastCapAtRef.current = {};
+    captureStore.clear();
+
     try {
       await setupCamera();
     } catch (e) {
@@ -328,7 +417,6 @@ export function useFaceMesh(
     }
   }, [setupCamera, stopCurrentSession, initManagers]);
 
-  // คงไว้กรณีคุณใช้ที่อื่น
   const resetStep2 = useCallback(() => {
     managers.current.state.reset();
     managers.current.ema.reset();
@@ -342,5 +430,9 @@ export function useFaceMesh(
 
     failed,
     restartFromSetup,
+
+    done,
+    selectedGroups,
+    completedGroups,
   };
 }

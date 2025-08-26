@@ -1,4 +1,3 @@
-// features/scan-face/components/FailModal.tsx
 "use client";
 
 import React from "react";
@@ -10,7 +9,6 @@ type Props = {
 };
 
 export default function FailModal({ open, onRetry }: Props) {
-  // ไม่ใช้ hooks ใด ๆ ทั้งสิ้น => ลำดับ hooks ไม่เปลี่ยนแน่นอน
   if (!open) return null;
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
@@ -26,7 +24,6 @@ export default function FailModal({ open, onRetry }: Props) {
       aria-describedby="scan-failed-desc"
       onKeyDown={handleKeyDown}
       tabIndex={-1}
-      // กัน warning จาก extension ที่ไปฉีด attrs ใส่ DOM
       suppressHydrationWarning
     >
       {/* overlay */}

@@ -13,37 +13,31 @@ import ScanOverlayHUD from "../components/ScanOverlayHUD";
 import { CONFIG } from "../configs/constant";
 import Image from "next/image";
 import { Step1Validator } from "../utils/validators/step1Validator";
+import { useRouter } from "next/navigation";
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const router = useRouter();
 
-  const { state, detectionResult, setupCamera, failed, restartFromSetup } =
-    useFaceMesh(videoRef, canvasRef);
+   const {
+    state, detectionResult, setupCamera,
+    failed, restartFromSetup,
+    done,
+  } = useFaceMesh(videoRef, canvasRef);
 
   const [frameSrc, setFrameSrc] = useState("/scan-face/frame-face-white.svg");
   const [step1Valid, setStep1Valid] = useState(true);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
-
-    const initCamera = async () => {
-      try {
-        cleanup = await setupCamera();
-      } catch (error) {
-        console.error("Failed to initialize camera:", error);
-        alert(
-          "ไม่สามารถเปิดกล้องได้: " +
-            (error instanceof Error ? error.message : String(error))
-        );
+    (async () => {
+      try { cleanup = await setupCamera(); } catch (e) {
+        console.error("Failed to initialize camera:", e);
+        alert("ไม่สามารถเปิดกล้องได้");
       }
-    };
-
-    initCamera();
-
-    return () => {
-      if (cleanup) cleanup();
-    };
+    })();
+    return () => { if (cleanup) cleanup(); };
   }, [setupCamera]);
 
   // ใช้ Step1Validator ตรวจสอบใบหน้า แล้วเปลี่ยนกรอบ
@@ -75,6 +69,11 @@ export default function ScanFaceSection() {
       navigator.vibrate(300);
     }
   }, [detectionResult]);
+  useEffect(() => {
+    if (done) {
+      router.push("/face-verification");
+    }
+  }, [done, router]);
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
@@ -101,8 +100,6 @@ export default function ScanFaceSection() {
           detection={detectionResult}
           visible={true}
         />
-
-        {/* กด Try again → หยุด session เก่าและเริ่มใหม่ตั้งแต่ Setup */}
         <FailModal open={failed} onRetry={restartFromSetup} />
       </div>
     </div>
