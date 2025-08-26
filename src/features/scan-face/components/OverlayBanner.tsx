@@ -3,7 +3,7 @@ import React from "react";
 
 type OverlayBannerProps = {
   text?: string | null;
-  y?: number;    
+  y?: number;
   visible?: boolean;
   className?: string;
 };
@@ -21,7 +21,7 @@ export default function OverlayBanner({
       className={`pointer-events-none absolute left-1/2 -translate-x-1/2 ${className}`}
       style={{ top: y }}
     >
-      <div className="text-white px-3 py-2 text-xl font-medium">
+      <div className="text-white font-bold text-glow px-3 py-2 text-xl font-medium whitespace-nowrap">
         {text}
       </div>
     </div>

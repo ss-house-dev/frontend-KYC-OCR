@@ -51,11 +51,7 @@ export default function ScanFaceSection() {
     if (!detectionResult.bbox) {
       setFrameSrc("/scan-face/frame-face-red.svg");
       setStep1Valid(false);
-
-      // ให้มือถือสั่น 300ms
-      if (navigator.vibrate) {
-        navigator.vibrate(300);
-      }
+      if ("vibrate" in navigator) navigator.vibrate(300);
       return;
     }
 
@@ -76,7 +72,7 @@ export default function ScanFaceSection() {
 
     // สั่นเมื่อ invalid
     if (!validation.isValid && navigator.vibrate) {
-      navigator.vibrate([100, 50, 100]);
+      navigator.vibrate(300);
     }
   }, [detectionResult]);
 
@@ -90,7 +86,7 @@ export default function ScanFaceSection() {
           detectionResult={detectionResult}
           videoElement={videoRef.current || undefined}
         />
-        <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-[88vw] max-w-[420px] aspect-[8.8/5.6] z-10 p-[3%]">
+        <div className="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 w-[88vw] max-w-[420px] aspect-[8.8/5.6] z-10 p-[3%]">
           <Image
             src={frameSrc}
             alt="face-outline"

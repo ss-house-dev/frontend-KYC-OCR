@@ -8,10 +8,10 @@ interface StatusBarProps {
 }
 
 const phaseIcons: Record<string, string> = {
-  yaw_left: "/phase-face/left-right.gif",
-  yaw_right: "/phase-face/left-right.gif",
-  pitch_up: "/phase-face/up-down.gif",
-  pitch_down: "/phase-face/up-down.gif",
+  yaw_left: "/phase-face/head-left.gif",
+  yaw_right: "/phase-face/head-right.gif",
+  pitch_up: "/phase-face/head-up.gif",
+  pitch_down: "/phase-face/head-down.gif",
   blink: "/phase-face/blink.gif",
   mouth: "/phase-face/mouth.gif",
 };
