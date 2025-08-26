@@ -8,7 +8,6 @@ import { Step2Validator } from "../utils/validators/step2Validator";
 import {
   applySharpenToImageData,
   banner,
-  putLabel,
   roundedRect,
   alertFrame,
   drawLandmarks,
@@ -20,14 +19,14 @@ const SHOW_OVERLAY = process.env.NEXT_PUBLIC_SHOW_OVERLAY === "1";
 interface VideoCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   state: FaceScanState;
-  detectionResult: DetectionResult;
+  detectionResults: DetectionResult[];
   videoElement?: HTMLVideoElement;
 }
 
 export function VideoCanvas({
   canvasRef,
   state,
-  detectionResult,
+  detectionResults,
   videoElement,
 }: VideoCanvasProps) {
   useEffect(() => {
@@ -47,13 +46,15 @@ export function VideoCanvas({
 
     // วาดตามขั้นตอน
     if (state.step === 1) {
-      drawStep1(ctx, detectionResult, canvas.width, canvas.height);
+      drawStep1(ctx, detectionResults, canvas.width, canvas.height);
     } else if (state.step === 2) {
-      drawStep2(ctx, detectionResult, state);
+      drawStep2(ctx, detectionResults[0], state);
     } else if (state.step === 3) {
-      banner(ctx, "DONE", 60);
+      if (SHOW_OVERLAY) {
+        banner(ctx, " ", 60);
+      }
     }
-  }, [state, detectionResult, videoElement]);
+  }, [state, detectionResults, videoElement]);
 
   return (
     <canvas
@@ -67,34 +68,40 @@ export function VideoCanvas({
 
 function drawStep1(
   ctx: CanvasRenderingContext2D,
-  detection: DetectionResult,
+  detectionResults: DetectionResult[],
   canvasWidth: number,
   canvasHeight: number
 ) {
-  const faceCount = detection.landmarks ? 1 : 0;
+  const faceCount = detectionResults.length;
 
   const validation = Step1Validator.validateStep1(
-    faceCount,
-    detection.brightness ?? 0,
-    detection.bbox ?? null,
+    detectionResults,
     canvasWidth,
     canvasHeight
   );
 
   if (SHOW_OVERLAY) {
-    alertFrame(ctx, validation.isValid ? "rgba(255,255,255,1)" : "rgba(255,0,0,1)", 4);
-    if (detection.bbox) {
-      const [x, y, w, h] = detection.bbox;
-      roundedRect(ctx, x, y, w, h, 12, validation.color, 2);
-    }
+    alertFrame(
+      ctx,
+      validation.isValid ? "rgba(255,255,255,1)" : "rgba(255,0,0,1)",
+      4
+    );
+    detectionResults.forEach((detection) => {
+      if (detection.bbox) {
+        const [x, y, w, h] = detection.bbox;
+        roundedRect(ctx, x, y, w, h, 12, validation.color, 2);
+      }
+    });
+
     if (validation.message) {
       banner(ctx, validation.message, 80);
     }
   }
 
-  // PIP sharpen 
+  // PIP sharpen
   if (CONFIG.SHARPEN.ENABLED) {
-    const pipW = 160, pipH = 120;
+    const pipW = 160,
+      pipH = 120;
     const sx = canvasWidth - pipW;
     const sy = canvasHeight - pipH;
     const pip = ctx.getImageData(sx, sy, pipW, pipH);
@@ -111,7 +118,7 @@ function drawStep2(
   if (!detection.landmarks || state.phase === "-") return;
 
   // จุด landmark ปิดไว้
-  if (SHOW_OVERLAY && CONFIG.LANDMARKS.SHOW_IN_STEP2) {
+  if (CONFIG.LANDMARKS.SHOW_IN_STEP2) {
     drawLandmarks(ctx, detection.landmarks, 1, "white");
   }
 
@@ -137,7 +144,8 @@ function drawStep2(
         ctx.restore();
       }
     }
-
+  }
+  if (SHOW_OVERLAY) {
     // ข้อความเฉพาะ phase ปาก
     if (state.phase === "mouth" && detection.marValue !== null) {
       banner(ctx, "Now, please close your mouth", 150);

@@ -90,4 +90,30 @@ export class FaceDetector {
 
     return { yawDeg, pitchDeg };
   }
+
+  static processFaces(
+    faces: LM[][],
+    w: number,
+    h: number,
+    ctx: CanvasRenderingContext2D
+  ) {
+    return faces.map((landmarks) => {
+      const bbox = this.getBoundingBox(landmarks, w, h);
+      const brightness = this.calculateBrightness(ctx, bbox);
+      const { yawDeg, pitchDeg } = this.estimateYawPitch(landmarks, w, h);
+      return {
+        landmarks,
+        bbox,
+        brightness,
+        yawDeg,
+        pitchDeg,
+        earValue: null,
+        marValue: null,
+      };
+    });
+  }
+
+  static countFaces(faces: LM[][]): number {
+    return faces.length;
+  }
 }

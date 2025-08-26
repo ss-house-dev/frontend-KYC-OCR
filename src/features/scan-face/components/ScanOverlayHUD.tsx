@@ -8,13 +8,13 @@ import { CONFIG } from "../configs/constant";
 
 type Props = {
   state: FaceScanState;
-  detection: DetectionResult;
+  detectionResults: DetectionResult[];
   visible?: boolean;
 };
 
 export default function ScanOverlayHUD({
   state,
-  detection,
+  detectionResults,
   visible = true,
 }: Props) {
   const { topMsg, midMsg, bottomMsg } = useMemo(() => {
@@ -23,11 +23,8 @@ export default function ScanOverlayHUD({
     let bottomMsg: string | null = null;
 
     if (state.step === 1) {
-      const faceCount = detection.landmarks ? 1 : 0;
       const validation = Step1Validator.validateStep1(
-        faceCount,
-        detection.brightness,
-        detection.bbox,
+        detectionResults,
         CONFIG.DISPLAY.WIDTH,
         CONFIG.DISPLAY.HEIGHT
       );
@@ -38,7 +35,7 @@ export default function ScanOverlayHUD({
       topMsg = "DONE";
     }
     return { topMsg, midMsg, bottomMsg };
-  }, [state, detection]);
+  }, [state, detectionResults]);
 
   return (
     <>

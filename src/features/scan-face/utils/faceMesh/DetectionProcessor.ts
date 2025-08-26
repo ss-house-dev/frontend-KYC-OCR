@@ -28,53 +28,53 @@ export class DetectionProcessor {
   }
 
   processLandmarks(
-    landmarks: LM[],
+    faces: LM[][],
     canvas: HTMLCanvasElement
-  ): DetectionResult {
+  ): DetectionResult[] {
     const ctx = canvas.getContext("2d")!;
 
-    // Calculate bounding box and brightness
-    const bbox = FaceDetector.getBoundingBox(
-      landmarks,
-      canvas.width,
-      canvas.height
-    );
-    const smoothedBox = this.ema.boxEma.update(bbox);
-    const brightness = FaceDetector.calculateBrightness(ctx, smoothedBox);
+    return faces.map((landmarks) => {
+      // โค้ดเดิมสำหรับหน้าเดียว
+      const bbox = FaceDetector.getBoundingBox(
+        landmarks,
+        canvas.width,
+        canvas.height
+      );
+      const smoothedBox = this.ema.boxEma.update(bbox);
+      const brightness = FaceDetector.calculateBrightness(ctx, smoothedBox);
 
-    // Calculate pose with smoothing
-    const { yawDeg: rawYaw, pitchDeg: rawPitch } =
-      FaceDetector.estimateYawPitch(landmarks, canvas.width, canvas.height);
-    this.updatePoseZeros(rawYaw, rawPitch);
+      const { yawDeg: rawYaw, pitchDeg: rawPitch } =
+        FaceDetector.estimateYawPitch(landmarks, canvas.width, canvas.height);
+      this.updatePoseZeros(rawYaw, rawPitch);
 
-    const yawDeg = this.ema.yawEma.update(
-      rawYaw - (this.ema.yawZero.value ?? 0)
-    );
-    const pitchDeg = this.ema.pitchEma.update(
-      rawPitch - (this.ema.pitchZero.value ?? 0)
-    );
+      const yawDeg = this.ema.yawEma.update(
+        rawYaw - (this.ema.yawZero.value ?? 0)
+      );
+      const pitchDeg = this.ema.pitchEma.update(
+        rawPitch - (this.ema.pitchZero.value ?? 0)
+      );
 
-    // Calculate eye and mouth ratios
-    const earValue = EyeDetector.getEyeAspectRatio(
-      landmarks,
-      canvas.width,
-      canvas.height
-    );
-    const marValue = MouthDetector.getMouthAspectRatio(
-      landmarks,
-      canvas.width,
-      canvas.height
-    );
+      const earValue = EyeDetector.getEyeAspectRatio(
+        landmarks,
+        canvas.width,
+        canvas.height
+      );
+      const marValue = MouthDetector.getMouthAspectRatio(
+        landmarks,
+        canvas.width,
+        canvas.height
+      );
 
-    return {
-      landmarks,
-      bbox: smoothedBox,
-      brightness,
-      yawDeg,
-      pitchDeg,
-      earValue,
-      marValue,
-    };
+      return {
+        landmarks,
+        bbox: smoothedBox,
+        brightness,
+        yawDeg,
+        pitchDeg,
+        earValue,
+        marValue,
+      };
+    });
   }
 
   private updatePoseZeros(rawYaw: number, rawPitch: number) {

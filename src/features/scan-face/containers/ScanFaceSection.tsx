@@ -20,9 +20,12 @@ export default function ScanFaceSection() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const router = useRouter();
 
-   const {
-    state, detectionResult, setupCamera,
-    failed, restartFromSetup,
+  const {
+    state,
+    detectionResults,
+    setupCamera,
+    failed,
+    restartFromSetup,
     done,
   } = useFaceMesh(videoRef, canvasRef);
 
@@ -32,17 +35,22 @@ export default function ScanFaceSection() {
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     (async () => {
-      try { cleanup = await setupCamera(); } catch (e) {
+      try {
+        cleanup = await setupCamera();
+      } catch (e) {
         console.error("Failed to initialize camera:", e);
         alert("ไม่สามารถเปิดกล้องได้");
       }
     })();
-    return () => { if (cleanup) cleanup(); };
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [setupCamera]);
 
   // ใช้ Step1Validator ตรวจสอบใบหน้า แล้วเปลี่ยนกรอบ
   useEffect(() => {
-    if (!detectionResult.bbox) {
+    // ถ้าไม่มีใบหน้าเลย
+    if (detectionResults.length === 0) {
       setFrameSrc("/scan-face/frame-face-red.svg");
       setStep1Valid(false);
       if ("vibrate" in navigator) navigator.vibrate(300);
@@ -50,9 +58,7 @@ export default function ScanFaceSection() {
     }
 
     const validation = Step1Validator.validateStep1(
-      detectionResult.landmarks ? 1 : 0,
-      detectionResult.brightness ?? 0,
-      detectionResult.bbox,
+      detectionResults,
       CONFIG.DISPLAY.WIDTH,
       CONFIG.DISPLAY.HEIGHT
     );
@@ -68,7 +74,8 @@ export default function ScanFaceSection() {
     if (!validation.isValid && navigator.vibrate) {
       navigator.vibrate(300);
     }
-  }, [detectionResult]);
+  }, [detectionResults]);
+
   useEffect(() => {
     if (done) {
       router.push("/face-verification");
@@ -82,7 +89,7 @@ export default function ScanFaceSection() {
         <VideoCanvas
           canvasRef={canvasRef}
           state={state}
-          detectionResult={detectionResult}
+          detectionResults={detectionResults}
           videoElement={videoRef.current || undefined}
         />
         <div className="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 w-[88vw] max-w-[420px] aspect-[8.8/5.6] z-10 p-[3%]">
@@ -97,7 +104,7 @@ export default function ScanFaceSection() {
         <StatusBar state={state} step1Valid={step1Valid} />
         <ScanOverlayHUD
           state={state}
-          detection={detectionResult}
+          detectionResults={detectionResults}
           visible={true}
         />
         <FailModal open={failed} onRetry={restartFromSetup} />
