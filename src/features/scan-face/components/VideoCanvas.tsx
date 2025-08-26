@@ -73,37 +73,28 @@ function drawStep1(
 ) {
   const faceCount = detection.landmarks ? 1 : 0;
 
-  if (faceCount === 0) {
-    if (SHOW_OVERLAY) {
-      alertFrame(ctx, "rgba(255,0,0,1)", 4);
-      banner(ctx, "No face found", 80);
-    }
-    return;
-  }
-
-  if (!detection.bbox) return;
-
   const validation = Step1Validator.validateStep1(
     faceCount,
-    detection.brightness,
-    detection.bbox,
+    detection.brightness ?? 0,
+    detection.bbox ?? null,
     canvasWidth,
     canvasHeight
   );
 
-  const [x, y, w, h] = detection.bbox;
-
-  // ป้ายข้อความ ปิดไว้
   if (SHOW_OVERLAY) {
-    roundedRect(ctx, x, y, w, h, 12, validation.color, 2);
+    alertFrame(ctx, validation.isValid ? "rgba(255,255,255,1)" : "rgba(255,0,0,1)", 4);
+    if (detection.bbox) {
+      const [x, y, w, h] = detection.bbox;
+      roundedRect(ctx, x, y, w, h, 12, validation.color, 2);
+    }
     if (validation.message) {
-      putLabel(ctx, validation.message, x, y);
+      banner(ctx, validation.message, 80);
     }
   }
 
+  // PIP sharpen 
   if (CONFIG.SHARPEN.ENABLED) {
-    const pipW = 160,
-      pipH = 120;
+    const pipW = 160, pipH = 120;
     const sx = canvasWidth - pipW;
     const sy = canvasHeight - pipH;
     const pip = ctx.getImageData(sx, sy, pipW, pipH);
