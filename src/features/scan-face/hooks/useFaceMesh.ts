@@ -8,9 +8,34 @@ import {
   StepProcessor,
 } from "../utils/faceMesh";
 
-/* ====== เงื่อนไข Try again แบบ “จับเวลา” ====== */
-const STEP_TIMEOUT_MS = 30_000; // 30 วินาที/ขั้น เฉพาะ Step 1 และ Step 2
+import {
+  cropFaceToDataURL,
+  shouldCapture,
+  cropFacePortraitToDataURL,
+} from "../utils/capture";
+import {
+  MovementGroup,
+  Phase,
+  MOVEMENT_TO_PHASES,
+  randomTwoGroups,
+  groupOfPhase,
+} from "../utils/movements";
+import { captureStore } from "../state/captureStore";
 
+/* ===== Timeout ต่อขั้น ===== */
+const STEP_TIMEOUT_MS = 30_000;
+
+/* ===== ลำดับเฟสมาตรฐานของเครื่อง ===== */
+const PHASE_ORDER: Phase[] = [
+  "yaw_left",
+  "yaw_right",
+  "pitch_up",
+  "pitch_down",
+  "blink",
+  "mouth",
+];
+
+/* ===== ค่าเริ่มต้นของ detection ===== */
 const INITIAL_DET: DetectionResult = {
   landmarks: null,
   bbox: null,
@@ -32,7 +57,6 @@ export function useFaceMesh(
     isReady: false,
   });
 
-  // ===== Failed popup state =====
   const [failed, setFailed] = useState(false);
   const failedRef = useRef(false);
   useEffect(() => {
@@ -42,15 +66,17 @@ export function useFaceMesh(
   const [detectionResult, setDetectionResult] =
     useState<DetectionResult>(INITIAL_DET);
 
-  // ===== Session-scoped refs (กัน BindingError) =====
+  // จบครบ 2 กลุ่ม -> ให้ container พาไปหน้า face-verification
+  const [done, setDone] = useState(false);
+
+  /* ===== session refs ===== */
   const faceMeshRef = useRef<any | null>(null);
   const cameraRef = useRef<any | null>(null);
   const processingRef = useRef(false);
-  const cleanupRef = useRef<(() => void) | null>(null);
-  const sessionIdRef = useRef(0); // เพิ่มทุกครั้งที่ setup ใหม่
-  const closingRef = useRef(false); // กัน close ซ้ำจากหลายทาง
+  const sessionIdRef = useRef(0);
+  const closingRef = useRef(false);
 
-  // ====== Managers (สร้างใหม่ทั้งชุดเมื่อเริ่มสแกนใหม่) ======
+  /* ===== managers ===== */
   const managers = useRef<{
     state: FaceMeshState;
     ema: EMAManager;
@@ -75,40 +101,45 @@ export function useFaceMesh(
       stepProcessor,
     };
   }, []);
-
-  // init ครั้งแรก
   useEffect(() => {
     initManagers();
   }, [initManagers]);
 
-  /* ====== ตัวจับเวลา Step ======
-     - เริ่มจับเวลาเมื่อเข้าขั้น 1 หรือ 2
-     - รีเซ็ตเมื่อเปลี่ยนขั้น
-     - ถ้าเกิน 30s ในขั้นนั้น ๆ → failed
-  */
+  /* ===== การสุ่ม movement 2 กลุ่ม ===== */
+  const selectedGroupsRef = useRef<MovementGroup[] | null>(null);
+  const allowedPhasesRef = useRef<Phase[]>([]);
+  const completedGroupsRef = useRef<Set<MovementGroup>>(new Set());
+  const prevPhaseRef = useRef<Phase | null>(null);
+
+  const [selectedGroups, setSelectedGroups] = useState<MovementGroup[] | null>(
+    null
+  );
+  const [completedGroups, setCompletedGroups] = useState<MovementGroup[]>([]);
+
+  /* ===== ตัวจับเวลา/สถานะขั้น ===== */
   const stepStartAtRef = useRef<number | null>(null);
-  const prevStepRef = useRef<number>(0); // เซ็ต 0 เพื่อให้การเข้าขั้น 1 ครั้งแรกถูกจับเป็น "เปลี่ยนขั้น"
+  const prevStepRef = useRef<number>(0);
+
+  /* ===== แคปภาพ ===== */
+  const lastCapAtRef = useRef<Partial<Record<MovementGroup, number>>>({});
+  const CAP_INTERVAL_MS = 500; // หน่วงเวลาอย่างน้อย 400ms
+  const CAP_LIMIT_PER_GROUP = 10;
 
   const processDetectionResults = useCallback((results: any) => {
-    // ทิ้ง callback ถ้า session ถูกปิดไปแล้ว
-    if (
-      !canvasRef.current ||
-      !managers.current.detector ||
-      !managers.current.stepProcessor ||
-      !faceMeshRef.current
-    )
-      return;
+    if (!canvasRef.current || !videoRef.current) return;
+    if (!managers.current.detector || !managers.current.stepProcessor) return;
+    if (!faceMeshRef.current) return;
 
     const canvas = canvasRef.current;
+    const video = videoRef.current;
 
     // FPS
     const fps = managers.current.detector.calculateFPS();
     if (fps !== null) setState((prev) => ({ ...prev, fps }));
 
-    // landmarks
+    // Detection
     const landmarks: LM[] | null = results.multiFaceLandmarks?.[0] || null;
     let detectionData: DetectionResult;
-
     if (landmarks) {
       detectionData = managers.current.detector.processLandmarks(
         landmarks,
@@ -118,10 +149,9 @@ export function useFaceMesh(
       managers.current.ema.boxEma.reset();
       detectionData = { ...INITIAL_DET };
     }
-
     setDetectionResult(detectionData);
 
-    // ลอจิกเดิม: process step
+    // Step process
     const { currentStep } = managers.current.state;
     if (currentStep === 1) {
       managers.current.stepProcessor.processStep1(
@@ -133,73 +163,161 @@ export function useFaceMesh(
       managers.current.stepProcessor.processStep2(detectionData);
     }
 
-    // ====== จัดการ "จับเวลา" ต่อขั้น ======
+    // เปลี่ยนขั้น → เริ่มจับเวลาใหม่ (เฉพาะ 1/2)
     const stepNow = managers.current.state.currentStep;
-
-    // ถ้าเปลี่ยนขั้น ให้เริ่มจับเวลาใหม่เฉพาะขั้น 1/2
     if (prevStepRef.current !== stepNow) {
       prevStepRef.current = stepNow;
       if (stepNow === 1 || stepNow === 2) {
         stepStartAtRef.current = performance.now();
       } else {
-        // ขั้นอื่น (เช่น 3/DONE) ไม่จับเวลา
         stepStartAtRef.current = null;
+      }
+
+      // เข้าสtep2 → สุ่มกลุ่ม + ทำ allowedPhases โดย "กรองจากลำดับมาตรฐาน"
+      if (stepNow === 2) {
+        const groups = randomTwoGroups();
+        selectedGroupsRef.current = groups;
+        setSelectedGroups(groups);
+
+        const allowed = PHASE_ORDER.filter((ph) =>
+          groups.includes(groupOfPhase(ph))
+        );
+        allowedPhasesRef.current = allowed;
+
+        completedGroupsRef.current.clear();
+        setCompletedGroups([]);
+
+        // เริ่มที่เฟสแรกของ allowed
+        if (allowed.length) {
+          managers.current.state.subPhase = allowed[0];
+          prevPhaseRef.current = allowed[0];
+        }
+
+        // เคลียร์ตัวจับเวลาแคป
+        lastCapAtRef.current = {};
       }
     }
 
-    // ถ้ายังอยู่ขั้น 1/2 และมีตัวจับเวลา → เช็กหมดเวลา
+    // Timeout ต่อขั้น (เฉพาะ Step 1/2)
     if ((stepNow === 1 || stepNow === 2) && stepStartAtRef.current != null) {
       const elapsed = performance.now() - stepStartAtRef.current;
       if (elapsed >= STEP_TIMEOUT_MS) {
-        setFailed(true); // โมดัลจะขึ้นเอง และ onFrame จะหยุดส่งเฟรม
+        setFailed(true);
         return;
       }
+    }
+
+    if (stepNow >= 2 && captureStore.get().step1Sample == null) {
+      if (detectionData.bbox) {
+        const url = cropFacePortraitToDataURL(
+          video,
+          detectionData.bbox as any,
+          { targetSize: 320, quality: 0.92, scale: 1.5, yShiftRatio: -0.06 }
+        );
+        if (url) captureStore.setStep1Sample(url);
+      }
+    }
+
+    // --- ระหว่าง Step2 → แคปเฉพาะกลุ่มที่ถูกสุ่ม (พอร์ตเทรต) ---
+    if (stepNow === 2 && detectionData.bbox && selectedGroupsRef.current) {
+      const phaseNow = managers.current.state.subPhase as Phase;
+      const grp = groupOfPhase(phaseNow);
+      if (selectedGroupsRef.current.includes(grp)) {
+        const lastAt = lastCapAtRef.current[grp] ?? null;
+        if (shouldCapture(lastAt, CAP_INTERVAL_MS)) {
+          lastCapAtRef.current[grp] = performance.now();
+          const has = captureStore.get().movements[grp].length;
+          if (has < CAP_LIMIT_PER_GROUP) {
+            const url = cropFacePortraitToDataURL(
+              video,
+              detectionData.bbox as any,
+              { targetSize: 320, quality: 0.92, scale: 1.5, yShiftRatio: -0.06 }
+            );
+            if (url) captureStore.push(grp, url, CAP_LIMIT_PER_GROUP);
+          }
+        }
+      }
+    }
+
+    // บังคับให้ step2 อยู่ใน allowed เท่านั้น
+    if (stepNow === 2 && allowedPhasesRef.current.length > 0) {
+      const phaseNow = managers.current.state.subPhase as Phase;
+      if (!allowedPhasesRef.current.includes(phaseNow)) {
+        managers.current.state.subPhase = allowedPhasesRef.current[0];
+      }
+    }
+
+    // ==== ตรวจการ "เปลี่ยนเฟสจริง" เพื่อ mark ว่าจบกลุ่ม ====
+    if (stepNow === 2 && allowedPhasesRef.current.length > 0) {
+      const cur = managers.current.state.subPhase as Phase;
+      const prev = prevPhaseRef.current;
+
+      if (prev && prev !== cur) {
+        const prevGroup = groupOfPhase(prev);
+        const phasesOfPrev = MOVEMENT_TO_PHASES[prevGroup];
+        const isPrevLastOfGroup =
+          phasesOfPrev[phasesOfPrev.length - 1] === prev;
+        if (isPrevLastOfGroup) {
+          completedGroupsRef.current.add(prevGroup);
+          setCompletedGroups(Array.from(completedGroupsRef.current));
+        }
+      }
+      prevPhaseRef.current = cur;
+
+      // ครบสองกลุ่มแล้ว → DONE
+      if (completedGroupsRef.current.size >= 2) {
+        managers.current.state.currentStep = 3;
+        setDone(true);
+      }
+    }
+
+    // เผื่อกรณีเครื่องตั้ง currentStep=3 เอง (เรา sync UI ให้แน่ใจ)
+    if (managers.current.state.currentStep === 3 && !done) {
+      setDone(true);
     }
 
     // Update UI state
     setState((prev) => ({
       ...prev,
       step: managers.current.state.currentStep,
-      phase: stepNow === 2 ? managers.current.state.subPhase : "-",
+      phase:
+        stepNow === 2
+          ? (managers.current.state.subPhase as Phase)
+          : ("-" as const),
     }));
   }, []);
 
-  // ปิด session ปัจจุบันให้ "ปลอดภัยและเรียกซ้ำได้" (idempotent)
+  // ปิด session ปลอดภัย/idempotent
   const stopCurrentSession = useCallback(async () => {
-    if (closingRef.current) return; // กันปิดซ้ำ
+    if (closingRef.current) return;
     closingRef.current = true;
 
-    // ยกเลิก callback เก่าทั้งหมด
     sessionIdRef.current += 1;
 
     try {
-      // 1) หยุดกล้อง
       try {
         cameraRef.current?.stop?.();
       } catch {}
       cameraRef.current = null;
 
-      // 2) รอเฟรมค้างอยู่ให้จบ (สูงสุด ~1s)
       const t0 = performance.now();
       while (processingRef.current && performance.now() - t0 < 1000) {
         await new Promise((r) => setTimeout(r, 16));
       }
     } finally {
-      // 3) ปิด FaceMesh (กลืน error ถ้าโดนปิดซ้ำ)
       try {
         faceMeshRef.current?.close?.();
       } catch {}
       faceMeshRef.current = null;
 
       processingRef.current = false;
-      cleanupRef.current = null;
       closingRef.current = false;
     }
   }, []);
 
+  // Setup camera + FaceMesh
   const setupCamera = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
-
     const mySessionId = ++sessionIdRef.current;
 
     try {
@@ -223,14 +341,14 @@ export function useFaceMesh(
       });
 
       faceMesh.onResults((res: any) => {
-        if (sessionIdRef.current !== mySessionId) return; // ทิ้ง callback เก่า
+        if (sessionIdRef.current !== mySessionId) return;
         processDetectionResults(res);
       });
 
       const cam = new Camera(videoRef.current!, {
         onFrame: async () => {
           if (sessionIdRef.current !== mySessionId) return;
-          if (failedRef.current) return; // หยุดส่งเฟรมเมื่อ failed
+          if (failedRef.current) return;
           if (!videoRef.current) return;
           if (document.hidden) return;
           if (processingRef.current) return;
@@ -257,38 +375,41 @@ export function useFaceMesh(
         },
         audio: false,
       });
-
       await cam.start();
       setState((prev) => ({ ...prev, isReady: true }));
 
-      // cleanup ของ session นี้: เรียก stopCurrentSession เสมอ
-      const cleanup = () => {
+      return () => {
         void stopCurrentSession();
       };
-      cleanupRef.current = cleanup;
-      return cleanup;
     } catch (error) {
       console.error("Camera setup error:", error);
       throw error;
     }
   }, [processDetectionResults, stopCurrentSession]);
 
-  // รีสตาร์ตทั้ง flow: stop เดิม → สร้าง managers ใหม่ → reset ทุกอย่าง → setup ใหม่
+  // Try again → กลับไปเริ่มใหม่จาก Setup เสมอ
   const restartFromSetup = useCallback(async () => {
-    // 1) ปิด session เดิมให้หมด
     await stopCurrentSession();
 
-    // 2) สร้าง managers ใหม่ทั้งชุด (สำคัญมาก เพื่อรีเซ็ตเฟส/ตัวตั้งเวลาภายใน)
     initManagers();
-
-    // 3) รีเซ็ตค่าหน้าจอและตัวจับเวลา step
     setFailed(false);
+    setDone(false);
     setDetectionResult({ ...INITIAL_DET });
     setState({ step: 1, phase: "-", fps: 0, isReady: false });
-    prevStepRef.current = 0; // บังคับให้จับ "เปลี่ยนขั้น" เมื่อเริ่มอ่านผลครั้งแรก
-    stepStartAtRef.current = null; // เริ่มใหม่
 
-    // 4) เริ่มกล้อง/FaceMesh ใหม่ (จะเข้าสtep 1 เสมอ)
+    selectedGroupsRef.current = null;
+    allowedPhasesRef.current = [];
+    completedGroupsRef.current = new Set();
+    setSelectedGroups(null);
+    setCompletedGroups([]);
+    prevPhaseRef.current = null;
+
+    stepStartAtRef.current = null;
+    prevStepRef.current = 0;
+
+    lastCapAtRef.current = {};
+    captureStore.clear();
+
     try {
       await setupCamera();
     } catch (e) {
@@ -296,7 +417,6 @@ export function useFaceMesh(
     }
   }, [setupCamera, stopCurrentSession, initManagers]);
 
-  // (ออปชัน) คงไว้กรณีคุณใช้ที่อื่น
   const resetStep2 = useCallback(() => {
     managers.current.state.reset();
     managers.current.ema.reset();
@@ -310,5 +430,9 @@ export function useFaceMesh(
 
     failed,
     restartFromSetup,
+
+    done,
+    selectedGroups,
+    completedGroups,
   };
 }

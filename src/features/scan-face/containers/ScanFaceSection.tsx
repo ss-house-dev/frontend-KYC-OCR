@@ -6,43 +6,35 @@ const FailModal = dynamic(() => import("../components/FailModal"), { ssr: false 
 import React, { useRef, useEffect } from "react";
 import { useFaceMesh } from "../hooks/useFaceMesh";
 import { VideoCanvas } from "../components/VideoCanvas";
-import { StatusBar } from "../components/StatusBar";
-import { CONFIG } from "../configs/constant";
-
+import { useRouter } from "next/navigation";
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const router = useRouter();
 
   const {
-    state,
-    detectionResult,
-    setupCamera,
-    failed,
-    restartFromSetup,
+    state, detectionResult, setupCamera,
+    failed, restartFromSetup,
+    done,
   } = useFaceMesh(videoRef, canvasRef);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
-
-    const initCamera = async () => {
-      try {
-        cleanup = await setupCamera();
-      } catch (error) {
-        console.error("Failed to initialize camera:", error);
-        alert(
-          "ไม่สามารถเปิดกล้องได้: " +
-            (error instanceof Error ? error.message : String(error))
-        );
+    (async () => {
+      try { cleanup = await setupCamera(); } catch (e) {
+        console.error("Failed to initialize camera:", e);
+        alert("ไม่สามารถเปิดกล้องได้");
       }
-    };
-
-    initCamera();
-
-    return () => {
-      if (cleanup) cleanup();
-    };
+    })();
+    return () => { if (cleanup) cleanup(); };
   }, [setupCamera]);
+
+  useEffect(() => {
+    if (done) {
+      router.push("/face-verification");
+    }
+  }, [done, router]);
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
@@ -55,10 +47,6 @@ export default function ScanFaceSection() {
           videoElement={videoRef.current || undefined}
         />
       </div>
-
-      {/* <StatusBar state={state} /> */}
-
-      {/* กด Try again → หยุด session เก่าและเริ่มใหม่ตั้งแต่ Setup */}
       <FailModal open={failed} onRetry={restartFromSetup} />
     </div>
   );
