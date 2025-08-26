@@ -1,4 +1,3 @@
-// app/face-verification/page.tsx
 "use client";
 
 import React from "react";
@@ -56,7 +55,6 @@ export default function FaceVerificationPage() {
 
         <button
           onClick={() => {
-            // TODO: ส่ง data ไป backend ตามรูปแบบที่ต้องการ
             alert("พร้อมส่งภาพให้ backend แล้ว");
           }}
           className="mt-4 w-full rounded-2xl px-5 py-3 text-white text-[15px] font-medium bg-[#1766FF] hover:bg-[#155BE6] transition"

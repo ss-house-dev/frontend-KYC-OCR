@@ -122,7 +122,7 @@ export function useFaceMesh(
 
   /* ===== แคปภาพ ===== */
   const lastCapAtRef = useRef<Partial<Record<MovementGroup, number>>>({});
-  const CAP_INTERVAL_MS = 500; // หน่วงเวลาอย่างน้อย 400ms
+  const CAP_INTERVAL_MS = 500; // หน่วง 500ms
   const CAP_LIMIT_PER_GROUP = 10;
 
   const processDetectionResults = useCallback((results: any) => {
@@ -271,7 +271,7 @@ export function useFaceMesh(
       }
     }
 
-    // เผื่อกรณีเครื่องตั้ง currentStep=3 เอง (เรา sync UI ให้แน่ใจ)
+    // เผื่อกรณีเครื่องตั้ง currentStep=3 เอง 
     if (managers.current.state.currentStep === 3 && !done) {
       setDone(true);
     }

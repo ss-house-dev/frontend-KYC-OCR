@@ -1,4 +1,3 @@
-// features/scan-face/utils/capture.ts
 export type BBox = [number, number, number, number]; // x, y, w, h (พิกัดจากเฟรมจริงของวิดีโอ)
 
 export function cropFaceToDataURL(
@@ -35,7 +34,7 @@ export function cropFaceToDataURL(
   return off.toDataURL("image/jpeg", quality);
 }
 
-/** ครอปพอร์ตเทรต: ขยายเป็นสี่เหลี่ยมจาก bbox + เลื่อนขึ้นเล็กน้อย ให้ได้เฟรม “ประมาณรูปตัวอย่าง” */
+/** ครอปพอร์ตเทรต: ขยายเป็นสี่เหลี่ยมจาก bbox + เลื่อนขึ้นเล็กน้อย ให้ได้เฟรม */
 export function cropFacePortraitToDataURL(
   video: HTMLVideoElement,
   bbox: BBox,
@@ -60,7 +59,6 @@ export function cropFacePortraitToDataURL(
   const cx = x + w / 2;
   const cy = y + h / 2;
 
-  // เลื่อนขึ้นเล็กน้อยเพื่อเก็บหน้าผากมากขึ้น (ตามตัวอย่าง)
   const yShift = Math.round(side * yShiftRatio);
 
   const left = Math.round(cx - side / 2);
