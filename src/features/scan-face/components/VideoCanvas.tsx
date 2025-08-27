@@ -118,11 +118,11 @@ function drawStep2(
   if (!detection.landmarks || state.phase === "-") return;
 
   // จุด landmark ปิดไว้
-  if (SHOW_OVERLAY) {
-    if (CONFIG.LANDMARKS.SHOW_IN_STEP2) {
-      drawLandmarks(ctx, detection.landmarks, 1, "white");
-    }
 
+  if (CONFIG.LANDMARKS.SHOW_IN_STEP2) {
+    drawLandmarks(ctx, detection.landmarks, 1, "white");
+  }
+  if (SHOW_OVERLAY) {
     // ปิดbanner
     const instruction = Step2Validator.getPhaseInstruction(state.phase as any);
     banner(ctx, instruction, 120);
@@ -142,7 +142,7 @@ function drawStep2(
         ctx.restore();
       }
     }
-    
+
     // ข้อความเฉพาะ phase ปาก
     if (state.phase === "mouth" && detection.marValue !== null) {
       banner(ctx, "Now, please close your mouth", 150);

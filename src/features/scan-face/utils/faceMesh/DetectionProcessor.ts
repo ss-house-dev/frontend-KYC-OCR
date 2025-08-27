@@ -34,7 +34,6 @@ export class DetectionProcessor {
     const ctx = canvas.getContext("2d")!;
 
     return faces.map((landmarks) => {
-      // โค้ดเดิมสำหรับหน้าเดียว
       const bbox = FaceDetector.getBoundingBox(
         landmarks,
         canvas.width,
@@ -80,6 +79,7 @@ export class DetectionProcessor {
   private updatePoseZeros(rawYaw: number, rawPitch: number) {
     const { YAW_ZERO_UPDATE_BAND, PITCH_ZERO_UPDATE_BAND } = CONFIG.THRESHOLDS;
 
+    // อัพเดต zero position เฉพาะเมื่อหน้าอยู่ใกล้กลาง
     if (
       !this.ema.yawZero.value ||
       Math.abs(rawYaw - this.ema.yawZero.value) <= YAW_ZERO_UPDATE_BAND

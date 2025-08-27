@@ -49,11 +49,12 @@ export default function ScanFaceSection() {
 
   // ใช้ Step1Validator ตรวจสอบใบหน้า แล้วเปลี่ยนกรอบ
   useEffect(() => {
+    const pattern = [100, 50, 100, 200];
     // ถ้าไม่มีใบหน้าเลย
     if (detectionResults.length === 0) {
       setFrameSrc("/scan-face/frame-face-red.svg");
       setStep1Valid(false);
-      if ("vibrate" in navigator) navigator.vibrate(300);
+      if ("vibrate" in navigator) navigator.vibrate(pattern);
       return;
     }
 
@@ -72,7 +73,7 @@ export default function ScanFaceSection() {
 
     // สั่นเมื่อ invalid
     if (!validation.isValid && navigator.vibrate) {
-      navigator.vibrate(300);
+      navigator.vibrate(pattern);
     }
   }, [detectionResults]);
 

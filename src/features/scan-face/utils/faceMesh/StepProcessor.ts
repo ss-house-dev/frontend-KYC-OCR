@@ -15,7 +15,6 @@ export class StepProcessor {
     canvasWidth: number,
     canvasHeight: number
   ) {
-    // เช็คจำนวนหน้าที่เจอ
     const validation = Step1Validator.validateStep1(
       detections,
       canvasWidth,
