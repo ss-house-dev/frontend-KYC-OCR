@@ -22,7 +22,7 @@ export function CaptureButton({ onClick, isReady }: CaptureButtonProps) {
         className={`absolute inset-0 rounded-full pointer-events-none
     ${
       isReady
-        ? "border border-white ring-1 ring-white/40 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.6)]"
+        ? "border-white border-3"
         : "border border-white/40 ring-1 ring-white/60 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.6)]"
     }`}
       />
