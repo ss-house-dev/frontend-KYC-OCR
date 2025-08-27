@@ -17,44 +17,28 @@ export default function ScanOverlayHUD({
   detectionResults,
   visible = true,
 }: Props) {
-  const { topMsg, midMsg, bottomMsg } = useMemo(() => {
-    let topMsg: string | null = null;
-    let midMsg: string | null = null;
-    let bottomMsg: string | null = null;
-
+  const message = useMemo(() => {
     if (state.step === 1) {
       const validation = Step1Validator.validateStep1(
         detectionResults,
         CONFIG.DISPLAY.WIDTH,
         CONFIG.DISPLAY.HEIGHT
       );
-      topMsg = validation.message ?? null;
+      return validation.message ?? null;
     } else if (state.step === 2) {
-      midMsg = Step2Validator.getPhaseInstruction(state.phase as any) ?? null;
+      return Step2Validator.getPhaseInstruction(state.phase as any) ?? null;
     } else if (state.step === 3) {
-      topMsg = "DONE";
+      return " ";
     }
-    return { topMsg, midMsg, bottomMsg };
+    return null;
   }, [state, detectionResults]);
 
   return (
     <>
       <OverlayBanner
-        text={topMsg}
-        y={80}
-        className="translate-y-8"
-        visible={visible}
-      />
-      <OverlayBanner
-        text={midMsg}
+        text={message}
         y={120}
-        className="translate-y-8"
-        visible={visible}
-      />
-      <OverlayBanner
-        text={bottomMsg}
-        y={150}
-        className="translate-y-8"
+        className="translate-y-4"
         visible={visible}
       />
     </>
