@@ -24,7 +24,7 @@ export default function Home() {
       <div className="w-full max-w-md bg-white min-h-screen">
         <header className="relative flex items-center justify-center p-5 border-b border-gray-200">
           <Link
-            href="/id-accept"
+            href="/scan-id-card"
             aria-label="Back"
             className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-lg
              focus-visible:outline focus-visible:outline-2
