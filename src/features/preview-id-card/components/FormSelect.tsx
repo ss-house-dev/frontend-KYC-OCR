@@ -14,9 +14,11 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Label } from "@/components/ui/label";
+
 interface FormSelectProps<TFieldValues extends FieldValues> {
   fieldName: Path<TFieldValues>;
   label: string;
@@ -38,6 +40,9 @@ const FormSelect = <TFieldValues extends FieldValues>({
     { value: "นางสาว", label: "นางสาว" },
   ];
 
+  const fieldError = errors[fieldName];
+  const hasError = !!fieldError;
+
   return (
     <div className="space-y-2">
       <Label htmlFor={fieldName}>
@@ -47,44 +52,61 @@ const FormSelect = <TFieldValues extends FieldValues>({
       <Controller
         name={fieldName}
         control={control}
+        defaultValue={undefined as any} 
         rules={validationRules}
-        render={({ field }) => {
+        render={({ field, fieldState }) => {
           const selectedTitle = titleThai.find(
             (title) => title.value === field.value
           );
 
           return (
-            <Select
-              value={field.value || ""}
-              onValueChange={(value) => field.onChange(value)}
-            >
-              <SelectTrigger>
-                {selectedTitle ? (
-                  <div className="flex items-center gap-4">
-                    <span className="font-medium">{selectedTitle.label}</span>
-                  </div>
-                ) : (
-                  <span className="text-gray-500">Select your name title</span>
+            <>
+              <Select
+                value={field.value || ""}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  setTimeout(() => field.onBlur(), 0);
+                }}
+              >
+                <SelectTrigger
+                  className={
+                    hasError ? "border-red-500 focus:border-red-500" : ""
+                  }
+                >
+                  {selectedTitle ? (
+                    <div className="flex items-center gap-4">
+                      <span className="font-medium">{selectedTitle.label}</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Select your name title" />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {titleThai.map((title) => (
+                    <SelectItem key={title.value} value={title.value}>
+                      <SelectPrimitive.ItemText>
+                        {title.label}
+                      </SelectPrimitive.ItemText>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* แสดงข้อความ error */}
+              <div className="text-xs text-muted-foreground min-h-[1rem]">
+                {(fieldError || fieldState.error) && (
+                  <span className="text-destructive text-sm">
+                    {
+                      (fieldError?.message ||
+                        fieldState.error?.message) as string
+                    }
+                  </span>
                 )}
-              </SelectTrigger>
-              <SelectContent>
-                {titleThai.map((title) => (
-                  <SelectItem key={title.value} value={title.value}>
-                    <SelectPrimitive.ItemText>
-                      {title.label}
-                    </SelectPrimitive.ItemText>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              </div>
+            </>
           );
         }}
       />
-      {errors[fieldName] && (
-        <p className="text-red-500 text-sm mt-1">
-          {errors[fieldName]?.message as string}
-        </p>
-      )}
     </div>
   );
 };
