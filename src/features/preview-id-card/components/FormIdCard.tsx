@@ -297,11 +297,10 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               required: "This field is needed.",
               maxLength: {
                 value: 200,
-                message: "Address must be 200 characters or less",
+                message: "",
               },
             }}
             render={({ field, fieldState }) => {
-              // ตรวจสอบว่ามี error หรือไม่
               const fieldError = errors.address;
               const hasError = !!(fieldError || fieldState.error);
 
