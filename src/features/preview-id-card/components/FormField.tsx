@@ -33,6 +33,9 @@ const FormField = <TFieldValues extends FieldValues>({
   ignoreChars,
   ...rest
 }: FormFieldProps<TFieldValues>) => {
+  const fieldError = errors[fieldName];
+  const hasError = !!fieldError;
+
   const maxLen =
     (validationRules?.maxLength &&
       typeof validationRules.maxLength === "object" &&
@@ -40,11 +43,11 @@ const FormField = <TFieldValues extends FieldValues>({
     maxLength;
 
   return (
-<Controller
+    <Controller
       name={fieldName}
       control={control}
       rules={validationRules}
-      render={({ field }) => {
+      render={({ field , fieldState}) => {
         const val = field.value || "";
         const charCount =
           typeof val === "string"
@@ -59,7 +62,7 @@ const FormField = <TFieldValues extends FieldValues>({
             <div className="flex justify-between items-center">
               <Label htmlFor={fieldName} className="text-sm">
                 {label}
-                  <span className="text-red-500 ml-[1px]">*</span>
+                <span className="text-red-500 ml-[1px]">*</span>
               </Label>
             </div>
 
@@ -72,6 +75,11 @@ const FormField = <TFieldValues extends FieldValues>({
                 field.onChange(inputVal);
               }}
               {...rest}
+              className={`${
+                hasError || fieldState.error 
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500" 
+                  : ""
+              }`}
             />
             <div className="text-xs text-muted-foreground min-h-[1rem]">
               {errors[fieldName] ? (
@@ -79,7 +87,11 @@ const FormField = <TFieldValues extends FieldValues>({
                   {errors[fieldName]?.message as string}
                 </span>
               ) : (
-                maxLen && <span>{charCount}/{maxLen}</span>
+                maxLen && (
+                  <span>
+                    {charCount}/{maxLen}
+                  </span>
+                )
               )}
             </div>
           </div>

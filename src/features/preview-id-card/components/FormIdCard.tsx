@@ -196,7 +196,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             name={"titleThai" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "This field is needed.",
+              required: "This field is needed",
             }}
             render={({ field }) => (
               <FormSelect
@@ -205,7 +205,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 control={control}
                 errors={errors}
                 validationRules={{
-                  required: "This field is needed.",
+                  required: "This field is needed",
                 }}
               />
             )}
@@ -243,7 +243,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             name={"lastNameThai" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "This field is needed",
+              required: "This field is needed.",
               maxLength: 50,
               pattern: {
                 value: /^[\u0E00-\u0E7F]+$/,
@@ -294,33 +294,47 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             name={"address" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "This field is needed",
+              required: "This field is needed.",
               maxLength: {
                 value: 200,
                 message: "Address must be 200 characters or less",
               },
             }}
-            render={({ field }) => (
-              <>
-                <Textarea
-                  id="address"
-                  placeholder="Enter your Address"
-                  maxLength={200}
-                  className="h-24 resize-y mt-1 mb-1 bg-muted"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-                <div className="text-sm text-muted-foreground min-h-[1rem]">
-                  {errors.address ? (
-                    <span className="text-destructive">
-                      {errors.address.message as string}
-                    </span>
-                  ) : (
-                    <span>{field.value ? field.value.length : 0} / 200</span>
-                  )}
-                </div>
-              </>
-            )}
+            render={({ field, fieldState }) => {
+              // ตรวจสอบว่ามี error หรือไม่
+              const fieldError = errors.address;
+              const hasError = !!(fieldError || fieldState.error);
+
+              return (
+                <>
+                  <Textarea
+                    id="address"
+                    placeholder="Enter your Address"
+                    maxLength={200}
+                    className={`h-24 resize-y mt-1 mb-1 bg-muted ${
+                      hasError
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : ""
+                    }`}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                  <div className="text-sm text-muted-foreground min-h-[1rem]">
+                    {hasError ? (
+                      <span className="text-destructive">
+                        {
+                          (fieldError?.message ||
+                            fieldState.error?.message) as string
+                        }
+                      </span>
+                    ) : (
+                      <span>{field.value ? field.value.length : 0} / 200</span>
+                    )}
+                  </div>
+                </>
+              );
+            }}
           />
         </div>
       </div>

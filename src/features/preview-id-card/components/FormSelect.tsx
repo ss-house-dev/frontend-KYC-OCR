@@ -40,7 +40,6 @@ const FormSelect = <TFieldValues extends FieldValues>({
     { value: "นางสาว", label: "นางสาว" },
   ];
 
-  // ตรวจสอบว่ามี error สำหรับ field นี้หรือไม่
   const fieldError = errors[fieldName];
   const hasError = !!fieldError;
 
@@ -68,8 +67,6 @@ const FormSelect = <TFieldValues extends FieldValues>({
                   field.onChange(value);
                   setTimeout(() => field.onBlur(), 0);
                 }}
-                // เพิ่ม class สำหรับแสดง error state
-                // className={hasError ? "border-red-500" : ""}
               >
                 <SelectTrigger
                   className={
