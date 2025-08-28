@@ -192,19 +192,30 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         </div>
 
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
-          <FormSelect
-            fieldName={"titleThai" as Path<TFieldValues>}
-            label="Name Title"
+          <Controller
+            name={"titleThai" as Path<TFieldValues>}
             control={control}
-            errors={errors}
-            validationRules={{ required: "This field is needed." }}
+            rules={{
+              required: "This field is needed.",
+            }}
+            render={({ field }) => (
+              <FormSelect
+                fieldName={"titleThai" as Path<TFieldValues>}
+                label="Name Title"
+                control={control}
+                errors={errors}
+                validationRules={{
+                  required: "This field is needed.",
+                }}
+              />
+            )}
           />
 
           <Controller
             name={"firstNameThai" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "This field is needed",
+              required: "This field is needed.",
               maxLength: {
                 value: 50,
                 message: "Cannot exceed 50 characters",
@@ -319,9 +330,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           type="submit"
           disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            canSubmit
-              ? "bg-[#2152b6]"
-              : "bg-gray-400"
+            canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
           Confirm
