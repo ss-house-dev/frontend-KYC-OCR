@@ -63,8 +63,9 @@ export function useFaceMesh(
     failedRef.current = failed;
   }, [failed]);
 
-  const [detectionResult, setDetectionResult] =
-    useState<DetectionResult>(INITIAL_DET);
+  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>([
+    INITIAL_DET,
+  ]);
 
   // จบครบ 2 กลุ่ม -> ให้ container พาไปหน้า face-verification
   const [done, setDone] = useState(false);
@@ -138,29 +139,27 @@ export function useFaceMesh(
     if (fps !== null) setState((prev) => ({ ...prev, fps }));
 
     // Detection
-    const landmarks: LM[] | null = results.multiFaceLandmarks?.[0] || null;
-    let detectionData: DetectionResult;
-    if (landmarks) {
-      detectionData = managers.current.detector.processLandmarks(
-        landmarks,
-        canvas
-      );
-    } else {
-      managers.current.ema.boxEma.reset();
-      detectionData = { ...INITIAL_DET };
-    }
-    setDetectionResult(detectionData);
+    const multiLandmarks: LM[][] = results.multiFaceLandmarks || [];
+    const detectionResults: DetectionResult[] = multiLandmarks.length
+      ? managers.current.detector.processLandmarks(multiLandmarks, canvas)
+      : [{ ...INITIAL_DET }]; // เก็บ array ว่างไว้หรือ default object
 
-    // Step process
+    setDetectionResults(detectionResults);
+
+    // Step process - ใช้เฉพาะใบหน้าแรกสำหรับ step processing
     const { currentStep } = managers.current.state;
+    const primaryFace = detectionResults[0] || { ...INITIAL_DET };
+
     if (currentStep === 1) {
       managers.current.stepProcessor.processStep1(
-        detectionData,
+        detectionResults,
         canvas.width,
         canvas.height
       );
-    } else if (currentStep === 2) {
-      managers.current.stepProcessor.processStep2(detectionData);
+      console.log("Face count:", detectionResults.length);
+    } else if (currentStep === 2 && detectionResults.length === 1) {
+      // Step 2 ต้องมีใบหน้าเดียวเท่านั้น
+      managers.current.stepProcessor.processStep2(primaryFace);
     }
 
     // เปลี่ยนขั้น → เริ่มจับเวลาใหม่ (เฉพาะ 1/2)
@@ -208,10 +207,10 @@ export function useFaceMesh(
     }
 
     if (stepNow >= 2 && captureStore.get().step1Sample == null) {
-      if (detectionData.bbox) {
+      if (detectionResults[0].bbox) {
         const url = cropFacePortraitToDataURL(
           video,
-          detectionData.bbox as any,
+          detectionResults[0].bbox as any,
           { targetSize: 320, quality: 0.92, scale: 1.5, yShiftRatio: -0.06 }
         );
         if (url) captureStore.setStep1Sample(url);
@@ -219,7 +218,11 @@ export function useFaceMesh(
     }
 
     // --- ระหว่าง Step2 → แคปเฉพาะกลุ่มที่ถูกสุ่ม (พอร์ตเทรต) ---
-    if (stepNow === 2 && detectionData.bbox && selectedGroupsRef.current) {
+    if (
+      stepNow === 2 &&
+      detectionResults[0].bbox &&
+      selectedGroupsRef.current
+    ) {
       const phaseNow = managers.current.state.subPhase as Phase;
       const grp = groupOfPhase(phaseNow);
       if (selectedGroupsRef.current.includes(grp)) {
@@ -230,7 +233,7 @@ export function useFaceMesh(
           if (has < CAP_LIMIT_PER_GROUP) {
             const url = cropFacePortraitToDataURL(
               video,
-              detectionData.bbox as any,
+              detectionResults[0].bbox as any,
               { targetSize: 320, quality: 0.92, scale: 1.5, yShiftRatio: -0.06 }
             );
             if (url) captureStore.push(grp, url, CAP_LIMIT_PER_GROUP);
@@ -271,7 +274,7 @@ export function useFaceMesh(
       }
     }
 
-    // เผื่อกรณีเครื่องตั้ง currentStep=3 เอง 
+    // เผื่อกรณีเครื่องตั้ง currentStep=3 เอง
     if (managers.current.state.currentStep === 3 && !done) {
       setDone(true);
     }
@@ -333,11 +336,11 @@ export function useFaceMesh(
       faceMeshRef.current = faceMesh;
 
       faceMesh.setOptions({
-        maxNumFaces: 1,
+        maxNumFaces: 3,
         refineLandmarks: true,
         selfieMode: CONFIG.CAMERA.MIRRORED_INPUT,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5,
+        minDetectionConfidence: 0.3,
+        minTrackingConfidence: 0.3,
       });
 
       faceMesh.onResults((res: any) => {
@@ -394,7 +397,7 @@ export function useFaceMesh(
     initManagers();
     setFailed(false);
     setDone(false);
-    setDetectionResult({ ...INITIAL_DET });
+    setDetectionResults([{ ...INITIAL_DET }]);
     setState({ step: 1, phase: "-", fps: 0, isReady: false });
 
     selectedGroupsRef.current = null;
@@ -424,7 +427,7 @@ export function useFaceMesh(
 
   return {
     state,
-    detectionResult,
+    detectionResults,
     setupCamera,
     resetStep2,
 
