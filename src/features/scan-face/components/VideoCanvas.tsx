@@ -118,11 +118,11 @@ function drawStep2(
   if (!detection.landmarks || state.phase === "-") return;
 
   // จุด landmark ปิดไว้
-
-  if (CONFIG.LANDMARKS.SHOW_IN_STEP2) {
-    drawLandmarks(ctx, detection.landmarks, 1, "white");
-  }
   if (SHOW_OVERLAY) {
+    if (CONFIG.LANDMARKS.SHOW_IN_STEP2) {
+      drawLandmarks(ctx, detection.landmarks, 1, "white");
+    }
+
     // ปิดbanner
     const instruction = Step2Validator.getPhaseInstruction(state.phase as any);
     banner(ctx, instruction, 120);
