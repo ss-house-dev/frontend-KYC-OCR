@@ -14,6 +14,7 @@ import ProgressLoading from "../../../components/ProgressLoading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
+import FormLaserId from "./FormLaserId";
 
 const IconInfo = () => (
   <svg
@@ -162,7 +163,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               pattern: /^[A-Za-z]{2}\d-\d{7}-\d{2}$/,
             }}
             render={({ field }) => (
-              <FormField
+              <FormLaserId
                 fieldName={"laserId" as Path<TFieldValues>}
                 label="Laser ID"
                 control={control}
@@ -170,21 +171,21 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 type="text"
                 value={field.value}
                 onChange={(e) => {
-                  let value = e.target.value.replace(/-/g, "");
-                  setLaserCharCount(value.length);
+                  const raw = e.target.value.replace(/-/g, "");
+                  const raw12 = raw.slice(0, 12);
                   let formatted = "";
-                  if (value.length > 0)
-                    formatted +=
-                      value.slice(0, 3) + (value.length > 3 ? "-" : "");
-                  if (value.length > 3)
-                    formatted +=
-                      value.slice(3, 10) + (value.length > 10 ? "-" : "");
-                  if (value.length > 10) formatted += value.slice(10, 12);
-                  e.target.value = formatted;
-                  field.onChange(e);
+                  if (raw12.length > 0) {
+                    formatted += raw12.slice(0, 3); 
+                    if (raw12.length > 3) formatted += "-" + raw12.slice(3, 10); 
+                    if (raw12.length > 10)
+                      formatted += "-" + raw12.slice(10, 12); 
+                  }
+                  setLaserCharCount(raw12.length);
+                  field.onChange(formatted);
                 }}
                 maxLength={12}
                 ignoreChars={["-"]}
+                counterValue={laserCharCount}
                 errors={errors}
               />
             )}
