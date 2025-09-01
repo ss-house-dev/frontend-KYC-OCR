@@ -51,7 +51,6 @@ const FormField = <TFieldValues extends FieldValues>({
       rules={validationRules}
       render={({ field, fieldState }) => {
         const val = field.value || "";
-        // ฟังก์ชันนับแบบภายใน (สำรอง)
         const escapeForCharClass = (s: string) =>
           s.replace(/[\\^$.*+?()[\]{}|/-]/g, "\\$&");
 
@@ -99,11 +98,6 @@ const FormField = <TFieldValues extends FieldValues>({
                   target: { ...e.target, value: formatted },
                 } as React.ChangeEvent<HTMLInputElement>);
               }}
-              className={`${
-                hasError || fieldState.error
-                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                  : ""
-              }`}
             />
             <div className="text-xs text-muted-foreground min-h-[1rem]">
               <span>{(val ?? "").toString().replace(/-/g, "").length}/12</span>
