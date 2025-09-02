@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface FormSelectProps<TFieldValues extends FieldValues> {
   fieldName: Path<TFieldValues>;
@@ -52,7 +53,7 @@ const FormSelect = <TFieldValues extends FieldValues>({
       <Controller
         name={fieldName}
         control={control}
-        defaultValue={undefined as any} 
+        defaultValue={undefined as any}
         rules={validationRules}
         render={({ field, fieldState }) => {
           const selectedTitle = titleThai.find(
@@ -62,25 +63,22 @@ const FormSelect = <TFieldValues extends FieldValues>({
           return (
             <>
               <Select
-                value={field.value || ""}
+                value={field.value || undefined}
                 onValueChange={(value) => {
                   field.onChange(value);
                   setTimeout(() => field.onBlur(), 0);
                 }}
               >
                 <SelectTrigger
-                  className={
-                    hasError ? "border-red-500 focus:border-red-500" : ""
-                  }
-                >
-                  {selectedTitle ? (
-                    <div className="flex items-center gap-4">
-                      <span className="font-medium">{selectedTitle.label}</span>
-                    </div>
-                  ) : (
-                    <SelectValue placeholder="Select your name title" />
+                  className={cn(
+                    hasError ? "border-red-500 focus:border-red-500" : "",
+                    "text-gray-900 font-medium",
+                    "data-[placeholder]:text-muted-foreground bg-muted data-[placeholder]:font-normal"
                   )}
+                >
+                  <SelectValue placeholder="Select your name title" />
                 </SelectTrigger>
+
                 <SelectContent>
                   {titleThai.map((title) => (
                     <SelectItem key={title.value} value={title.value}>

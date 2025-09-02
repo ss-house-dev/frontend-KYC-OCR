@@ -229,7 +229,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"firstNameThai" as Path<TFieldValues>}
-                label="First name"
+                label="First name (TH)"
                 placeholder="Enter your First name"
                 type="text"
                 value={field.value}
@@ -254,7 +254,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"lastNameThai" as Path<TFieldValues>}
-                label="Last name"
+                label="Last name (TH)"
                 placeholder="Enter your Last name"
                 type="text"
                 control={control}
@@ -264,7 +264,61 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               />
             )}
           />
+{/* ------------------ name eng ------------------ */}
+{/* edit feild name */}
+          <Controller
+            name={"firstNameThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "This field is needed.",
+              maxLength: {
+                value: 50,
+                message: "Cannot exceed 50 characters",
+              },
+              pattern: {
+                value: /^[A-Za-z]+$/,
+                message: "Invalid format. Please enter the correct characters.",
+              },
+            }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"firstNameThai" as Path<TFieldValues>}
+                label="First name (ENG)"
+                placeholder="Enter your First name"
+                type="text"
+                value={field.value}
+                control={control}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
 
+          <Controller
+            name={"lastNameThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "This field is needed.",
+              maxLength: 50,
+              pattern: {
+                value: /^[A-Za-z]+$/,
+                message: "Invalid format. Please enter the correct characters.",
+              },
+            }}
+            render={({ field }) => (
+              <FormField
+                fieldName={"lastNameThai" as Path<TFieldValues>}
+                label="Last name (ENG)"
+                placeholder="Enter your Last name"
+                type="text"
+                control={control}
+                value={field.value}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
+{/* ------------------ name eng ------------------ */}
           <Controller
             name={"birthDateThai" as Path<TFieldValues>}
             control={control}
