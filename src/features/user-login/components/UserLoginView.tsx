@@ -42,7 +42,7 @@ export default function UserLoginView({
           </button>
         </form>
 
-        <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
