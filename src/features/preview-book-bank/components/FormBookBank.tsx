@@ -118,7 +118,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
             name={"accountNameThai" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
+              required: "This field is needed.",
               pattern: {
                 value: /^[\u0E00-\u0E7F ]+$/,
                 message: "Invalid format. Please enter the correct characters.",
@@ -127,7 +127,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormFieldBookBank
                 fieldName={"accountNameThai" as Path<TFieldValues>}
-                label="Account Name"
+                label="Account Name (TH)"
                 placeholder="Enter Name"
                 type="text"
                 value={field.value}
@@ -136,6 +136,32 @@ const FormBookBank = <TFieldValues extends FieldValues>({
               />
             )}
           />
+
+{/* ------------------ name eng ------------------ */}
+{/* edit feild name */}
+          {/* <Controller
+            name={"accountNameThai" as Path<TFieldValues>}
+            control={control}
+            rules={{
+              required: "This field is needed.",
+              pattern: {
+                value: /^[A-Za-z]+$/,
+                message: "Invalid format. Please enter the correct characters.",
+              },
+            }}
+            render={({ field }) => (
+              <FormFieldBookBank
+                fieldName={"accountNameThai" as Path<TFieldValues>}
+                label="Account Name (ENG)"
+                placeholder="Enter Name"
+                type="text"
+                value={field.value}
+                control={control}
+                errors={errors}
+              />
+            )}
+          /> */}
+{/* ------------------ name eng ------------------ */}
 
           {/* === ช่อง Account No. === */}
           <Controller
@@ -172,9 +198,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           type="submit"
           disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            canSubmit
-              ? "bg-[#2152b6]"
-              : "bg-gray-400"
+            canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
           Confirm

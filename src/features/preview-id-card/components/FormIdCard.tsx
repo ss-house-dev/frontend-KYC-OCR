@@ -266,7 +266,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           />
 {/* ------------------ name eng ------------------ */}
 {/* edit feild name */}
-          <Controller
+          {/* <Controller
             name={"firstNameThai" as Path<TFieldValues>}
             control={control}
             rules={{
@@ -317,7 +317,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 errors={errors}
               />
             )}
-          />
+          /> */}
 {/* ------------------ name eng ------------------ */}
           <Controller
             name={"birthDateThai" as Path<TFieldValues>}

@@ -46,6 +46,7 @@ export default function BookBankPage() {
     register,
     control,
     setError,
+    trigger,
     formState: { errors, isValid },
   } = useForm<BookBankFormValues>({
     defaultValues: defaultFormValues,
@@ -62,20 +63,35 @@ export default function BookBankPage() {
         accountNameThai: ocrData.accountNameThai || "",
         accountNumber: ocrData.accountNumber || "",
       });
-      // set API errors into form
-      (ocrData.errors || []).forEach((err) => {
-        setError(err.field as Path<BookBankFormValues>, {
-          type: "manual",
-          message: err.message,
+
+      setTimeout(async () => {
+        // ตรวจสอบและ set error สำหรับ field ที่ required แต่ไม่มีค่า
+        const requiredFields = [
+          { field: "branchNameThai", value: ocrData.branchNameThai },
+          { field: "accountNameThai", value: ocrData.accountNameThai },
+          { field: "accountNumber", value: ocrData.accountNumber },
+        ];
+
+        for (const { field, value } of requiredFields) {
+          if (!value || value.trim() === "") {
+            await trigger(field as Path<BookBankFormValues>);
+          }
+        }
+
+        // set API errors ที่มาจากระบบ OCR
+        (ocrData.errors || []).forEach((err) => {
+          setError(err.field as Path<BookBankFormValues>, {
+            type: "manual",
+            message: err.message,
+          });
         });
-      });
+      }, 100);
     },
     // onError: (err) => {
     //   console.error("OCR upload failed:", err);
     //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
     // },
   });
-
 
   useEffect(() => {
     const processImageOnMount = async () => {
@@ -86,7 +102,7 @@ export default function BookBankPage() {
         return;
       }
       if (dataUrl) setPreviewImage(dataUrl);
-      
+
       if (dataUrl) {
         try {
           const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
