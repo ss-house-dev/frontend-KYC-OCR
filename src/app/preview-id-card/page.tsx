@@ -34,7 +34,7 @@ export default function Home() {
             <span className="sr-only">Back</span>
           </Link>
           <h1 className="text-xl font-bold text-[#0F2D73]">
-            Verify Your Identity
+            ID Card Verification
           </h1>
         </header>
         <main>
