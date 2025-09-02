@@ -14,6 +14,7 @@ import ProgressLoading from "../../../components/ProgressLoading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
+import FormLaserId from "./FormLaserId";
 
 const IconInfo = () => (
   <svg
@@ -162,7 +163,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               pattern: /^[A-Za-z]{2}\d-\d{7}-\d{2}$/,
             }}
             render={({ field }) => (
-              <FormField
+              <FormLaserId
                 fieldName={"laserId" as Path<TFieldValues>}
                 label="Laser ID"
                 control={control}
@@ -170,21 +171,21 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 type="text"
                 value={field.value}
                 onChange={(e) => {
-                  let value = e.target.value.replace(/-/g, "");
-                  setLaserCharCount(value.length);
+                  const raw = e.target.value.replace(/-/g, "");
+                  const raw12 = raw.slice(0, 12);
                   let formatted = "";
-                  if (value.length > 0)
-                    formatted +=
-                      value.slice(0, 3) + (value.length > 3 ? "-" : "");
-                  if (value.length > 3)
-                    formatted +=
-                      value.slice(3, 10) + (value.length > 10 ? "-" : "");
-                  if (value.length > 10) formatted += value.slice(10, 12);
-                  e.target.value = formatted;
-                  field.onChange(e);
+                  if (raw12.length > 0) {
+                    formatted += raw12.slice(0, 3); 
+                    if (raw12.length > 3) formatted += "-" + raw12.slice(3, 10); 
+                    if (raw12.length > 10)
+                      formatted += "-" + raw12.slice(10, 12); 
+                  }
+                  setLaserCharCount(raw12.length);
+                  field.onChange(formatted);
                 }}
                 maxLength={12}
                 ignoreChars={["-"]}
+                counterValue={laserCharCount}
                 errors={errors}
               />
             )}
@@ -192,19 +193,30 @@ const FormIdCard = <TFieldValues extends FieldValues>({
         </div>
 
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
-          <FormSelect
-            fieldName={"titleThai" as Path<TFieldValues>}
-            label="Name Title"
+          <Controller
+            name={"titleThai" as Path<TFieldValues>}
             control={control}
-            errors={errors}
-            validationRules={{ required: "This field is needed." }}
+            rules={{
+              required: "This field is needed",
+            }}
+            render={({ field }) => (
+              <FormSelect
+                fieldName={"titleThai" as Path<TFieldValues>}
+                label="Name Title"
+                control={control}
+                errors={errors}
+                validationRules={{
+                  required: "This field is needed",
+                }}
+              />
+            )}
           />
 
           <Controller
             name={"firstNameThai" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "This field is needed",
+              required: "This field is needed.",
               maxLength: {
                 value: 50,
                 message: "Cannot exceed 50 characters",
@@ -232,7 +244,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             name={"lastNameThai" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "This field is needed",
+              required: "This field is needed.",
               maxLength: 50,
               pattern: {
                 value: /^[\u0E00-\u0E7F]+$/,
@@ -283,33 +295,46 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             name={"address" as Path<TFieldValues>}
             control={control}
             rules={{
-              required: "This field is needed",
+              required: "This field is needed.",
               maxLength: {
                 value: 200,
-                message: "Address must be 200 characters or less",
+                message: "",
               },
             }}
-            render={({ field }) => (
-              <>
-                <Textarea
-                  id="address"
-                  placeholder="Enter your Address"
-                  maxLength={200}
-                  className="h-24 resize-y mt-1 mb-1 bg-muted"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-                <div className="text-sm text-muted-foreground min-h-[1rem]">
-                  {errors.address ? (
-                    <span className="text-destructive">
-                      {errors.address.message as string}
-                    </span>
-                  ) : (
-                    <span>{field.value ? field.value.length : 0} / 200</span>
-                  )}
-                </div>
-              </>
-            )}
+            render={({ field, fieldState }) => {
+              const fieldError = errors.address;
+              const hasError = !!(fieldError || fieldState.error);
+
+              return (
+                <>
+                  <Textarea
+                    id="address"
+                    placeholder="Enter your Address"
+                    maxLength={200}
+                    className={`h-24 resize-y mt-1 mb-1 bg-muted ${
+                      hasError
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : ""
+                    }`}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                  <div className="text-sm text-muted-foreground min-h-[1rem]">
+                    {hasError ? (
+                      <span className="text-destructive">
+                        {
+                          (fieldError?.message ||
+                            fieldState.error?.message) as string
+                        }
+                      </span>
+                    ) : (
+                      <span>{field.value ? field.value.length : 0} / 200</span>
+                    )}
+                  </div>
+                </>
+              );
+            }}
           />
         </div>
       </div>
@@ -319,9 +344,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           type="submit"
           disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            canSubmit
-              ? "bg-[#2152b6]"
-              : "bg-gray-400"
+            canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
           Confirm

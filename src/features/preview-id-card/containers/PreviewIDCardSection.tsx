@@ -47,6 +47,7 @@ export default function VerifyIdentityScreen() {
     reset,
     control,
     setError,
+    trigger,
   } = useForm<PreviewIdCardForm>({
     defaultValues: defaultFormValues,
     mode: "onChange",
@@ -69,13 +70,33 @@ export default function VerifyIdentityScreen() {
         titleThai: ocrData.titleThai || "",
       });
 
-      // set API errors into form
-      (ocrData.errors || []).forEach((err) => {
-        setError(err.field as Path<PreviewIdCardForm>, {
-          type: "manual",
-          message: err.message,
+      setTimeout(async () => {
+        // ตรวจสอบและ set error สำหรับ field ที่ required แต่ไม่มีค่า
+        const requiredFields = [
+          { field: "titleThai", value: ocrData.titleThai },
+          { field: "firstNameThai", value: ocrData.firstNameThai },
+          { field: "lastNameThai", value: ocrData.lastNameThai },
+          { field: "idNumber", value: ocrData.idNumber },
+          { field: "birthDateThai", value: ocrData.birthDateThai },
+          { field: "issueDateThai", value: ocrData.issueDateThai },
+          { field: "expiryDateThai", value: ocrData.expiryDateThai },
+          { field: "address", value: ocrData.address },
+        ];
+
+        for (const { field, value } of requiredFields) {
+          if (!value || value.trim() === "") {
+            await trigger(field as Path<PreviewIdCardForm>);
+          }
+        }
+
+        // set API errors ที่มาจากระบบ OCR
+        (ocrData.errors || []).forEach((err) => {
+          setError(err.field as Path<PreviewIdCardForm>, {
+            type: "manual",
+            message: err.message,
+          });
         });
-      });
+      }, 100);
     },
     //alert error ไว้ใช้ใน sprint หน้า
     // onError: (err) => {
