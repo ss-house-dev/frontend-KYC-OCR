@@ -76,7 +76,6 @@ export default function BookBankPage() {
     // },
   });
 
-
   useEffect(() => {
     const processImageOnMount = async () => {
       const dataUrl = sessionStorage.getItem("capturedBookBankImage");
@@ -86,7 +85,7 @@ export default function BookBankPage() {
         return;
       }
       if (dataUrl) setPreviewImage(dataUrl);
-      
+
       if (dataUrl) {
         try {
           const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
