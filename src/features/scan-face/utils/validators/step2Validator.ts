@@ -54,12 +54,12 @@ export class Step2Validator {
 
   static getPhaseInstruction(phase: Phase): string {
     const instructions = {
-      yaw_left: "Turn your head LEFT",
-      yaw_right: "Turn your head RIGHT",
-      pitch_up: "Nod your head UP",
-      pitch_down: "Nod your head DOWN",
-      blink: "Please blink your eyes slowly",
-      mouth: "Please open your mouth",
+      yaw_left: "Please turn your face left.",
+      yaw_right: "Please turn your face right.",
+      pitch_up: "Nod your head up.",
+      pitch_down: "Nod your head down.",
+      blink: "Please blink your eyes.",
+      mouth: "Please open your mouth.",
     };
     return instructions[phase];
   }
