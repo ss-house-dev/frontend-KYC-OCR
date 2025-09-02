@@ -70,6 +70,10 @@ export default function BookBankPage() {
         });
       });
     },
+    // onError: (err) => {
+    //   console.error("OCR upload failed:", err);
+    //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+    // },
   });
 
   useEffect(() => {
