@@ -64,15 +64,48 @@ export class FaceDetector {
     return Math.round(sum / (roi.data.length / 4 || 1));
   }
 
+  // static estimateYawPitch(
+  //   landmarks: LM[],
+  //   w: number,
+  //   h: number
+  // ): { yawDeg: number; pitchDeg: number } {
+  //   const nose = landmarks[1];
+  //   const eyeL = landmarks[33];
+  //   const eyeR = landmarks[263];
+
+  //   const midEye: LM = {
+  //     x: (eyeL.x + eyeR.x) / 2,
+  //     y: (eyeL.y + eyeR.y) / 2,
+  //     z: (eyeL.z + eyeR.z) / 2,
+  //   };
+
+  //   const eyeDistPx = this.distXY(eyeL, eyeR, w, h) || 1;
+  //   const dx = (nose.x - midEye.x) * w;
+  //   const dy = (nose.y - midEye.y) * h;
+
+  //   let yawDeg = (Math.atan2(dx, eyeDistPx) * 180) / Math.PI;
+  //   const pitchDeg = (Math.atan2(dy, eyeDistPx) * 180) / Math.PI;
+
+  //   if (CONFIG.CAMERA.MIRRORED_INPUT) yawDeg = -yawDeg;
+
+  //   return { yawDeg, pitchDeg };
+  // }
+
+  // ปรับปรุง pose estimation ให้แม่นยำกว่า
   static estimateYawPitch(
     landmarks: LM[],
     w: number,
     h: number
   ): { yawDeg: number; pitchDeg: number } {
+    // ใช้หลายจุดอ้างอิงเพื่อความแม่นยำ
     const nose = landmarks[1];
     const eyeL = landmarks[33];
     const eyeR = landmarks[263];
+    const mouthL = landmarks[61];
+    const mouthR = landmarks[291];
+    const chin = landmarks[175];
 
+    // Method 1: Eye-based (เดิม)
     const midEye: LM = {
       x: (eyeL.x + eyeR.x) / 2,
       y: (eyeL.y + eyeR.y) / 2,
@@ -80,14 +113,63 @@ export class FaceDetector {
     };
 
     const eyeDistPx = this.distXY(eyeL, eyeR, w, h) || 1;
-    const dx = (nose.x - midEye.x) * w;
-    const dy = (nose.y - midEye.y) * h;
+    const dx1 = (nose.x - midEye.x) * w;
+    const dy1 = (nose.y - midEye.y) * h;
 
-    let yawDeg = (Math.atan2(dx, eyeDistPx) * 180) / Math.PI;
-    const pitchDeg = (Math.atan2(dy, eyeDistPx) * 180) / Math.PI;
+    const yaw1 = (Math.atan2(dx1, eyeDistPx) * 180) / Math.PI;
+    const pitch1 = (Math.atan2(dy1, eyeDistPx) * 180) / Math.PI;
+
+    // Method 2: Mouth-based (เพิ่มเติม)
+    const midMouth: LM = {
+      x: (mouthL.x + mouthR.x) / 2,
+      y: (mouthL.y + mouthR.y) / 2,
+      z: (mouthL.z + mouthR.z) / 2,
+    };
+
+    const mouthDistPx = this.distXY(mouthL, mouthR, w, h) || 1;
+    const dx2 = (nose.x - midMouth.x) * w;
+
+    const yaw2 = (Math.atan2(dx2, mouthDistPx) * 180) / Math.PI;
+
+    // Method 3: ใช้ chin เป็น reference เพิ่มเติม
+    const dx3 = (nose.x - chin.x) * w;
+    const dy3 = (nose.y - chin.y) * h;
+    const chinDistPx = Math.hypot(dx3, dy3) || 1;
+    
+    const pitch3 = (Math.atan2(dy3, chinDistPx) * 180) / Math.PI;
+
+    // Weighted average ให้น้ำหนักตา 60%, ปาก 25%, คาง 15%
+    let yawDeg = yaw1 * 0.6 + yaw2 * 0.4;
+    const pitchDeg = pitch1 * 0.7 + pitch3 * 0.3;
 
     if (CONFIG.CAMERA.MIRRORED_INPUT) yawDeg = -yawDeg;
 
     return { yawDeg, pitchDeg };
+  }
+
+  static processFaces(
+    faces: LM[][],
+    w: number,
+    h: number,
+    ctx: CanvasRenderingContext2D
+  ) {
+    return faces.map((landmarks) => {
+      const bbox = this.getBoundingBox(landmarks, w, h);
+      const brightness = this.calculateBrightness(ctx, bbox);
+      const { yawDeg, pitchDeg } = this.estimateYawPitch(landmarks, w, h);
+      return {
+        landmarks,
+        bbox,
+        brightness,
+        yawDeg,
+        pitchDeg,
+        earValue: null,
+        marValue: null,
+      };
+    });
+  }
+
+  static countFaces(faces: LM[][]): number {
+    return faces.length;
   }
 }

@@ -1,12 +1,13 @@
-import { Rect4, StepValidation } from "../../configs/type";
+import { DetectionResult, Rect4, StepValidation } from "../../configs/type";
 import { CONFIG } from "../../configs/constant";
 
 export class Step1Validator {
-  static validateFaceCount(faceCount: number): StepValidation {
+  static validateFaceCount(results: DetectionResult[]): StepValidation {
+    const faceCount = results.length;
     if (faceCount === 0) {
       return {
         isValid: false,
-        message: "No face found",
+        message: "No face found.",
         color: "red",
       };
     }
@@ -49,7 +50,7 @@ export class Step1Validator {
     if (sizeMin >= CONFIG.FACE_SIZE.NEAR_THRESHOLD) {
       return {
         isValid: false,
-        message: `Move your face back. (${w}x${h})`,
+        message: `Move your face away.`,
         color: "red",
       };
     }
@@ -57,14 +58,14 @@ export class Step1Validator {
     if (sizeMin < CONFIG.FACE_SIZE.FAR_THRESHOLD) {
       return {
         isValid: false,
-        message: `Move your face closer. (${w}x${h})`,
+        message: `Move your face closer.`,
         color: "red",
       };
     }
 
     return {
       isValid: true,
-      message: `OK | Medium (${w}x${h})`,
+      message: `OK | Medium `,
       color: "white",
     };
   }
@@ -95,24 +96,26 @@ export class Step1Validator {
 
     return {
       isValid: false,
-      message: "Center your face",
+      message: "Please keep your face in frame.",
       color: "yellow",
     };
   }
 
   static validateStep1(
-    faceCount: number,
-    brightness: number,
-    bbox: Rect4 | null,
+    detectionResults: DetectionResult[],
     canvasWidth: number,
     canvasHeight: number
   ): StepValidation & { canProceed: boolean } {
-    const faceValidation = this.validateFaceCount(faceCount);
+    // เช็คจำนวนใบหน้า
+    const faceValidation = this.validateFaceCount(detectionResults);
     if (!faceValidation.isValid) {
       return { ...faceValidation, canProceed: false };
     }
 
-    if (!bbox) {
+    // ถ้ามีหน้าเดียว ให้เช็คเงื่อนไขอื่นต่อ
+    const primaryFace = detectionResults[0];
+
+    if (!primaryFace.bbox) {
       return {
         isValid: false,
         message: "No face detected",
@@ -121,18 +124,20 @@ export class Step1Validator {
       };
     }
 
-    const brightnessValidation = this.validateBrightness(brightness);
+    const brightnessValidation = this.validateBrightness(
+      primaryFace.brightness
+    );
     if (!brightnessValidation.isValid) {
       return { ...brightnessValidation, canProceed: false };
     }
 
-    const sizeValidation = this.validateFaceSize(bbox);
+    const sizeValidation = this.validateFaceSize(primaryFace.bbox);
     if (!sizeValidation.isValid) {
       return { ...sizeValidation, canProceed: false };
     }
 
     const positionValidation = this.validateFacePosition(
-      bbox,
+      primaryFace.bbox,
       canvasWidth,
       canvasHeight
     );
