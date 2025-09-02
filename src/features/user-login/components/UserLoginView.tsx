@@ -29,14 +29,14 @@ export default function UserLoginView({
             placeholder="Enter your E-mail"
             value={email}
             onChange={(e) => onEmailChange(e.target.value.trim())}
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-100"
+            className="w-full rounded-sm border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-100"
           />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-gradient-to-b from-[#2a5bf6] to-[#1a4bd6] py-3 text-white font-medium shadow-md"
+            className="w-full rounded-sm bg-gradient-to-b from-[#2a5bf6] to-[#1a4bd6] py-3 text-white font-medium shadow-md"
           >
             Login
           </button>

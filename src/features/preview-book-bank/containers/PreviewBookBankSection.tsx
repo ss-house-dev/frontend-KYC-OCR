@@ -70,12 +70,7 @@ export default function BookBankPage() {
         });
       });
     },
-    // onError: (err) => {
-    //   console.error("OCR upload failed:", err);
-    //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-    // },
   });
-
 
   useEffect(() => {
     const processImageOnMount = async () => {
@@ -86,7 +81,7 @@ export default function BookBankPage() {
         return;
       }
       if (dataUrl) setPreviewImage(dataUrl);
-      
+
       if (dataUrl) {
         try {
           const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
