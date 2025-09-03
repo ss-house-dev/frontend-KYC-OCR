@@ -21,10 +21,10 @@ export default function FaceVerificationPage() {
       <h1 className="text-[22px] sm:text-2xl font-semibold text-neutral-900 text-center">
         KYC Verification Complete
       </h1>
-      <p className="mt-3 text-[30px] text-neutral-600 text-center">
+      <p className="mt-3 text-[15px] text-neutral-600 text-center">
         We’ve received all your documents
       </p>
-      <p className="mt-1 text-[30px] text-neutral-600 text-center">
+      <p className="mt-1 text-[15px] text-neutral-600 text-center">
         We’ll send the verification result to your email within 24 hours
       </p>
 
