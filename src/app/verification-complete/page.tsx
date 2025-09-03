@@ -1,12 +1,8 @@
-
 import Image from "next/image";
 
 export default function FaceVerificationPage() {
 
   return (
-    // <div className="min-h-screen bg-neutral-50 flex flex-col items-center p-6">
-      
-    // </div>
     <div className="min-h-screen bg-neutral-50 flex flex-col items-center px-6 py-10">
       {/* Top badge */}
       <div className="mt-6 mb-6">
