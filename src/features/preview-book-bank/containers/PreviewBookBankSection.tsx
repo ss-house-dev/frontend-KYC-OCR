@@ -128,7 +128,8 @@ export default function BookBankPage() {
 
   const onSubmit = (data: BookBankFormValues) => {
     console.log("Form submitted:", data);
-    alert("บันทึกข้อมูลสำเร็จ!");
+    // alert("บันทึกข้อมูลสำเร็จ!");
+    router.push("/verification-complete");
   };
 
   return (

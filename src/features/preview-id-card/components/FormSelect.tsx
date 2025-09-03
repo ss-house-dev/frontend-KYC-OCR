@@ -53,7 +53,6 @@ const FormSelect = <TFieldValues extends FieldValues>({
       <Controller
         name={fieldName}
         control={control}
-        defaultValue={undefined as any}
         rules={validationRules}
         render={({ field, fieldState }) => {
           const selectedTitle = titleThai.find(
@@ -63,7 +62,7 @@ const FormSelect = <TFieldValues extends FieldValues>({
           return (
             <>
               <Select
-                value={field.value || undefined}
+                value={field.value || ""}
                 onValueChange={(value) => {
                   field.onChange(value);
                   setTimeout(() => field.onBlur(), 0);
