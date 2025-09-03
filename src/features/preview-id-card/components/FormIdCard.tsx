@@ -37,7 +37,6 @@ const IconInfo = () => (
 interface FormIdCardProps<TFieldValues extends FieldValues> {
   handleSubmit: UseFormHandleSubmit<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
-  onInvalid?: SubmitErrorHandler<TFieldValues>; // <<=== เพิ่ม prop นี้
   watch?: UseFormWatch<TFieldValues>;
   canSubmit: boolean;
   control: Control<TFieldValues>;
@@ -51,7 +50,6 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
 const FormIdCard = <TFieldValues extends FieldValues>({
   handleSubmit,
   onSubmit,
-  onInvalid,
   watch,
   canSubmit,
   control,
@@ -63,7 +61,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   const [laserCharCount, setLaserCharCount] = useState(0);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="p-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
         <IconInfo />
         <p className="text-sm font-medium">

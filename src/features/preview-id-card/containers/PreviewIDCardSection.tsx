@@ -26,7 +26,7 @@ const defaultFormValues = {
 
 type PreviewIdCardForm = typeof defaultFormValues;
 
-// ฟังก์ชันคำนวณความคล้ายคลึง (Levenshtein distance)
+// ฟังก์ชันคำนวณความคล้ายคลึง
 const calculateSimilarity = (str1: string, str2: string): number => {
   if (!str1 || !str2) return 0;
 
@@ -89,7 +89,7 @@ export default function VerifyIdentityScreen() {
     setError,
     trigger,
     setFocus,
-    getValues, 
+    getValues,
   } = useForm<PreviewIdCardForm>({
     defaultValues: defaultFormValues,
     mode: "onChange",
@@ -193,97 +193,70 @@ export default function VerifyIdentityScreen() {
   const watchedValues = watch();
 
   useEffect(() => {
-    // ฟิลด์ที่แก้ไขไม่ได้ (disabled fields) - เช็คแค่ว่ามีค่าหรือไม่
-    const disabledFields = ['idNumber', 'issueDateThai', 'expiryDateThai', 'birthDateThai'];
-    
-    // ฟิลด์ที่แก้ไขได้ - ต้องเช็คทั้งค่าและ validation
-    const editableFields = [
-      'titleThai', 'firstNameThai', 'lastNameThai', 
-      'address', 'laserId'
+    const disabledFields = [
+      "idNumber",
+      "issueDateThai",
+      "expiryDateThai",
+      "birthDateThai",
     ];
-    
-    // เช็คฟิลด์ที่แก้ไขไม่ได้ - ต้องมีค่าและไม่มี error
+
+    const editableFields = [
+      "titleThai",
+      "firstNameThai",
+      "lastNameThai",
+      "address",
+      "laserId",
+    ];
+
     const disabledFieldsValid = disabledFields.every((fieldName) => {
       const value = watchedValues[fieldName as keyof typeof watchedValues];
       const hasValue = value !== "" && value !== null && value !== undefined;
       const hasError = errors[fieldName as keyof typeof errors];
       return hasValue && !hasError;
     });
-    
-    // เช็คฟิลด์ที่แก้ไขได้ - ต้องมีค่า, ไม่มี error, และผ่าน validation
+
     const editableFieldsValid = editableFields.every((fieldName) => {
       const value = watchedValues[fieldName as keyof typeof watchedValues];
       const hasValue = value !== "" && value !== null && value !== undefined;
       const hasError = errors[fieldName as keyof typeof errors];
       return hasValue && !hasError;
     });
-    
-    // ตั้งค่า canSubmit เป็น true เมื่อทุกเงื่อนไขผ่าน
+
     setCanSubmit(disabledFieldsValid && editableFieldsValid);
   }, [watchedValues, errors]);
 
   const onSubmit = (data: PreviewIdCardForm) => {
     console.log("Form submitted:", data);
-    
+
     // เช็คความคล้ายคลึงของชื่อ
     const firstNameSimilarity = calculateSimilarity(
-      originalData.firstNameThai, 
+      originalData.firstNameThai,
       data.firstNameThai
     );
     const lastNameSimilarity = calculateSimilarity(
-      originalData.lastNameThai, 
+      originalData.lastNameThai,
       data.lastNameThai
     );
 
-    // แจ้งเตือนถ้าความคล้ายคลึงต่ำกว่า 60%
-    if (firstNameSimilarity < 60 || lastNameSimilarity < 60) {
-      const message = `คำเตือน: ข้อมูลที่แก้ไขมีความแตกต่างจากข้อมูลเดิมมาก\n` +
-        `ชื่อ: ${firstNameSimilarity.toFixed(1)}% ความคล้าย\n` +
-        `นามสกุล: ${lastNameSimilarity.toFixed(1)}% ความคล้าย\n\n` +
+    const overallSimilarity = (firstNameSimilarity + lastNameSimilarity) / 2;
+
+    if (overallSimilarity < 60) {
+      const message =
+        `คำเตือน: ข้อมูลที่แก้ไขมีความแตกต่างจากข้อมูลเดิมมาก\n` +
+        `เปอร์เซ็นต์รวม: ${overallSimilarity.toFixed(1)}%\n\n` +
         `คุณต้องการดำเนินการต่อหรือไม่?`;
-      
+
       if (!confirm(message)) {
-        return; // หยุดการ submit ถ้าผู้ใช้ยกเลิก
+        return; 
       }
     }
-    
-    // ไปหน้า preview-book-bank
-    router.push("/preview-book-bank");
+    router.push("/face-accept");
   };
-
-   const onInvalid: SubmitErrorHandler<PreviewIdCardForm> = (errs) => {
-    console.group("[Form Submit Failed]");
-    console.log("Values at submit:", getValues());
-    Object.entries(errs).forEach(([k, v]) => {
-      console.log(`${k}:`, (v as any)?.message, v);
-    });
-    console.groupEnd();
-
-    // โฟกัสช่องแรกที่พัง
-    const first = Object.keys(errs)[0];
-    if (first) setFocus(first as any);
-  };
-
-
-  // useEffect(() => {
-  //   const allFieldsFilled = Object.values(watchedValues).every(
-  //     (value) => value !== "" && value !== null && value !== undefined
-  //   );
-  //   const noErrors = Object.keys(errors).length === 0;
-
-  //   setCanSubmit(allFieldsFilled && noErrors);
-  // }, [watchedValues, errors]);
-
-  // const onSubmit = (data: PreviewIdCardForm) => {
-  //   console.log("Form submitted:", data);
-  //   alert("บันทึกข้อมูลสำเร็จ!");
-  // };
 
   return (
     <FormIdCard
       handleSubmit={handleSubmit}
       onSubmit={onSubmit}
-      onInvalid={onInvalid}
       control={control}
       errors={errors}
       watch={watch}
