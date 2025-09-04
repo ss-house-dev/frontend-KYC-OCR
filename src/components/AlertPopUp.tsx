@@ -11,7 +11,7 @@ interface AlertPopUpProps {
 
 const AlertPopUp: React.FC<AlertPopUpProps> = ({
   isOpen,
-  title = "ยืนยันการทำรายการ",
+  title ,
   message,
   onRetry,
 }) => {
