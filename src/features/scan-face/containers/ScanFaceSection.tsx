@@ -1,7 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-const FailModal = dynamic(() => import("../components/FailModal"), { ssr: false });
+const FailModal = dynamic(() => import("../components/FailModal"), {
+  ssr: false,
+});
 
 import React, { useRef, useEffect, useState } from "react";
 import { useFaceMesh } from "../hooks/useFaceMesh";
@@ -20,7 +22,7 @@ export default function ScanFaceSection() {
 
   const {
     state,
-    detectionResult,        
+    detectionResults,
     setupCamera,
     failed,
     restartFromSetup,
@@ -45,21 +47,19 @@ export default function ScanFaceSection() {
     };
   }, [setupCamera]);
 
-  // ใช้ Step1Validator ตรวจและเปลี่ยนกรอบ
+  // ใช้ Step1Validator ตรวจสอบใบหน้า แล้วเปลี่ยนกรอบ
   useEffect(() => {
     const pattern = [100, 50, 100, 200];
-
-    // ไม่มีหน้า → bbox เป็น null
-    if (!detectionResult?.bbox) {
+    // ถ้าไม่มีใบหน้าเลย
+    if (detectionResults.length === 0) {
       setFrameSrc("/scan-face/frame-face-red.svg");
       setStep1Valid(false);
       if ("vibrate" in navigator) navigator.vibrate(pattern);
       return;
     }
 
-    // ⬅️ Step1Validator ยังรับ array → ห่อเป็น [detectionResult]
     const validation = Step1Validator.validateStep1(
-      [detectionResult],
+      detectionResults,
       CONFIG.DISPLAY.WIDTH,
       CONFIG.DISPLAY.HEIGHT
     );
@@ -71,18 +71,17 @@ export default function ScanFaceSection() {
         : "/scan-face/frame-face-red.svg"
     );
 
-    if (!validation.isValid && "vibrate" in navigator) {
+    // สั่นเมื่อ invalid
+    if (!validation.isValid && navigator.vibrate) {
       navigator.vibrate(pattern);
     }
-  }, [detectionResult]);
+  }, [detectionResults]);
 
   useEffect(() => {
     if (done) {
       router.push("/face-verification");
     }
   }, [done, router]);
-
-  const detectionResults = detectionResult ? [detectionResult] : [];
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
@@ -91,10 +90,9 @@ export default function ScanFaceSection() {
         <VideoCanvas
           canvasRef={canvasRef}
           state={state}
-          detectionResults={detectionResults}  
+          detectionResults={detectionResults}
           videoElement={videoRef.current || undefined}
         />
-
         <div className="absolute left-1/2 top-[60%] -translate-x-1/2 -translate-y-1/2 w-[88vw] max-w-[420px] aspect-[8.8/5.6] z-10 p-[3%]">
           <Image
             src={frameSrc}
@@ -104,15 +102,12 @@ export default function ScanFaceSection() {
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 h-120 object-contain pointer-events-none"
           />
         </div>
-
         <StatusBar state={state} step1Valid={step1Valid} />
-
         <ScanOverlayHUD
           state={state}
-          detectionResults={detectionResults}   
+          detectionResults={detectionResults}
           visible={true}
         />
-
         <FailModal open={failed} onRetry={restartFromSetup} />
       </div>
     </div>

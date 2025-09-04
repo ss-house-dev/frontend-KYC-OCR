@@ -10,11 +10,6 @@ export class StepProcessor {
     private ema: EMAManager
   ) {}
 
-  // runtime flags updated per frame in processStep2
-  private _okLight: boolean = true;
-  private _movingYaw: boolean = true;
-  private _movingPitch: boolean = true;
-
   processStep1(
     detections: DetectionResult[],
     canvasWidth: number,
@@ -43,10 +38,6 @@ export class StepProcessor {
   }
 
   processStep2(detection: DetectionResult) {
-    // Update movement/light flags for gating
-    this._okLight = this.brightnessOK(detection.brightness!);
-    this._movingYaw = this.isYawMoving();
-    this._movingPitch = this.isPitchMoving();
     if (!this.isValidDetection(detection)) return;
 
     const { yawDeg, pitchDeg, earValue, marValue } = detection;
@@ -107,28 +98,6 @@ export class StepProcessor {
     } else if (exitCondition?.()) {
       this.state.holdStart = null;
     }
-  
-  }
-
-  
-  private isYawMoving(): boolean {
-    const yf = this.ema.yawFast.value ?? 0;
-    const ys = this.ema.yawSlow.value ?? 0;
-    const momentum = Math.abs(yf - ys);
-    const minDelta = (CONFIG.SMOOTHING as any).YAW_MOMENTUM_MIN ?? 4;
-    return momentum > minDelta;
-  }
-  private isPitchMoving(): boolean {
-    const pf = this.ema.pitchFast.value ?? 0;
-    const ps = this.ema.pitchSlow.value ?? 0;
-    const momentum = Math.abs(pf - ps);
-    const minDelta = (CONFIG.SMOOTHING as any).PITCH_MOMENTUM_MIN ?? 3.5;
-    return momentum > minDelta;
-  }
-  private brightnessOK(b: number): boolean {
-    const minB = (CONFIG.THRESHOLDS as any).BRIGHTNESS_MIN ?? 70;
-    const maxB = (CONFIG.THRESHOLDS as any).BRIGHTNESS_MAX ?? 210;
-    return b >= minB && b <= maxB;
   }
 
   private handleYawLeft(yawDeg: number) {
@@ -189,9 +158,7 @@ export class StepProcessor {
       this.state.subPhase = "mouth";
       this.state.blinkCloseStart = null;
     }
-
   }
-
 
   private handleMouth(marValue: number) {
     const baselineMAR = this.ema.marBase.value ?? marValue;
