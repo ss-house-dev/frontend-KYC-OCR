@@ -46,15 +46,12 @@ export class DetectionProcessor {
         FaceDetector.estimateYawPitch(landmarks, canvas.width, canvas.height);
       this.updatePoseZeros(rawYaw, rawPitch);
 
-      const yawAdj = rawYaw - (this.ema.yawZero.value ?? 0);
-const pitchAdj = rawPitch - (this.ema.pitchZero.value ?? 0);
-const yawDeg = this.ema.yawEma.update(yawAdj);
-const pitchDeg = this.ema.pitchEma.update(pitchAdj);
-// อัปเดต EMA เร็ว/ช้า สำหรับ momentum
-this.ema.yawFast.update(yawAdj);
-this.ema.yawSlow.update(yawAdj);
-this.ema.pitchFast.update(pitchAdj);
-this.ema.pitchSlow.update(pitchAdj);
+      const yawDeg = this.ema.yawEma.update(
+        rawYaw - (this.ema.yawZero.value ?? 0)
+      );
+      const pitchDeg = this.ema.pitchEma.update(
+        rawPitch - (this.ema.pitchZero.value ?? 0)
+      );
 
       const earValue = EyeDetector.getEyeAspectRatio(
         landmarks,
