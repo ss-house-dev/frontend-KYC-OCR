@@ -84,7 +84,7 @@ const FormField = <TFieldValues extends FieldValues>({
               id={fieldName}
               value={val}
               onChange={(e) => {
-                const raw = e.target.value.replace(/-/g, "");
+                const raw = e.target.value.toUpperCase().replace(/-/g, "");
                 const raw12 = raw.slice(0, 12);
                 let formatted = "";
                 if (raw12.length > 0) {

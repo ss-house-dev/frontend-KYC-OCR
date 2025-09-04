@@ -65,24 +65,30 @@ const FormBookBank = <TFieldValues extends FieldValues>({
 }: FormBookBankProps<TFieldValues>) => {
   return (
     <form onSubmit={onSubmit} className="p-6 max-w-md mx-auto">
+      <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
+        <IconInfo />
+        <p className="text-sm font-medium">
+          Your bank account information will be used only for transaction
+          verification and handled securely.
+        </p>
+      </div>
+      {isLoading ? (
+        <ProgressLoading progress={loadingProgress} />
+      ) : (
+        capturedImage && (
+          <img
+            src={capturedImage}
+            alt="Book Bank"
+            className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
+          />
+        )
+      )}
       <div className="bg-white rounded-xl shadow-md p-6">
         <div className="space-y-6">
-          {isLoading ? (
-            <ProgressLoading progress={loadingProgress} />
-          ) : (
-            capturedImage && (
-              <img
-                src={capturedImage}
-                alt="Book Bank"
-                className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
-              />
-            )
-          )}
-
           <div className="space-y-2">
             <FormSelectBookBank
               fieldName={"bookbankOption" as Path<TFieldValues>}
-              label="Name Title"
+              label="Select a Bank"
               control={control}
               errors={errors}
               validationRules={{ required: "This field is needed." }}
@@ -127,7 +133,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormFieldBookBank
                 fieldName={"accountNameThai" as Path<TFieldValues>}
-                label="Account Name"
+                label="Account Name (TH)"
                 placeholder="Enter Name"
                 type="text"
                 value={field.value}
@@ -172,9 +178,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           type="submit"
           disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            canSubmit
-              ? "bg-[#2152b6]"
-              : "bg-gray-400"
+            canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
           Confirm
