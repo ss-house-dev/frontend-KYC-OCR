@@ -5,11 +5,11 @@ import { Path, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import FormIdCard from "../components/FormIdCard";
+import AlertPopUp from "@/components/AlertPopUp";
 import {
   uploadIdCardOcr,
   OcrResponse,
 } from "@/features/preview-id-card/services/ocr-id-card";
-import { SubmitErrorHandler } from "react-hook-form";
 
 const defaultFormValues = {
   idNumber: "",
@@ -75,6 +75,8 @@ export default function VerifyIdentityScreen() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
   const [canSubmit, setCanSubmit] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [pendingData, setPendingData] = useState<any>(null);
   const [originalData, setOriginalData] = useState<{
     firstNameThai: string;
     lastNameThai: string;
@@ -88,8 +90,6 @@ export default function VerifyIdentityScreen() {
     control,
     setError,
     trigger,
-    setFocus,
-    getValues,
   } = useForm<PreviewIdCardForm>({
     defaultValues: defaultFormValues,
     mode: "onChange",
@@ -241,34 +241,45 @@ export default function VerifyIdentityScreen() {
     const overallSimilarity = (firstNameSimilarity + lastNameSimilarity) / 2;
 
     if (overallSimilarity < 60) {
-      const message =
-        `คำเตือน: ข้อมูลที่แก้ไขมีความแตกต่างจากข้อมูลเดิมมาก\n` +
-        `เปอร์เซ็นต์รวม: ${overallSimilarity.toFixed(1)}%\n\n` +
-        `คุณต้องการดำเนินการต่อหรือไม่?`;
-
-      if (!confirm(message)) {
-        return; 
-      }
+      setPendingData(data); 
+      setShowDialog(true); 
+    } else {
+      router.push("/face-accept");
     }
-    router.push("/face-accept");
+  };
+
+    const handleRetry = () => {
+    setShowDialog(false);
+    setPendingData(null);
   };
 
   return (
-    <FormIdCard
-      handleSubmit={handleSubmit}
-      onSubmit={onSubmit}
-      control={control}
-      errors={errors}
-      watch={watch}
-      canSubmit={canSubmit}
-      capturedImage={
-        typeof window !== "undefined"
-          ? sessionStorage.getItem("capturedIdCardImage")
-          : null
-      }
-      isValid={isValid}
-      isLoading={ocrMutation.isPending}
-      loadingProgress={loadingProgress}
-    />
+    <>
+      <FormIdCard
+        handleSubmit={handleSubmit}
+        onSubmit={onSubmit}
+        control={control}
+        errors={errors}
+        watch={watch}
+        canSubmit={canSubmit}
+        capturedImage={
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("capturedIdCardImage")
+            : null
+        }
+        isValid={isValid}
+        isLoading={ocrMutation.isPending}
+        loadingProgress={loadingProgress}
+      />
+
+      <AlertPopUp
+        isOpen={showDialog}
+        title="Edited Name Doesn’t Match"
+        message={
+          `Your edited name is very different the extracted name, Please correct it to continue.`
+        }
+        onRetry={handleRetry}
+      />
+    </>
   );
 }

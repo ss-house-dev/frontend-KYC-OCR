@@ -33,12 +33,15 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
   ignoreChars,
   ...rest
 }: FormFieldBookBankProps<TFieldValues>) => {
+  const fieldError = errors[fieldName];
+  const hasError = !!fieldError;
+
   return (
     <Controller
       name={fieldName}
       control={control}
       rules={validationRules}
-      render={({ field }) => (
+      render={({ field, fieldState }) => (
         <div className="space-y-1">
           <div className="flex justify-between items-center">
             <Label htmlFor={fieldName} className="text-sm">
@@ -51,6 +54,11 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
             id={fieldName}
             {...field}
             {...rest}
+            className={`${
+              hasError || fieldState.error
+                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                : ""
+            }`}
           />
 
           <div className="text-xs text-muted-foreground min-h-[1rem]">
