@@ -22,7 +22,7 @@ export const CONFIG = {
     BRIGHT_THRESHOLD: 190,
   },
   POSITION: {
-    CENTER_TOLERANCE: 0.15, // 15%
+    CENTER_TOLERANCE: 0.15,
   },
   TIMING: {
     STEP1_HOLD_SECONDS: 2.0,
