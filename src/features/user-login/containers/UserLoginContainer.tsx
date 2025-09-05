@@ -3,37 +3,45 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { emailStore } from "@/lib/client/emailStore";
 import UserLoginView from "../components/UserLoginView";
+import { useForm, SubmitHandler } from "react-hook-form";
 
-const EMAIL_RE = /.+@.+\..+/;
+type Inputs = {
+  email: string;
+};
 
 export default function UserLoginContainer() {
   const router = useRouter();
   const search = useSearchParams();
-  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<Inputs>({
+    defaultValues: { email: "" },
+  });
 
   useEffect(() => {
     const saved = emailStore.get();
-    if (saved) setEmail(saved);
-  }, []);
+    if (saved) setValue("email", saved, { shouldValidate: true });
+  }, [setValue]);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit: SubmitHandler<Inputs> = ({ email }) => {
     setError(null);
-    if (!EMAIL_RE.test(email)) {
-      setError("กรุณากรอกอีเมลให้ถูกต้อง");
-      return;
-    }
+
     emailStore.set(email);
-    const next = search.get("next") || "/ocr"; // ไปหน้า OCR ต่อ
+    const next = search.get("next") || "/id-accept";
     router.replace(next);
   };
 
   return (
     <UserLoginView
-      email={email}
       error={error}
-      onEmailChange={setEmail}
+      handleSubmit={handleSubmit}
+      register={register as any}
       onSubmit={onSubmit}
     />
   );

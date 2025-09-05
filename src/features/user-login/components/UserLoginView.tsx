@@ -1,17 +1,24 @@
+import {
+  SubmitHandler,
+  UseFormRegister,
+  UseFormHandleSubmit,
+} from "react-hook-form";
 import BrandLogo from "./BrandLogo";
 import { Label, Input, Button } from "@/components/ui";
 
+type Inputs = { email: string };
+
 type Props = {
-  email: string;
   error: string | null;
-  onEmailChange: (v: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  register: UseFormRegister<Inputs>;
+  handleSubmit: UseFormHandleSubmit<Inputs>;
+  onSubmit: SubmitHandler<Inputs>;
 };
 
 export default function UserLoginView({
-  email,
   error,
-  onEmailChange,
+  handleSubmit,
+  register,
   onSubmit,
 }: Props) {
   return (
@@ -19,17 +26,18 @@ export default function UserLoginView({
       <div className="w-full max-w-sm">
         <BrandLogo />
 
-        <form onSubmit={onSubmit} className="space-y-2">
+        <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
             type="email"
             inputMode="email"
             autoComplete="email"
-            required
             placeholder="Enter your E-mail"
             className="bg-white"
-            value={email}
-            onChange={(e) => onEmailChange(e.target.value.trim())}
+            {...register("email", {
+              required: "กรุณากรอกอีเมล",
+              pattern: { value: /.+@.+\..+/, message: "กรุณากรอกอีเมลให้ถูกต้อง" },
+            })}
           />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
