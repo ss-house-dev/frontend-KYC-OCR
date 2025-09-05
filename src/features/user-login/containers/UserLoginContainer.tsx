@@ -1,27 +1,40 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { emailStore } from "@/lib/client/emailStore";
 import UserLoginView from "../components/UserLoginView";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useCreateKycRequest } from "../hooks/useCreateKycRequest";
 
-type Inputs = {
-  email: string;
-};
+const schema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: "กรุณากรอกอีเมล" })
+    .email({ message: "กรุณากรอกอีเมลให้ถูกต้อง" }),
+});
+
+type Inputs = z.infer<typeof schema>;
 
 export default function UserLoginContainer() {
   const router = useRouter();
   const search = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
+  const { mutateAsync, isPending } = useCreateKycRequest();
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
-    watch,
   } = useForm<Inputs>({
+    resolver: zodResolver(schema),
     defaultValues: { email: "" },
+    mode: "onSubmit",
   });
 
   useEffect(() => {
@@ -29,17 +42,20 @@ export default function UserLoginContainer() {
     if (saved) setValue("email", saved, { shouldValidate: true });
   }, [setValue]);
 
-  const onSubmit: SubmitHandler<Inputs> = ({ email }) => {
+  const onSubmit: SubmitHandler<Inputs> = async ({ email }) => {
     setError(null);
-
-    emailStore.set(email);
-    const next = search.get("next") || "/id-accept";
-    router.replace(next);
+    try {
+      await mutateAsync({ companyId: "66d5c2a9f5f0a3e2b82f3a19", email });
+      router.replace(search.get("next") || "/id-accept");
+    } catch (e) {
+      setError("ส่งคำขอล้มเหลว ลองใหม่อีกครั้ง");
+    }
   };
 
   return (
     <UserLoginView
       error={error}
+      errors={errors}
       handleSubmit={handleSubmit}
       register={register as any}
       onSubmit={onSubmit}
