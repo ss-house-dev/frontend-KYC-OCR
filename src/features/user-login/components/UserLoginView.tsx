@@ -2,6 +2,7 @@ import {
   SubmitHandler,
   UseFormRegister,
   UseFormHandleSubmit,
+  FieldErrors,
 } from "react-hook-form";
 import BrandLogo from "./BrandLogo";
 import { Label, Input, Button } from "@/components/ui";
@@ -10,6 +11,7 @@ type Inputs = { email: string };
 
 type Props = {
   error: string | null;
+  errors: FieldErrors<Inputs>;
   register: UseFormRegister<Inputs>;
   handleSubmit: UseFormHandleSubmit<Inputs>;
   onSubmit: SubmitHandler<Inputs>;
@@ -17,6 +19,7 @@ type Props = {
 
 export default function UserLoginView({
   error,
+  errors,
   handleSubmit,
   register,
   onSubmit,
@@ -26,7 +29,11 @@ export default function UserLoginView({
       <div className="w-full max-w-sm">
         <BrandLogo />
 
-        <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+        <form
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-2"
+        >
           <Label htmlFor="email">Email</Label>
           <Input
             type="email"
@@ -36,10 +43,21 @@ export default function UserLoginView({
             className="bg-white"
             {...register("email", {
               required: "กรุณากรอกอีเมล",
-              pattern: { value: /.+@.+\..+/, message: "กรุณากรอกอีเมลให้ถูกต้อง" },
+              pattern: {
+                value: /.+@.+\..+/,
+                message: "กรุณากรอกอีเมลให้ถูกต้อง",
+              },
             })}
           />
 
+          {/* ข้อความจาก Zod/RHF */}
+          {errors.email && (
+            <p className="text-sm text-red-600">
+              {String(errors.email.message)}
+            </p>
+          )}
+
+          {/* ข้อความ error ฝั่งเซิร์ฟเวอร์ (ถ้ามี) */}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="mt-6">
             <Button variant="brand" size="brand" fullWidth type="submit">
