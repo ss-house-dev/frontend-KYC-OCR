@@ -5,8 +5,6 @@ export type KycResponse = { id?: string };
 type UserResponseArgs = {
   companyId: string;
   email: string;
-  onProgress?: (pct: number) => void;
-  signal?: AbortSignal;
 };
 
 export async function UserResponse({

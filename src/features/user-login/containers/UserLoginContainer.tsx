@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { emailStore } from "@/lib/client/emailStore";
 import UserLoginView from "../components/UserLoginView";
 import { useCreateKycRequest } from "../hooks/useCreateKycRequest";
+import { kycStore } from "@/lib/client/kycStore";
 
 const schema = z.object({
   email: z
@@ -45,7 +46,12 @@ export default function UserLoginContainer() {
   const onSubmit: SubmitHandler<Inputs> = async ({ email }) => {
     setError(null);
     try {
-      await mutateAsync({ companyId: "66d5c2a9f5f0a3e2b82f3a19", email });
+      const response = await mutateAsync({
+        companyId: "66d5c2a9f5f0a3e2b82f3a19",
+        email,
+      });
+
+      kycStore.set(response, "email_sent", 30);
       router.replace(search.get("next") || "/id-accept");
     } catch (e) {
       setError("ส่งคำขอล้มเหลว ลองใหม่อีกครั้ง");

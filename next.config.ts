@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/ocr/:path*',
-        destination: 'https://kyra.sshouse.dev:3207/ocr/:path*',
+        destination: 'http://141.11.156.52:3207/ocr/:path*',
       },
     ];
   },

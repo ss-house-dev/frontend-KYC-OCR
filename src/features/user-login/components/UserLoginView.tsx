@@ -57,7 +57,7 @@ export default function UserLoginView({
             </p>
           )}
 
-          {/* ข้อความ error ฝั่งเซิร์ฟเวอร์ (ถ้ามี) */}
+          {/* ข้อความ error ฝั่งเซิร์ฟเวอร์ */}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="mt-6">
             <Button variant="brand" size="brand" fullWidth type="submit">
