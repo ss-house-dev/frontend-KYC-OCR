@@ -6,6 +6,8 @@ import {
 } from "react-hook-form";
 import BrandLogo from "./BrandLogo";
 import { Label, Input, Button } from "@/components/ui";
+import { usePersistedForm } from "@/lib/client/usePersistedForm";
+
 
 type Inputs = { email: string };
 

@@ -9,6 +9,7 @@ import {
   uploadIdCardOcr,
   OcrResponse,
 } from "@/features/preview-id-card/services/ocr-id-card";
+import { usePersistedForm } from "@/lib/client/usePersistedForm";
 
 const defaultFormValues = {
   idNumber: "",
@@ -40,6 +41,10 @@ export default function VerifyIdentityScreen() {
   const router = useRouter();
   const [canSubmit, setCanSubmit] = useState(false);
 
+  const form = useForm<PreviewIdCardForm>({
+    defaultValues: defaultFormValues,
+    mode: "onChange",
+  });
   const {
     handleSubmit,
     formState: { errors, isValid },
@@ -48,10 +53,9 @@ export default function VerifyIdentityScreen() {
     control,
     setError,
     trigger,
-  } = useForm<PreviewIdCardForm>({
-    defaultValues: defaultFormValues,
-    mode: "onChange",
-  });
+  } = form;
+
+  usePersistedForm<PreviewIdCardForm>(form, "id-accept:form", 30, ["errors"]);
 
   const ocrMutation = useMutation({
     mutationKey: ["uploadIdCardOcr"],

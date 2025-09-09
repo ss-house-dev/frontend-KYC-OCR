@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { emailStore } from "@/lib/client/emailStore";
 import UserLoginView from "../components/UserLoginView";
 import { signIn } from "next-auth/react";
+import { usePersistedForm } from "@/lib/client/usePersistedForm";
 
 const schema = z.object({
   email: z
@@ -25,35 +25,35 @@ export default function UserLoginContainer() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<Inputs>({
+  const form = useForm<Inputs>({
     resolver: zodResolver(schema),
     defaultValues: { email: "" },
     mode: "onSubmit",
   });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = form;
 
-  useEffect(() => {
-    const saved = emailStore.get();
-    if (saved) setValue("email", saved, { shouldValidate: true });
-  }, [setValue]);
+  usePersistedForm<Inputs>(form, "auth:login", 30);
 
   const onSubmit: SubmitHandler<Inputs> = async ({ email }) => {
     setError(null);
     setIsPending(true);
     try {
-      const res = await signIn("credentials", { email, companyId: "66d5c2a9f5f0a3e2b82f3a19", redirect: false });
+      const res = await signIn("credentials", {
+        email,
+        companyId: "66d5c2a9f5f0a3e2b82f3a19",
+        redirect: false,
+      });
 
       if (!res || !res.ok) {
         setError("เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
-        setIsPending(false);
         return;
       }
 
-      const next = search.get("next") || "/id-accept"; 
+      const next = search.get("next") || "/id-accept";
       router.replace(next);
     } catch (e) {
       setError("ส่งคำขอล้มเหลว ลองใหม่อีกครั้ง");
