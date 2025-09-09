@@ -22,7 +22,6 @@ type Inputs = z.infer<typeof schema>;
 export default function UserLoginContainer() {
   const router = useRouter();
   const search = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   const form = useForm<Inputs>({
@@ -39,7 +38,6 @@ export default function UserLoginContainer() {
   usePersistedForm<Inputs>(form, "auth:login", 30);
 
   const onSubmit: SubmitHandler<Inputs> = async ({ email }) => {
-    setError(null);
     setIsPending(true);
     try {
       const res = await signIn("credentials", {
@@ -49,14 +47,14 @@ export default function UserLoginContainer() {
       });
 
       if (!res || !res.ok) {
-        setError("เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
+        console.error("Login failed", res?.error);
         return;
       }
 
       const next = search.get("next") || "/id-accept";
       router.replace(next);
     } catch (e) {
-      setError("ส่งคำขอล้มเหลว ลองใหม่อีกครั้ง");
+      console.error("Login error", e);
     } finally {
       setIsPending(false);
     }
@@ -64,7 +62,6 @@ export default function UserLoginContainer() {
 
   return (
     <UserLoginView
-      error={error}
       errors={errors}
       handleSubmit={handleSubmit}
       register={register as any}

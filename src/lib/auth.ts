@@ -49,19 +49,13 @@ export const authOptions: NextAuthOptions = {
           }
 
           const data = await res.json().catch(() => ({}));
-
-          // ✅ จุดสำคัญ:
-          // /kyc/requests ของคุณน่าจะคืน "KYC request id" (ไม่ใช่ user id)
-          // เราจะ:
-          //  - ใช้ email เป็น user id ชั่วคราว (ให้ระบบวิ่งได้)
-          //  - เก็บ kycRequestId ไว้ใน token/session เพื่อนำไปใช้ต่อ
           const kycRequestId = data?.id;
-          const userId = email; // หรือถ้าคุณมี endpoint user จริง ให้เปลี่ยนเป็น user.id ที่ backend คืนมา
+          const userId = email;
 
           return {
             id: userId,
             email,
-            kycRequestId, // จะย้ายไปเก็บใน token/session ใน callbacks ด้านล่าง
+            kycRequestId, 
           };
         } catch (err) {
           console.error("[authorize] error:", err);
@@ -75,7 +69,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.userId = (user as any).id;
         token.email = (user as any).email;
-        token.kycRequestId = (user as any).kycRequestId; // เก็บต่อใน JWT
+        token.kycRequestId = (user as any).kycRequestId; 
       }
       return token;
     },
@@ -83,7 +77,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.userId;
       }
-      (session as any).kycRequestId = token.kycRequestId; // expose ไปที่ session
+      (session as any).kycRequestId = token.kycRequestId; 
       return session;
     },
   },

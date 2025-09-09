@@ -6,13 +6,10 @@ import {
 } from "react-hook-form";
 import BrandLogo from "./BrandLogo";
 import { Label, Input, Button } from "@/components/ui";
-import { usePersistedForm } from "@/lib/client/usePersistedForm";
-
 
 type Inputs = { email: string };
 
 type Props = {
-  error: string | null;
   errors: FieldErrors<Inputs>;
   register: UseFormRegister<Inputs>;
   handleSubmit: UseFormHandleSubmit<Inputs>;
@@ -20,7 +17,6 @@ type Props = {
 };
 
 export default function UserLoginView({
-  error,
   errors,
   handleSubmit,
   register,
@@ -44,10 +40,10 @@ export default function UserLoginView({
             placeholder="Enter your E-mail"
             className="bg-white"
             {...register("email", {
-              required: "กรุณากรอกอีเมล",
+              required: "Please enter your email address.",
               pattern: {
                 value: /.+@.+\..+/,
-                message: "กรุณากรอกอีเมลให้ถูกต้อง",
+                message: "Please enter a valid email address.",
               },
             })}
           />
@@ -59,8 +55,6 @@ export default function UserLoginView({
             </p>
           )}
 
-          {/* ข้อความ error ฝั่งเซิร์ฟเวอร์ */}
-          {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="mt-6">
             <Button variant="brand" size="brand" fullWidth type="submit">
               Login
