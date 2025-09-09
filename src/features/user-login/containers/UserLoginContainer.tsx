@@ -8,14 +8,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import UserLoginView from "../components/UserLoginView";
 import { signIn } from "next-auth/react";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
-import { signOut } from "next-auth/react";
 
 const schema = z.object({
   email: z
     .string()
     .trim()
-    .min(1, { message: "กรุณากรอกอีเมล" })
-    .email({ message: "กรุณากรอกอีเมลให้ถูกต้อง" }),
+    .min(1, { message: "Please enter your email address." })
+    .email({ message: "Please enter a valid email address." }),
 });
 
 type Inputs = z.infer<typeof schema>;
@@ -64,17 +63,11 @@ export default function UserLoginContainer() {
   };
 
   return (
-    <>
       <UserLoginView
         errors={errors}
         handleSubmit={handleSubmit}
         register={register as any}
         onSubmit={onSubmit}
       />
-
-      <button onClick={() => signOut({ callbackUrl: "/user-login" })}>
-        ออกจากระบบ
-      </button>
-    </>
   );
 }
