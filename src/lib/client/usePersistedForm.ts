@@ -58,13 +58,11 @@ export function usePersistedForm<TFieldValues extends FieldValues>(
             }
           }
         } catch {
-          /* noop */
         }
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

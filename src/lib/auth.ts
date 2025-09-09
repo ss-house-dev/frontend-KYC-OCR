@@ -2,7 +2,6 @@ import type { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { z } from "zod";
 
-// ผู้ใช้ที่เราจะคืนจาก authorize() (ไม่มี any)
 type AppUser = User & {
   id: string;
   email: string;
@@ -15,8 +14,7 @@ const CredentialsSchema = z.object({
 });
 
 type KycCreateResponse = {
-  id?: string; // kycRequestId
-  // …ฟิลด์อื่นจาก backend ใส่เพิ่มได้
+  id?: string; 
 };
 
 export const authOptions: NextAuthOptions = {
@@ -67,8 +65,6 @@ export const authOptions: NextAuthOptions = {
             () => ({} as KycCreateResponse)
           );
           const kycRequestId = typeof data.id === "string" ? data.id : undefined;
-
-          // ถ้ายังไม่มี userId จริงจาก backend ใช้ email เป็น id ชั่วคราว
           const user: AppUser = { id: email, email, kycRequestId };
           return user;
         } catch (err) {
@@ -80,9 +76,8 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // user มีค่าเฉพาะครั้งแรกหลัง authorize()
       if (user) {
-        const u = user as AppUser; // ✅ cast เป็นชนิดที่เราควบคุม
+        const u = user as AppUser; 
         token.userId = u.id;
         token.email = u.email ?? token.email;
         if (u.kycRequestId) token.kycRequestId = u.kycRequestId;
@@ -91,7 +86,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user && token.userId) {
-        session.user.id = token.userId; // ✅ type-safe จาก module augmentation
+        session.user.id = token.userId; 
       }
       if (typeof token.kycRequestId === "string") {
         session.kycRequestId = token.kycRequestId;
