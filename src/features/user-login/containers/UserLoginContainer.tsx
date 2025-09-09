@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import UserLoginView from "../components/UserLoginView";
 import { signIn } from "next-auth/react";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
+import { signOut } from "next-auth/react";
 
 const schema = z.object({
   email: z
@@ -22,6 +23,8 @@ type Inputs = z.infer<typeof schema>;
 export default function UserLoginContainer() {
   const router = useRouter();
   const search = useSearchParams();
+  const rawCb = search.get("callbackUrl"); 
+  const callbackUrl = rawCb ?? "/id-accept";
   const [isPending, setIsPending] = useState(false);
 
   const form = useForm<Inputs>({
@@ -43,7 +46,7 @@ export default function UserLoginContainer() {
       const res = await signIn("credentials", {
         email,
         companyId: "66d5c2a9f5f0a3e2b82f3a19",
-        redirect: false,
+        callbackUrl,  
       });
 
       if (!res || !res.ok) {
@@ -61,11 +64,17 @@ export default function UserLoginContainer() {
   };
 
   return (
-    <UserLoginView
-      errors={errors}
-      handleSubmit={handleSubmit}
-      register={register as any}
-      onSubmit={onSubmit}
-    />
+    <>
+      <UserLoginView
+        errors={errors}
+        handleSubmit={handleSubmit}
+        register={register as any}
+        onSubmit={onSubmit}
+      />
+
+      <button onClick={() => signOut({ callbackUrl: "/user-login" })}>
+        ออกจากระบบ
+      </button>
+    </>
   );
 }

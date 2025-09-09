@@ -4,9 +4,9 @@ import { authOptions } from "@/lib/auth";
 export async function GET() {
   const session = await getServerSession(authOptions);
   return Response.json({
-    userId: (session?.user as any)?.id ?? null,
+    userId: session?.user?.id ?? null,
     email: session?.user?.email ?? null,
-    kycRequestId: (session as any)?.kycRequestId ?? null,
-    authenticated: !!session,
+    kycRequestId: session?.kycRequestId ?? null,
+    authenticated: Boolean(session),
   });
 }
