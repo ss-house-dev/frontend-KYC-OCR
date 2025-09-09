@@ -7,8 +7,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { emailStore } from "@/lib/client/emailStore";
 import UserLoginView from "../components/UserLoginView";
-import { useCreateKycRequest } from "../hooks/useCreateKycRequest";
-import { kycStore } from "@/lib/client/kycStore";
+import { signIn } from "next-auth/react";
 
 const schema = z.object({
   email: z
@@ -24,8 +23,7 @@ export default function UserLoginContainer() {
   const router = useRouter();
   const search = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-
-  const { mutateAsync, isPending } = useCreateKycRequest();
+  const [isPending, setIsPending] = useState(false);
 
   const {
     register,
@@ -45,16 +43,22 @@ export default function UserLoginContainer() {
 
   const onSubmit: SubmitHandler<Inputs> = async ({ email }) => {
     setError(null);
+    setIsPending(true);
     try {
-      const response = await mutateAsync({
-        companyId: "66d5c2a9f5f0a3e2b82f3a19",
-        email,
-      });
+      const res = await signIn("credentials", { email, companyId: "66d5c2a9f5f0a3e2b82f3a19", redirect: false });
 
-      kycStore.set(response, "email_sent", 30);
-      router.replace(search.get("next") || "/id-accept");
+      if (!res || !res.ok) {
+        setError("เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่");
+        setIsPending(false);
+        return;
+      }
+
+      const next = search.get("next") || "/id-accept"; 
+      router.replace(next);
     } catch (e) {
       setError("ส่งคำขอล้มเหลว ลองใหม่อีกครั้ง");
+    } finally {
+      setIsPending(false);
     }
   };
 
