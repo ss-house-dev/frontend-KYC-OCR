@@ -10,6 +10,7 @@ import { Label, Input, Button } from "@/components/ui";
 type Inputs = { email: string };
 
 type Props = {
+  error: string | null;
   errors: FieldErrors<Inputs>;
   register: UseFormRegister<Inputs>;
   handleSubmit: UseFormHandleSubmit<Inputs>;
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export default function UserLoginView({
+  error,
   errors,
   handleSubmit,
   register,
@@ -48,12 +50,13 @@ export default function UserLoginView({
             })}
           />
 
-          {/* ข้อความจาก Zod/RHF */}
-          {errors.email && (
+          {errors.email ? (
             <p className="text-sm text-red-600">
               {String(errors.email.message)}
             </p>
-          )}
+          ) : error ? (
+            <p className="text-sm text-red-600">{error}</p>
+          ) : null}
 
           <div className="mt-6">
             <Button variant="brand" size="brand" fullWidth type="submit">
