@@ -4,13 +4,15 @@ import React, { useEffect, useState } from "react";
 import { Path, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { usePersistedForm } from "@/lib/client/usePersistedForm";
+import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
 import FormIdCard from "../components/FormIdCard";
 import AlertPopUp from "@/components/AlertPopUp";
 import {
   uploadIdCardOcr,
   OcrResponse,
 } from "@/features/preview-id-card/services/ocr-id-card";
-import { usePersistedForm } from "@/lib/client/usePersistedForm";
 
 const defaultFormValues = {
   idNumber: "",
@@ -27,51 +29,6 @@ const defaultFormValues = {
 
 type PreviewIdCardForm = typeof defaultFormValues;
 
-// ฟังก์ชันคำนวณความคล้ายคลึง
-const calculateSimilarity = (str1: string, str2: string): number => {
-  if (!str1 || !str2) return 0;
-
-  const longer = str1.length > str2.length ? str1 : str2;
-  const shorter = str1.length > str2.length ? str2 : str1;
-
-  if (longer.length === 0) return 100;
-
-  const matrix = [];
-  for (let i = 0; i <= longer.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= shorter.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  for (let i = 1; i <= longer.length; i++) {
-    for (let j = 1; j <= shorter.length; j++) {
-      if (longer.charAt(i - 1) === shorter.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-
-  const distance = matrix[longer.length][shorter.length];
-  return ((longer.length - distance) / longer.length) * 100;
-};
-
-const base64StringToFile = (base64String: string, filename: string): File => {
-  const [meta, data] = base64String.split(",");
-  const mimeMatch = meta.match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
-  const bstr = atob(data);
-  const u8 = new Uint8Array(bstr.length);
-  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
-  return new File([u8], filename, { type: mime });
-};
-
 export default function VerifyIdentityScreen() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
@@ -82,6 +39,8 @@ export default function VerifyIdentityScreen() {
     firstNameThai: string;
     lastNameThai: string;
   }>({ firstNameThai: "", lastNameThai: "" });
+  const { data: session, status } = useSession();
+  const kycRequestId = session?.kycRequestId;
 
   const form = useForm<PreviewIdCardForm>({
     defaultValues: defaultFormValues,
@@ -100,8 +59,9 @@ export default function VerifyIdentityScreen() {
   usePersistedForm<PreviewIdCardForm>(form, "id-accept:form", 30, ["errors"]);
 
   const ocrMutation = useMutation({
-    mutationKey: ["uploadIdCardOcr"],
-    mutationFn: (file: File) => uploadIdCardOcr(file, setLoadingProgress),
+    mutationKey: ["uploadIdCardOcr", kycRequestId],
+    mutationFn: (file: File) =>
+      uploadIdCardOcr(file, kycRequestId, setLoadingProgress),
 
     onSuccess: (ocrData: OcrResponse) => {
       console.log("OCR Success, resetting form with:", ocrData);
@@ -152,16 +112,20 @@ export default function VerifyIdentityScreen() {
       }, 100);
     },
     //alert error ไว้ใช้ใน sprint หน้า
-    // onError: (err) => {
-    //   console.error("OCR upload failed:", err);
-    //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-    // },
+    onError: (err) => {
+      console.error("OCR upload failed:", err);
+      alert(err instanceof Error ? err.message : "Upload failed");    },
   });
 
   useEffect(() => {
     const processImageOnMount = async () => {
-      const imageSrc = sessionStorage.getItem("capturedIdCardImage");
+      if (status === "loading") return;
+      if (!kycRequestId) {
+        router.replace("/user-login");
+        return;
+      }
 
+      const imageSrc = sessionStorage.getItem("capturedIdCardImage");
       if (!imageSrc) {
         router.replace("/");
         return;
@@ -192,7 +156,7 @@ export default function VerifyIdentityScreen() {
       }
     };
     processImageOnMount();
-  }, []);
+  }, [status, kycRequestId]);
 
   const watchedValues = watch();
 
@@ -245,14 +209,14 @@ export default function VerifyIdentityScreen() {
     const overallSimilarity = (firstNameSimilarity + lastNameSimilarity) / 2;
 
     if (overallSimilarity < 60) {
-      setPendingData(data); 
-      setShowDialog(true); 
+      setPendingData(data);
+      setShowDialog(true);
     } else {
       router.push("/face-accept");
     }
   };
 
-    const handleRetry = () => {
+  const handleRetry = () => {
     setShowDialog(false);
     setPendingData(null);
   };
@@ -279,9 +243,7 @@ export default function VerifyIdentityScreen() {
       <AlertPopUp
         isOpen={showDialog}
         title="Edited Name Doesn’t Match"
-        message={
-          `Your edited name is very different the extracted name, Please correct it to continue.`
-        }
+        message={`Your edited name is very different the extracted name, Please correct it to continue.`}
         onRetry={handleRetry}
       />
     </>
