@@ -6,13 +6,14 @@ import {
 } from "react-hook-form";
 import BrandLogo from "./BrandLogo";
 import { Label, Input, Button } from "@/components/ui";
+import type { LoginInputs } from "@/features/user-login/types/type.ts";
 
 type Inputs = { email: string };
 
 type Props = {
   error: string | null;
   errors: FieldErrors<Inputs>;
-  register: UseFormRegister<Inputs>;
+  register: UseFormRegister<LoginInputs>;
   handleSubmit: UseFormHandleSubmit<Inputs>;
   onSubmit: SubmitHandler<Inputs>;
 };
@@ -57,7 +58,7 @@ export default function UserLoginView({
           ) : error ? (
             <p className="text-sm text-red-600">{error}</p>
           ) : null}
-          
+
           <div className="mt-6">
             <Button variant="brand" size="brand" fullWidth type="submit">
               Login

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import UserLoginView from "../components/UserLoginView";
 import { signIn } from "next-auth/react";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
+import type { LoginInputs } from "@/features/user-login/types/type.ts";
 
 const schema = z.object({
   email: z
@@ -27,7 +28,7 @@ export default function UserLoginContainer() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  const form = useForm<Inputs>({
+  const form = useForm<LoginInputs>({
     resolver: zodResolver(schema),
     defaultValues: { email: "" },
     mode: "onSubmit",
@@ -72,7 +73,7 @@ export default function UserLoginContainer() {
       error={error}
       errors={errors}
       handleSubmit={handleSubmit}
-      register={register as any}
+      register={register} 
       onSubmit={onSubmit}
     />
   );
