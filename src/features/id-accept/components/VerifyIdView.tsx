@@ -16,6 +16,7 @@ const InfoIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
 const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -26,6 +27,7 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" />
   </svg>
 );
+
 interface VerifyIdViewProps {
   isChecked: boolean;
   onCheckboxChange: (checked: boolean) => void;
@@ -39,15 +41,15 @@ export default function VerifyIdView({
   onStartScan,
 }: VerifyIdViewProps) {
   return (
-    <div className="flex flex-col min-h-screen bg-white font-inter">
-      <div className="mx-auto w-full max-w-[480px] flex min-h-screen flex-col">
-        <main className="flex-grow flex flex-col p-6 pt-8">
-          <div className="w-full mb-8">
+    <div className="flex min-h-dvh flex-col bg-white font-inter">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
+        <main className="flex flex-grow flex-col p-6 pt-8 ">
+          <div className="mb-6 w-full">
             <div className="flex items-baseline justify-between gap-4">
-              <span className="text-[18px]  text-black whitespace-nowrap">
+              <span className="whitespace-nowrap text-[18px] text-black">
                 Step 1 of 3
               </span>
-              <span className="text-[18px]  text-gray-600 whitespace-nowrap">
+              <span className="whitespace-nowrap text-[18px] text-gray-600">
                 ID Card Verification
               </span>
             </div>
@@ -59,30 +61,32 @@ export default function VerifyIdView({
             </div>
           </div>
 
-          <div className="mb-6 flex flex-col items-center text-center">
+          <div className="flex flex-col items-center text-center">
             <h2
               className="font-bold"
               style={{ color: "#0F2D73", fontSize: "20px" }}
             >
               Please have your ID card ready
             </h2>
-            <p className="text-gray-500 mt-1 text-sm">
+            <p className="mt-2 text-sm text-gray-500">
               Make sure your ID card is clearly visible.
             </p>
           </div>
-          <div className="w-40 h-40 mx-auto my-4">
+
+          <div className="mx-auto my-4 h-30 w-44">
             <Image
               src="/id-accept/card-sample.svg"
               alt="ID Card Illustration"
               width={160}
               height={160}
-              className="w-full h-full object-contain"
+              className="h-full w-full object-contain"
             />
           </div>
-          <div className="grid grid-cols-3 gap-3 my-4">
+
+          <div className="my-4 grid grid-cols-3 gap-5">
             <div className="flex items-center justify-center">
               <Image
-                src="\id-accept\card-sample-correct.svg"
+                src="/id-accept/card-sample-correct.svg"
                 alt="Correct Example"
                 width={100}
                 height={75}
@@ -91,7 +95,7 @@ export default function VerifyIdView({
             </div>
             <div className="flex items-center justify-center">
               <Image
-                src="\id-accept\card-sample-blurry.svg"
+                src="/id-accept/card-sample-blurry.svg"
                 alt="Blurry Example"
                 width={100}
                 height={75}
@@ -100,7 +104,7 @@ export default function VerifyIdView({
             </div>
             <div className="flex items-center justify-center">
               <Image
-                src="\id-accept\card-sample-glare.svg"
+                src="/id-accept/card-sample-glare.svg"
                 alt="Glare Example"
                 width={100}
                 height={75}
@@ -109,175 +113,99 @@ export default function VerifyIdView({
             </div>
           </div>
 
-          <div className="space-y-3 text-left">
-            <div className="flex ">
-              <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="11"
-                    fill="#fff"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="12"
-                    y="17"
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="#9ca3af"
-                    fontWeight="bold"
+          <div className="text-left space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div className="flex items-center" key={i}>
+                <span className="mr-3 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full">
+                  <svg
+                    className="h-4 w-4 text-gray-600"
+                    viewBox="0 0 24 24"
+                    fill="none"
                   >
-                    !
-                  </text>
-                </svg>
-              </span>
-              <span className="text-gray-600" style={{ fontSize: "13px" }}>
-                Place your ID card within the camera frame.
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="11"
-                    fill="#fff"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="12"
-                    y="17"
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="#9ca3af"
-                    fontWeight="bold"
-                  >
-                    !
-                  </text>
-                </svg>
-              </span>
-              <span className="text-gray-600" style={{ fontSize: "13px" }}>
-                Please make sure your camera is steady to avoid blurry images.
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="11"
-                    fill="#fff"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="12"
-                    y="17"
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="#9ca3af"
-                    fontWeight="bold"
-                  >
-                    !
-                  </text>
-                </svg>
-              </span>
-              <span className="text-gray-600" style={{ fontSize: "13px" }}>
-                Please make sure you are in a well-lit area for optimal results.
-              </span>
-            </div>
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="11"
+                      fill="#fff"
+                      stroke="#9ca3af"
+                      strokeWidth="2"
+                    />
+                    <text
+                      x="12"
+                      y="17"
+                      textAnchor="middle"
+                      fontSize="16"
+                      fill="#9ca3af"
+                      fontWeight="bold"
+                    >
+                      !
+                    </text>
+                  </svg>
+                </span>
+                <span className="text-[13px] text-gray-600">
+                  {i === 0 && "Place your ID card within the camera frame."}
+                  {i === 1 &&
+                    "Please make sure your camera is steady to avoid blurry images."}
+                  {i === 2 &&
+                    "Please make sure you are in a well-lit area for optimal results."}
+                </span>
+              </div>
+            ))}
           </div>
         </main>
-        <footer className="p-6  bg-white">
-          <label
-            htmlFor="consent-checkbox"
-            className="flex items-start space-x-3 cursor-pointer"
-          >
-            <div className="relative flex-shrink-0 mt-1">
+      </div>
+
+      <footer className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur  border-gray-200">
+        <div className="mx-auto w-full max-w-[480px] p-6 pb-[calc(16px+env(safe-area-inset-bottom))]">
+          <label className="flex cursor-pointer items-start gap-3">
+            <div className="relative mt-0.5 flex-shrink-0">
               <input
                 id="consent-checkbox"
                 type="checkbox"
                 checked={isChecked}
                 onChange={(e) => onCheckboxChange(e.target.checked)}
-                className="sr-only"
+                className="peer sr-only"
               />
-
-              <label
-                htmlFor="consent-checkbox"
-                className="block h-5 w-5 absolute left-0 top-0 cursor-pointer border rounded-[6px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1849D6]/40"
-                style={{
-                  borderColor: isChecked ? "#1849D6" : "#D1D5DB",
-                  backgroundColor: isChecked ? "#1849D6" : "#fff",
-                }}
+              <span
+                aria-hidden="true"
+                className="block h-5 w-5 rounded-[6px] border transition-colors
+                     border-[#D1D5DB] bg-white
+                     peer-focus-visible:ring-2 peer-focus-visible:ring-[#1849D6]/40
+                     peer-checked:border-[#1849D6] peer-checked:bg-[#1849D6]"
+              />
+              <svg
+                className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity
+                     peer-checked:opacity-100"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    top: "1px",
-                    left: "5px",
-                    width: "8px",
-                    height: "12px",
-                    borderRight: `2px solid ${
-                      isChecked ? "#fff" : "transparent"
-                    }`,
-                    borderBottom: `2px solid ${
-                      isChecked ? "#fff" : "transparent"
-                    }`,
-                    transform: "rotate(45deg)",
-                    pointerEvents: "none",
-                  }}
-                />
-              </label>
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
             </div>
 
-            <svg
-              className="h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span className="text-sm text-black" style={{ fontSize: "14px" }}>
+            <span className="text-sm text-black">
               I consent to Kyra KYC processing my personal and biometric data
               for identity verification, AML compliance, and as per its privacy
               policy.
             </span>
           </label>
-          <div className="mt-4"></div>
+
+          <div className="mt-4" />
           <button
             onClick={onStartScan}
             disabled={!isChecked}
-            className={`w-full py-3 rounded-lg text-white  text-base transition-colors duration-300 ${
-              isChecked ? "bg-[#2152b6]" : "bg-gray-400 cursor-not-allowed"
+            className={`w-full rounded-lg py-3 text-base text-white transition-colors duration-300 ${
+              isChecked ? "bg-[#2152b6]" : "cursor-not-allowed bg-gray-400"
             }`}
           >
             Get Started
           </button>
-        </footer>
-      </div>
+        </div>
+      </footer>
     </div>
   );
 }
