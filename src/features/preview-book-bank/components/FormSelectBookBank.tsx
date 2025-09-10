@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import {
   FieldErrors,
   FieldValues,
   Path,
-  RegisterOptions,
   Control,
   Controller,
 } from "react-hook-form";
@@ -19,21 +18,19 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 
-interface FormSelectProps<TFieldValues extends FieldValues> {
+interface FormSelectBookBankProps<TFieldValues extends FieldValues> {
   fieldName: Path<TFieldValues>;
   label: string;
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
-  validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
 }
 
-const FormSelect = <TFieldValues extends FieldValues>({
+const FormSelectBookBank = <TFieldValues extends FieldValues>({
   fieldName,
   label,
   control,
   errors,
-  validationRules,
-}: FormSelectProps<TFieldValues>) => {
+}: FormSelectBookBankProps<TFieldValues>) => {
   const bankOptions = [
     { value: "kbank", label: "KBANK", image: "/logo-bank/kbank.jpg" },
     { value: "scb", label: "SCB", image: "/logo-bank/scb.png" },
@@ -49,14 +46,13 @@ const FormSelect = <TFieldValues extends FieldValues>({
       <Controller
         name={fieldName}
         control={control}
-        rules={validationRules}
         render={({ field }) => {
           const selectedBank = bankOptions.find(
             (bank) => bank.value === field.value
           );
 
           return (
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select value={field.value || ""} onValueChange={field.onChange}>
               <SelectTrigger>
                 {selectedBank ? (
                   <div className="flex items-center gap-4">
@@ -99,4 +95,4 @@ const FormSelect = <TFieldValues extends FieldValues>({
   );
 };
 
-export default FormSelect;
+export default FormSelectBookBank;

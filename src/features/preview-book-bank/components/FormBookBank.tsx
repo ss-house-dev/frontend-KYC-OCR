@@ -33,12 +33,12 @@ const IconInfo = () => (
 interface BookBankFormValues {
   bank: string;
   branch: string;
-  accountName: string;
+  accountNameThai: string;
+  accountNameEng: string;
   accountNo: string;
 }
 interface FormBookBankProps<TFieldValues extends FieldValues> {
   onSubmit: ReturnType<UseFormHandleSubmit<TFieldValues>>;
-  register: UseFormRegister<TFieldValues>;
   watch: UseFormWatch<TFieldValues>;
   control: Control<TFieldValues>;
   canSubmit: boolean;
@@ -55,7 +55,6 @@ const FormBookBank = <TFieldValues extends FieldValues>({
   watch,
   control,
   errors,
-  register,
   capturedImage,
   bankOptions,
   isValid,
@@ -91,85 +90,48 @@ const FormBookBank = <TFieldValues extends FieldValues>({
               label="Select a Bank"
               control={control}
               errors={errors}
-              validationRules={{ required: "This field is needed." }}
             />
           </div>
 
           {/* === ช่อง Branch === */}
-          <Controller
-            name={"branchNameThai" as Path<TFieldValues>}
+          <FormFieldBookBank
+            fieldName={"branchNameThai" as Path<TFieldValues>}
+            label="Branch"
+            placeholder="Enter Branch"
+            type="text"
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-              pattern: {
-                value: /^[\u0E00-\u0E7F ]+$/,
-                message: "Invalid format. Please enter the correct characters.",
-              },
-            }}
-            render={({ field }) => (
-              <FormFieldBookBank
-                fieldName={"branchNameThai" as Path<TFieldValues>}
-                label="Branch"
-                placeholder="Enter Branch"
-                type="text"
-                value={field.value}
-                control={control}
-                errors={errors}
-              />
-            )}
+            errors={errors}
           />
 
-          {/* === ช่อง Account Name === */}
-          <Controller
-            name={"accountNameThai" as Path<TFieldValues>}
+          {/* === ช่อง Account Name (TH) === */}
+          <FormFieldBookBank
+            fieldName={"accountNameThai" as Path<TFieldValues>}
+            label="Account Name (TH)"
+            placeholder="Enter Name"
+            type="text"
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-              pattern: {
-                value: /^[\u0E00-\u0E7F ]+$/,
-                message: "Invalid format. Please enter the correct characters.",
-              },
-            }}
-            render={({ field }) => (
-              <FormFieldBookBank
-                fieldName={"accountNameThai" as Path<TFieldValues>}
-                label="Account Name (TH)"
-                placeholder="Enter Name"
-                type="text"
-                value={field.value}
-                control={control}
-                errors={errors}
-              />
-            )}
+            errors={errors}
+          />
+
+          {/* === ช่อง Account Name (ENG) === */}
+          <FormFieldBookBank
+            fieldName={"accountNameEng" as Path<TFieldValues>}
+            label="Account Name (ENG)"
+            placeholder="Enter Name"
+            type="text"
+            control={control}
+            errors={errors}
           />
 
           {/* === ช่อง Account No. === */}
-          <Controller
-            name={"accountNumber" as Path<TFieldValues>}
+          <FormFieldBookBank
+            fieldName={"accountNumber" as Path<TFieldValues>}
+            label="Account No."
+            placeholder="Enter Account no."
+            type="text"
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-              maxLength: 13,
-              validate: (value: string) => {
-                const digitsOnly = value.replace(/-/g, "");
-                if (digitsOnly.length > 13) return false;
-                if (value.length > 0 && !/^[0-9-]+$/.test(value)) return false;
-                return true;
-              },
-            }}
-            render={({ field }) => (
-              <FormFieldBookBank
-                fieldName={"accountNumber" as Path<TFieldValues>}
-                label="Account No."
-                placeholder="Enter Account no."
-                type="text"
-                control={control}
-                value={field.value}
-                onChange={field.onChange}
-                errors={errors}
-                disabled
-              />
-            )}
+            errors={errors}
+            disabled
           />
         </div>
       </div>

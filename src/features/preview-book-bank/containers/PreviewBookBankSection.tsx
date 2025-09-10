@@ -8,13 +8,18 @@ import { useMutation } from "@tanstack/react-query";
 import { uploadBookBankOcr, OcrResponse } from "../services";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
 import AlertPopUp from "@/components/AlertPopUp";
+import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
+import { useSession } from "next-auth/react";
+import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
+import { bookbankFormSchema, BookBankFormData } from "./../schemas/bookbank";
 
 const defaultFormValues = {
   bank: "",
   branchNameThai: "",
   accountNameThai: "",
+  accountNameEng: "",
   accountNumber: "",
-  errors: [{ field: "", message: "" }],
+  // errors: [{ field: "", message: "" }],
 };
 
 type BookBankFormValues = typeof defaultFormValues;
@@ -25,51 +30,6 @@ const bankOptions = [
   { value: "ktb", label: "KTB", image: "/logobank/KTB.png" },
 ];
 
-// ฟังก์ชันคำนวณความคล้ายคลึง
-const calculateSimilarity = (str1: string, str2: string): number => {
-  if (!str1 || !str2) return 0;
-
-  const longer = str1.length > str2.length ? str1 : str2;
-  const shorter = str1.length > str2.length ? str2 : str1;
-
-  if (longer.length === 0) return 100;
-
-  const matrix = [];
-  for (let i = 0; i <= longer.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= shorter.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  for (let i = 1; i <= longer.length; i++) {
-    for (let j = 1; j <= shorter.length; j++) {
-      if (longer.charAt(i - 1) === shorter.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-
-  const distance = matrix[longer.length][shorter.length];
-  return ((longer.length - distance) / longer.length) * 100;
-};
-
-const base64StringToFile = (base64String: string, filename: string): File => {
-  const [meta, data] = base64String.split(",");
-  const mimeMatch = meta.match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
-  const bstr = atob(data);
-  const u8 = new Uint8Array(bstr.length);
-  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
-  return new File([u8], filename, { type: mime });
-};
-
 export default function BookBankPage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
@@ -79,12 +39,20 @@ export default function BookBankPage() {
   const [pendingData, setPendingData] = useState<any>(null);
   const [originalData, setOriginalData] = useState<{
     accountNameThai: string;
-  }>({ accountNameThai: "" });
+    accountNameEng: string;
+  }>({ accountNameThai: "", accountNameEng: "" });
+
+  const { data: session, status } = useSession();
+  const kycRequestId = session?.kycRequestId;
 
   const form = useForm<BookBankFormValues>({
+    resolver: zodResolver(bookbankFormSchema),
     defaultValues: defaultFormValues,
     mode: "onChange",
+    criteriaMode: "all",
+    shouldFocusError: true,
   });
+
   const {
     handleSubmit,
     watch,
@@ -96,22 +64,28 @@ export default function BookBankPage() {
     formState: { errors, isValid },
   } = form;
 
-  usePersistedForm<BookBankFormValues>(form, "book-bank:form", 30, ["errors"]);
+  usePersistedForm<BookBankFormData>(form, "book-bank:form", 30, ["errors"]);
 
   const ocrMutation = useMutation({
-    mutationKey: ["uploadBookBankOcr"],
-    mutationFn: (file: File) => uploadBookBankOcr(file, setLoadingProgress),
+    mutationKey: ["uploadBookBankOcr", kycRequestId],
+    mutationFn: (file: File) => {
+      if (!kycRequestId)
+        throw new Error("Missing kycRequestId. Please sign in first.");
+      return uploadBookBankOcr(file, kycRequestId, setLoadingProgress);
+    },
     onSuccess: (ocrData: OcrResponse) => {
       console.log("OCR Success, resetting form with:", ocrData);
 
       // เก็บข้อมูลเดิมจาก OCR
       setOriginalData({
         accountNameThai: ocrData.accountNameThai || "",
+        accountNameEng: ocrData.accountNameEng || "",
       });
 
       reset({
         branchNameThai: ocrData.branchNameThai || "",
         accountNameThai: ocrData.accountNameThai || "",
+        accountNameEng: ocrData.accountNameEng || "",
         accountNumber: ocrData.accountNumber || "",
       });
 
@@ -120,6 +94,7 @@ export default function BookBankPage() {
         const requiredFields = [
           { field: "branchNameThai", value: ocrData.branchNameThai },
           { field: "accountNameThai", value: ocrData.accountNameThai },
+          { field: "accountNameEng", value: ocrData.accountNameEng },
           { field: "accountNumber", value: ocrData.accountNumber },
         ];
 
@@ -138,10 +113,10 @@ export default function BookBankPage() {
         });
       }, 100);
     },
-    // onError: (err) => {
-    //   console.error("OCR upload failed:", err);
-    //   alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
-    // },
+    onError: (err) => {
+      console.error("OCR upload failed:", err);
+      alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+    },
   });
 
   useEffect(() => {
@@ -196,13 +171,17 @@ export default function BookBankPage() {
   const onSubmit = (data: BookBankFormValues) => {
     console.log("Form submitted:", data);
 
-    // เช็คความคล้ายคลึงของชื่อ
-    const accountNameSimilarity = calculateSimilarity(
+    // เช็คความคล้ายของชื่อ
+    const accountNameThaiSimilarity = calculateSimilarity(
       originalData.accountNameThai,
       data.accountNameThai
     );
+    const accountNameEngSimilarity = calculateSimilarity(
+      originalData.accountNameEng,
+      data.accountNameEng
+    );
 
-    if (accountNameSimilarity < 60) {
+    if (accountNameThaiSimilarity < 60 || accountNameEngSimilarity < 60) {
       setPendingData(data);
       setShowDialog(true);
     } else {
@@ -219,7 +198,6 @@ export default function BookBankPage() {
     <>
       <FormBookBank
         onSubmit={handleSubmit(onSubmit)}
-        register={register}
         watch={watch}
         control={control}
         errors={errors}
