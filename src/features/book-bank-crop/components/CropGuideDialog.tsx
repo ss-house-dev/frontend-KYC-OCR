@@ -1,130 +1,87 @@
 "use client";
 
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
-export default function CropGuideDialog({ onClose }: { onClose: () => void }) {
+type GuideImages = {
+  visible: string;
+  sharp: string;
+  info: string;
+};
+
+type Props = {
+  onClose: () => void;
+  images?: GuideImages;
+};
+
+function GuideRow({
+  img,
+  text,
+  dark = false,
+}: {
+  img: string;
+  text: string;
+  dark?: boolean;
+}) {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-lg p-4">
-        <div
-          className="text-center font-semibold"
-          style={{ color: "##0F2D73" }}
-        >
+    <div className="flex items-center gap-3">
+      <div
+        className={[
+          "relative shrink-0 w-20 h-20 rounded-lg overflow-hidden wr-3",
+          dark ? "bg-gray-200" : "bg-[#EAF4FF]",
+        ].join(" ")}
+      >
+        <Image
+          src={img}
+          alt=""
+          fill
+          sizes="80px"
+          className="object-cover"
+          priority={false}
+        />
+      </div>
+      <p className="text-[13px] leading-snug text-gray-700">{text}</p>
+    </div>
+  );
+}
+
+export default function CropGuideDialog({ onClose, images }: Props) {
+  const imgs: GuideImages = images ?? {
+    visible: "/book-bank-crop/clearly.svg",
+    sharp: "/book-bank-crop/do-not.svg",
+    info: "/book-bank-crop/crop.svg",
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-black/45 backdrop-blur-sm">
+      <div className="w-full max-w-[380px] rounded-2xl bg-white shadow-xl p-4">
+        <h3 className="text-center text-[20px] font-bold text-[#0F2D73]">
           Crop Book Bank
-        </div>
-        <p className="mt-2 text-center text-sm text-[#4B5563]">
+        </h3>
+        <p className="mt-2 text-center text-sm text-gray-600">
           Please ensure the bankbook page is fully visible within the frame.
         </p>
 
-        <div className="grid grid-cols-3 gap-4 my-4 opacity-90">
-          <div className="h-16 rounded-md bg-gray-100 grid place-items-center text-gray-400 text-xs">
-            Sample
-          </div>
-          <div className="h-16 rounded-md bg-gray-100 grid place-items-center text-gray-400 text-xs">
-            Blurry
-          </div>
-          <div className="h-16 rounded-md bg-gray-100 grid place-items-center text-gray-400 text-xs">
-            Glare
-          </div>
+        <div className="mt-4 space-y-4">
+          <GuideRow
+            img={imgs.visible}
+            text="Make sure the full account page is clearly visible."
+          />
+          <GuideRow
+            img={imgs.sharp}
+            text="Keep the image sharp and readable under good lighting."
+          />
+          <GuideRow
+            img={imgs.info}
+            dark
+            text="Use the page showing bank name, account holder and, account number."
+          />
         </div>
 
-        <div className="space-y-2 text-left">
-          <div className="flex ">
-            <span className="flex items-center justify-center w-5 h-5  flex-shrink-0 rounded-full ">
-              <svg
-                className="w-4 h-4 text-gray-600"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="11"
-                  fill="#fff"
-                  stroke="#9ca3af"
-                  strokeWidth="2"
-                />
-                <text
-                  x="12"
-                  y="17"
-                  textAnchor="middle"
-                  fontSize="16"
-                  fill="#9ca3af"
-                  fontWeight="bold"
-                >
-                  !
-                </text>
-              </svg>
-            </span>
-            <span className="text-gray-600 pl-2" style={{ fontSize: "13px" }}>
-              Make sure the full account page is clearly visible.
-            </span>
-          </div>
-          <div className="flex items-center">
-            <span className="flex items-center justify-center w-5 h-5  flex-shrink-0 rounded-full ">
-              <svg
-                className="w-4 h-4 text-gray-600"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="11"
-                  fill="#fff"
-                  stroke="#9ca3af"
-                  strokeWidth="2"
-                />
-                <text
-                  x="12"
-                  y="17"
-                  textAnchor="middle"
-                  fontSize="16"
-                  fill="#9ca3af"
-                  fontWeight="bold"
-                >
-                  !
-                </text>
-              </svg>
-            </span>
-            <span className="text-gray-600 pl-2" style={{ fontSize: "13px" }}>
-              Keep the image sharp and readable under good lighting.
-            </span>
-          </div>
-          <div className="flex items-center">
-            <span className="flex items-center justify-center w-5 h-5  flex-shrink-0 rounded-full ">
-              <svg
-                className="w-4 h-4 text-gray-600"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="11"
-                  fill="#fff"
-                  stroke="#9ca3af"
-                  strokeWidth="2"
-                />
-                <text
-                  x="12"
-                  y="17"
-                  textAnchor="middle"
-                  fontSize="16"
-                  fill="#9ca3af"
-                  fontWeight="bold"
-                >
-                  !
-                </text>
-              </svg>
-            </span>
-            <span className="text-gray-600 pl-2" style={{ fontSize: "13px" }}>
-              Use the page showing bank name, account holder, and account number.
-            </span>
-          </div>
-        </div>
-
-        <Button onClick={onClose} className="mt-8 w-full bg-[#1C55D9]">
+        <Button
+          onClick={onClose}
+          className="mt-6 w-full h-11 rounded-full bg-gradient-to-b from-[#1C55D9] to-[#0F46C8] shadow-[0_10px_24px_rgba(28,85,217,0.35)]"
+        >
           Got it
         </Button>
       </div>
