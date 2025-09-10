@@ -211,6 +211,40 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           />
 
           <Controller
+            name={"firstNameEng" as Path<TFieldValues>}
+            control={control}
+            render={({ field }) => (
+              <FormField
+                fieldName={"firstNameEng" as Path<TFieldValues>}
+                label="First name (ENG)"
+                placeholder="Enter your First name"
+                type="text"
+                value={field.value}
+                control={control}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
+
+          <Controller
+            name={"lastNameEng" as Path<TFieldValues>}
+            control={control}
+            render={({ field }) => (
+              <FormField
+                fieldName={"lastNameEng" as Path<TFieldValues>}
+                label="Last name (ENG)"
+                placeholder="Enter your Last name"
+                type="text"
+                control={control}
+                value={field.value}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
+
+          <Controller
             name={"birthDateThai" as Path<TFieldValues>}
             control={control}
             render={({ field }) => (

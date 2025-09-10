@@ -5,7 +5,6 @@ import {
   Controller,
   Control,
   FieldErrors,
-  RegisterOptions,
   FieldValues,
   Path,
 } from "react-hook-form";
@@ -19,7 +18,6 @@ interface FormFieldProps<TFieldValues extends FieldValues>
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
   maxLength?: number;
-  // validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
   ignoreChars?: string[];
 }
 
