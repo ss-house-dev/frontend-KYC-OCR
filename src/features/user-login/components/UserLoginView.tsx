@@ -1,17 +1,25 @@
-"use client";
+import {
+  SubmitHandler,
+  UseFormRegister,
+  UseFormHandleSubmit,
+  FieldErrors,
+} from "react-hook-form";
 import BrandLogo from "./BrandLogo";
+import { Label, Input, Button } from "@/components/ui";
+
+type Inputs = { email: string };
 
 type Props = {
-  email: string;
-  error: string | null;
-  onEmailChange: (v: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  errors: FieldErrors<Inputs>;
+  register: UseFormRegister<Inputs>;
+  handleSubmit: UseFormHandleSubmit<Inputs>;
+  onSubmit: SubmitHandler<Inputs>;
 };
 
 export default function UserLoginView({
-  email,
-  error,
-  onEmailChange,
+  errors,
+  handleSubmit,
+  register,
   onSubmit,
 }: Props) {
   return (
@@ -19,27 +27,39 @@ export default function UserLoginView({
       <div className="w-full max-w-sm">
         <BrandLogo />
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <label className="block text-sm text-black">Email</label>
-          <input
+        <form
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-2"
+        >
+          <Label htmlFor="email">Email</Label>
+          <Input
             type="email"
             inputMode="email"
             autoComplete="email"
-            required
             placeholder="Enter your E-mail"
-            value={email}
-            onChange={(e) => onEmailChange(e.target.value.trim())}
-            className="w-full rounded-sm border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-100"
+            className="bg-white"
+            {...register("email", {
+              required: "Please enter your email address.",
+              pattern: {
+                value: /.+@.+\..+/,
+                message: "Please enter a valid email address.",
+              },
+            })}
           />
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {/* ข้อความจาก Zod/RHF */}
+          {errors.email && (
+            <p className="text-sm text-red-600">
+              {String(errors.email.message)}
+            </p>
+          )}
 
-          <button
-            type="submit"
-            className="w-full rounded-sm bg-gradient-to-b from-[#2a5bf6] to-[#1a4bd6] py-3 text-white font-medium shadow-md"
-          >
-            Login
-          </button>
+          <div className="mt-6">
+            <Button variant="brand" size="brand" fullWidth type="submit">
+              Login
+            </Button>
+          </div>
         </form>
 
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
