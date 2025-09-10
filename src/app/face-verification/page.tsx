@@ -2,10 +2,12 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation"; 
 import { captureStore } from "@/features/scan-face/state/captureStore";
 
 export default function FaceVerificationPage() {
   const data = captureStore.get();
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col items-center p-6">
@@ -55,7 +57,7 @@ export default function FaceVerificationPage() {
 
         <button
           onClick={() => {
-            alert("พร้อมส่งภาพให้ backend แล้ว");
+            router.push("/book-bank-accept"); 
           }}
           className="mt-4 w-full rounded-2xl px-5 py-3 text-white text-[15px] font-medium bg-[#1766FF] hover:bg-[#155BE6] transition"
         >

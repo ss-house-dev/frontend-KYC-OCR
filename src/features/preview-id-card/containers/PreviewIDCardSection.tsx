@@ -5,6 +5,7 @@ import { Path, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import FormIdCard from "../components/FormIdCard";
+import AlertPopUp from "@/components/AlertPopUp";
 import {
   uploadIdCardOcr,
   OcrResponse,
@@ -26,6 +27,41 @@ const defaultFormValues = {
 
 type PreviewIdCardForm = typeof defaultFormValues;
 
+// ฟังก์ชันคำนวณความคล้ายคลึง
+const calculateSimilarity = (str1: string, str2: string): number => {
+  if (!str1 || !str2) return 0;
+
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+
+  if (longer.length === 0) return 100;
+
+  const matrix = [];
+  for (let i = 0; i <= longer.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= shorter.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= longer.length; i++) {
+    for (let j = 1; j <= shorter.length; j++) {
+      if (longer.charAt(i - 1) === shorter.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  const distance = matrix[longer.length][shorter.length];
+  return ((longer.length - distance) / longer.length) * 100;
+};
+
 const base64StringToFile = (base64String: string, filename: string): File => {
   const [meta, data] = base64String.split(",");
   const mimeMatch = meta.match(/:(.*?);/);
@@ -40,6 +76,12 @@ export default function VerifyIdentityScreen() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
   const [canSubmit, setCanSubmit] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [pendingData, setPendingData] = useState<any>(null);
+  const [originalData, setOriginalData] = useState<{
+    firstNameThai: string;
+    lastNameThai: string;
+  }>({ firstNameThai: "", lastNameThai: "" });
 
   const form = useForm<PreviewIdCardForm>({
     defaultValues: defaultFormValues,
@@ -63,6 +105,13 @@ export default function VerifyIdentityScreen() {
 
     onSuccess: (ocrData: OcrResponse) => {
       console.log("OCR Success, resetting form with:", ocrData);
+
+      // เก็บข้อมูลเดิมจาก OCR
+      setOriginalData({
+        firstNameThai: ocrData.firstNameThai || "",
+        lastNameThai: ocrData.lastNameThai || "",
+      });
+
       reset({
         idNumber: ocrData.idNumber || "",
         firstNameThai: ocrData.firstNameThai || "",
@@ -148,35 +197,93 @@ export default function VerifyIdentityScreen() {
   const watchedValues = watch();
 
   useEffect(() => {
-    const allFieldsFilled = Object.values(watchedValues).every(
-      (value) => value !== "" && value !== null && value !== undefined
-    );
-    const noErrors = Object.keys(errors).length === 0;
+    const disabledFields = [
+      "idNumber",
+      "issueDateThai",
+      "expiryDateThai",
+      "birthDateThai",
+    ];
 
-    setCanSubmit(allFieldsFilled && noErrors);
+    const editableFields = [
+      "titleThai",
+      "firstNameThai",
+      "lastNameThai",
+      "address",
+      "laserId",
+    ];
+
+    const disabledFieldsValid = disabledFields.every((fieldName) => {
+      const value = watchedValues[fieldName as keyof typeof watchedValues];
+      const hasValue = value !== "" && value !== null && value !== undefined;
+      const hasError = errors[fieldName as keyof typeof errors];
+      return hasValue && !hasError;
+    });
+
+    const editableFieldsValid = editableFields.every((fieldName) => {
+      const value = watchedValues[fieldName as keyof typeof watchedValues];
+      const hasValue = value !== "" && value !== null && value !== undefined;
+      const hasError = errors[fieldName as keyof typeof errors];
+      return hasValue && !hasError;
+    });
+
+    setCanSubmit(disabledFieldsValid && editableFieldsValid);
   }, [watchedValues, errors]);
 
   const onSubmit = (data: PreviewIdCardForm) => {
     console.log("Form submitted:", data);
-    alert("บันทึกข้อมูลสำเร็จ!");
+
+    // เช็คความคล้ายคลึงของชื่อ
+    const firstNameSimilarity = calculateSimilarity(
+      originalData.firstNameThai,
+      data.firstNameThai
+    );
+    const lastNameSimilarity = calculateSimilarity(
+      originalData.lastNameThai,
+      data.lastNameThai
+    );
+
+    const overallSimilarity = (firstNameSimilarity + lastNameSimilarity) / 2;
+
+    if (overallSimilarity < 60) {
+      setPendingData(data); 
+      setShowDialog(true); 
+    } else {
+      router.push("/face-accept");
+    }
+  };
+
+    const handleRetry = () => {
+    setShowDialog(false);
+    setPendingData(null);
   };
 
   return (
-    <FormIdCard
-      handleSubmit={handleSubmit}
-      onSubmit={onSubmit}
-      control={control}
-      errors={errors}
-      watch={watch}
-      canSubmit={canSubmit}
-      capturedImage={
-        typeof window !== "undefined"
-          ? sessionStorage.getItem("capturedIdCardImage")
-          : null
-      }
-      isValid={isValid}
-      isLoading={ocrMutation.isPending}
-      loadingProgress={loadingProgress}
-    />
+    <>
+      <FormIdCard
+        handleSubmit={handleSubmit}
+        onSubmit={onSubmit}
+        control={control}
+        errors={errors}
+        watch={watch}
+        canSubmit={canSubmit}
+        capturedImage={
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("capturedIdCardImage")
+            : null
+        }
+        isValid={isValid}
+        isLoading={ocrMutation.isPending}
+        loadingProgress={loadingProgress}
+      />
+
+      <AlertPopUp
+        isOpen={showDialog}
+        title="Edited Name Doesn’t Match"
+        message={
+          `Your edited name is very different the extracted name, Please correct it to continue.`
+        }
+        onRetry={handleRetry}
+      />
+    </>
   );
 }

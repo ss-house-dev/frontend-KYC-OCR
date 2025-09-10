@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { uploadBookBankOcr, OcrResponse } from "../services";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
+import AlertPopUp from "@/components/AlertPopUp";
 
 const defaultFormValues = {
   bank: "",
@@ -24,6 +25,41 @@ const bankOptions = [
   { value: "ktb", label: "KTB", image: "/logobank/KTB.png" },
 ];
 
+// ฟังก์ชันคำนวณความคล้ายคลึง
+const calculateSimilarity = (str1: string, str2: string): number => {
+  if (!str1 || !str2) return 0;
+
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+
+  if (longer.length === 0) return 100;
+
+  const matrix = [];
+  for (let i = 0; i <= longer.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= shorter.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= longer.length; i++) {
+    for (let j = 1; j <= shorter.length; j++) {
+      if (longer.charAt(i - 1) === shorter.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  const distance = matrix[longer.length][shorter.length];
+  return ((longer.length - distance) / longer.length) * 100;
+};
+
 const base64StringToFile = (base64String: string, filename: string): File => {
   const [meta, data] = base64String.split(",");
   const mimeMatch = meta.match(/:(.*?);/);
@@ -39,6 +75,11 @@ export default function BookBankPage() {
   const router = useRouter();
   const [canSubmit, setCanSubmit] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [pendingData, setPendingData] = useState<any>(null);
+  const [originalData, setOriginalData] = useState<{
+    accountNameThai: string;
+  }>({ accountNameThai: "" });
 
   const form = useForm<BookBankFormValues>({
     defaultValues: defaultFormValues,
@@ -51,6 +92,7 @@ export default function BookBankPage() {
     register,
     control,
     setError,
+    trigger,
     formState: { errors, isValid },
   } = form;
 
@@ -61,18 +103,40 @@ export default function BookBankPage() {
     mutationFn: (file: File) => uploadBookBankOcr(file, setLoadingProgress),
     onSuccess: (ocrData: OcrResponse) => {
       console.log("OCR Success, resetting form with:", ocrData);
+
+      // เก็บข้อมูลเดิมจาก OCR
+      setOriginalData({
+        accountNameThai: ocrData.accountNameThai || "",
+      });
+
       reset({
         branchNameThai: ocrData.branchNameThai || "",
         accountNameThai: ocrData.accountNameThai || "",
         accountNumber: ocrData.accountNumber || "",
       });
-      // set API errors into form
-      (ocrData.errors || []).forEach((err) => {
-        setError(err.field as Path<BookBankFormValues>, {
-          type: "manual",
-          message: err.message,
+
+      setTimeout(async () => {
+        // ตรวจสอบและ set error สำหรับ field ที่ required แต่ไม่มีค่า
+        const requiredFields = [
+          { field: "branchNameThai", value: ocrData.branchNameThai },
+          { field: "accountNameThai", value: ocrData.accountNameThai },
+          { field: "accountNumber", value: ocrData.accountNumber },
+        ];
+
+        for (const { field, value } of requiredFields) {
+          if (!value || value.trim() === "") {
+            await trigger(field as Path<BookBankFormValues>);
+          }
+        }
+
+        // set API errors into form
+        (ocrData.errors || []).forEach((err) => {
+          setError(err.field as Path<BookBankFormValues>, {
+            type: "manual",
+            message: err.message,
+          });
         });
-      });
+      }, 100);
     },
     // onError: (err) => {
     //   console.error("OCR upload failed:", err);
@@ -131,7 +195,24 @@ export default function BookBankPage() {
 
   const onSubmit = (data: BookBankFormValues) => {
     console.log("Form submitted:", data);
-    alert("บันทึกข้อมูลสำเร็จ!");
+
+    // เช็คความคล้ายคลึงของชื่อ
+    const accountNameSimilarity = calculateSimilarity(
+      originalData.accountNameThai,
+      data.accountNameThai
+    );
+
+    if (accountNameSimilarity < 60) {
+      setPendingData(data);
+      setShowDialog(true);
+    } else {
+      router.push("/verification-complete");
+    }
+  };
+
+  const handleRetry = () => {
+    setShowDialog(false);
+    setPendingData(null);
   };
 
   return (
@@ -148,6 +229,13 @@ export default function BookBankPage() {
         canSubmit={canSubmit}
         isLoading={ocrMutation.isPending}
         loadingProgress={loadingProgress}
+      />
+
+      <AlertPopUp
+        isOpen={showDialog}
+        title="Edited Name Doesn’t Match"
+        message={`Your edited name is very different the extracted name, Please correct it to continue.`}
+        onRetry={handleRetry}
       />
     </>
   );

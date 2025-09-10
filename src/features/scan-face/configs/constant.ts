@@ -14,15 +14,15 @@ export const CONFIG = {
     KERNEL: SHARPEN_KERNEL,
   },
   FACE_SIZE: {
-    FAR_THRESHOLD: 80,
-    NEAR_THRESHOLD: 260,
+    FAR_THRESHOLD: 180,
+    NEAR_THRESHOLD: 320,
   },
   BRIGHTNESS: {
     DARK_THRESHOLD: 60,
     BRIGHT_THRESHOLD: 190,
   },
   POSITION: {
-    CENTER_TOLERANCE: 0.15, // 15%
+    CENTER_TOLERANCE: 0.15,
   },
   TIMING: {
     STEP1_HOLD_SECONDS: 2.0,
@@ -45,7 +45,7 @@ export const CONFIG = {
     PITCH_EMA_ALPHA: 0.25, // เพิ่มจาก 0.15
 
     // เพิ่มค่าใหม่สำหรับ zero position
-    ZERO_EMA_ALPHA: 0.05,             // ใช้สำหรับ baseline ให้ stable กว่า
+    ZERO_EMA_ALPHA: 0.05, // ใช้สำหรับ baseline ให้ stable กว่า
 
     BLINK_BASE_EMA_ALPHA: 0.1,
     MOUTH_BASE_EMA_ALPHA: 0.1,
@@ -58,7 +58,7 @@ export const CONFIG = {
     PITCH_ENTER_DEG: 4.5, // ลดจาก 6.0
     PITCH_EXIT_DEG: 2.0, // ลดจาก 3.0
     PITCH_ZERO_UPDATE_BAND: 8.0, // เพิ่มจาก 4.0
-    
+
     BLINK_THRESH_FRACTION: 0.72,
     MOUTH_OPEN_DELTA: 0.12,
   },

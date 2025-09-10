@@ -7,6 +7,7 @@ import {
   Path,
   UseFormHandleSubmit,
   SubmitHandler,
+  SubmitErrorHandler,
 } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
 import FormSelect from "@/features/preview-id-card/components/FormSelect";
@@ -88,11 +89,15 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             control={control}
             rules={{
               required: "Unable to extract data. Kindly rescan your document.",
-              maxLength: 13,
               validate: (value: string) => {
                 const digitsOnly = value.replace(/-/g, "");
-                if (digitsOnly.length > 13) return false;
-                if (value.length > 0 && !/^[0-9-]+$/.test(value)) return false;
+
+                if (digitsOnly.length !== 13) {
+                  return "ID number must be exactly 13 digits";
+                }
+                if (!/^[0-9]+$/.test(digitsOnly)) {
+                  return "ID number must contain only digits";
+                }
                 return true;
               },
             }}
@@ -106,8 +111,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 value={field.value}
                 onChange={field.onChange}
                 disabled
-                maxLength={13}
-                ignoreChars={["-"]}
                 errors={errors}
               />
             )}
@@ -175,10 +178,10 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                   const raw12 = raw.slice(0, 12);
                   let formatted = "";
                   if (raw12.length > 0) {
-                    formatted += raw12.slice(0, 3); 
-                    if (raw12.length > 3) formatted += "-" + raw12.slice(3, 10); 
+                    formatted += raw12.slice(0, 3);
+                    if (raw12.length > 3) formatted += "-" + raw12.slice(3, 10);
                     if (raw12.length > 10)
-                      formatted += "-" + raw12.slice(10, 12); 
+                      formatted += "-" + raw12.slice(10, 12);
                   }
                   setLaserCharCount(raw12.length);
                   field.onChange(formatted);
@@ -264,7 +267,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               />
             )}
           />
-          
+
           <Controller
             name={"birthDateThai" as Path<TFieldValues>}
             control={control}
