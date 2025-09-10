@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "cropperjs/dist/cropper.css";
 import "./globals.css";
 import QueryProvider from "@/lib/react-query/QueryClientProvider";
 

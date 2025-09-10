@@ -1,25 +1,73 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+/* ทำให้พื้นมืดรอบกรอบเหมือนเดิม */
+.bb-cropper .cropper-modal {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* ใช้เส้นกรอบแบบ dashed โปร่ง ไม่มีสีทึบ */
+.bb-cropper .cropper-view-box {
+  outline: 2px dashed rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 8px;
+}
+
+/* เอา “เส้นทึบหนา” ที่อยู่ตรงขอบออก (ให้เห็นแต่ dashed box) */
+.bb-cropper .cropper-line {
+  background-color: transparent; /* ซ่อนเส้นเต็มด้าน */
+}
+
+/* ซ่อนปุ่มใหญ่ตรง “กลางเส้น” (ด้าน N/E/S/W) */
+.bb-cropper .cropper-point.point-n,
+.bb-cropper .cropper-point.point-e,
+.bb-cropper .cropper-point.point-s,
+.bb-cropper .cropper-point.point-w {
+  display: none;
+}
+
+/* ทำ “หัวมุม” ให้เป็นวงแหวน ไม่มีสีข้างใน (outline-only) */
+.bb-cropper .cropper-point.point-ne,
+.bb-cropper .cropper-point.point-nw,
+.bb-cropper .cropper-point.point-se,
+.bb-cropper .cropper-point.point-sw {
+  width: 12px;
+  height: 12px;
+  background: transparent; /* ไม่มีสีด้านใน */
+  border: 2px solid rgba(255, 255, 255, 0.95); /* เส้นรอบนอก */
+  /* border-radius: 9999px; เป็นวงกลม */
+  opacity: 1;
+}
+
+/* (ทางเลือก) ซ่อนจุดกากบาทตรงกลาง หากเกะกะสายตา */
+.bb-cropper .cropper-center {
+  display: none;
+}
+
+/* (ปรับได้) ให้เส้น dashed จาง/เข้มตามชอบ */
+.bb-cropper .cropper-dashed {
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 @font-face {
-  font-family: 'Inter';
-  font-style: italic;
-  font-weight: 100 900; 
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
   font-display: swap;
-  src: url('/fonts/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
+  src: url("/fonts/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/Inter-Italic-VariableFont_opsz,wght.ttf") format("truetype");
 }
 
 @layer base {
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
   }
 }
 
@@ -134,7 +182,8 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-html, body {
+html,
+body {
   background-color: white;
 }
 
