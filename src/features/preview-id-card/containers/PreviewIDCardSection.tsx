@@ -13,6 +13,8 @@ import {
   uploadIdCardOcr,
   OcrResponse,
 } from "@/features/preview-id-card/services/ocr-id-card";
+import { idCardFormSchema, IdCardFormData } from "./../schemas/idcard";
+import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
 
 const defaultFormValues = {
   idNumber: "",
@@ -24,7 +26,6 @@ const defaultFormValues = {
   birthDateThai: "",
   address: "",
   laserId: "",
-  errors: [{ field: "", message: "" }],
 };
 
 type PreviewIdCardForm = typeof defaultFormValues;
@@ -42,10 +43,12 @@ export default function VerifyIdentityScreen() {
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
 
-  const form = useForm<PreviewIdCardForm>({
+    const form = useForm<IdCardFormData>({
+    resolver: zodResolver(idCardFormSchema),
     defaultValues: defaultFormValues,
     mode: "onChange",
   });
+
   const {
     handleSubmit,
     formState: { errors, isValid },
@@ -56,7 +59,7 @@ export default function VerifyIdentityScreen() {
     trigger,
   } = form;
 
-  usePersistedForm<PreviewIdCardForm>(form, "id-accept:form", 30, ["errors"]);
+  usePersistedForm<IdCardFormData>(form, "id-accept:form", 30, ["errors"]);
 
   const ocrMutation = useMutation({
     mutationKey: ["uploadIdCardOcr", kycRequestId],

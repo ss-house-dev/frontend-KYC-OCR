@@ -19,7 +19,6 @@ interface FormFieldProps<TFieldValues extends FieldValues>
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
   maxLength?: number;
-  validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
   ignoreChars?: string[];
   counterValue?: number;
 }
@@ -30,7 +29,6 @@ const FormField = <TFieldValues extends FieldValues>({
   control,
   errors,
   maxLength,
-  validationRules,
   ignoreChars,
   counterValue,
   ...rest
@@ -38,17 +36,10 @@ const FormField = <TFieldValues extends FieldValues>({
   const fieldError = errors[fieldName];
   const hasError = !!fieldError;
 
-  const maxLen =
-    (validationRules?.maxLength &&
-      typeof validationRules.maxLength === "object" &&
-      validationRules.maxLength.value) ||
-    maxLength;
-
   return (
     <Controller
       name={fieldName}
       control={control}
-      rules={validationRules}
       render={({ field, fieldState }) => {
         const val = field.value || "";
         const escapeForCharClass = (s: string) =>
@@ -84,28 +75,34 @@ const FormField = <TFieldValues extends FieldValues>({
               id={fieldName}
               value={val}
               onChange={(e) => {
-                const raw = e.target.value.toUpperCase().replace(/-/g, "");
-                const raw12 = raw.slice(0, 12);
-                let formatted = "";
-                if (raw12.length > 0) {
-                  formatted += raw12.slice(0, 3);
-                  if (raw12.length > 3) formatted += "-" + raw12.slice(3, 10);
-                  if (raw12.length > 10) formatted += "-" + raw12.slice(10, 12);
+                let raw = e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, "");
+                raw = raw.slice(0, 12);
+
+                const chars = raw.split("");
+                for (let i = 0; i < chars.length; i++) {
+                  if (i < 2 && /[^A-Z]/.test(chars[i])) {
+                    chars[i] = "";
+                  }
+                  if (i >= 2 && /[^0-9]/.test(chars[i])) {
+                    chars[i] = "";
+                  }
                 }
+                const fixed = chars.join("");
+                const part1 = fixed.slice(0, 3); 
+                const part2 = fixed.slice(3, 10); 
+                const part3 = fixed.slice(10, 12); 
+                const formatted =
+                  part1 +
+                  (part2 ? "-" + part2 : "") +
+                  (part3 ? "-" + part3 : "");
+
                 field.onChange(formatted);
-                rest?.onChange?.({
-                  ...e,
-                  target: { ...e.target, value: formatted },
-                } as React.ChangeEvent<HTMLInputElement>);
               }}
             />
             <div className="text-xs text-muted-foreground min-h-[1rem]">
               <span>{(val ?? "").toString().replace(/-/g, "").length}/12</span>
-              {errors[fieldName] && (
-                <span className="text-destructive">
-                  {errors[fieldName]?.message as string}
-                </span>
-              )}
             </div>
           </div>
         );

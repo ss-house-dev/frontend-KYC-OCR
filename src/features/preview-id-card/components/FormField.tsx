@@ -19,7 +19,7 @@ interface FormFieldProps<TFieldValues extends FieldValues>
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
   maxLength?: number;
-  validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
+  // validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
   ignoreChars?: string[];
 }
 
@@ -29,24 +29,16 @@ const FormField = <TFieldValues extends FieldValues>({
   control,
   errors,
   maxLength,
-  validationRules,
   ignoreChars,
   ...rest
 }: FormFieldProps<TFieldValues>) => {
   const fieldError = errors[fieldName];
   const hasError = !!fieldError;
 
-  const maxLen =
-    (validationRules?.maxLength &&
-      typeof validationRules.maxLength === "object" &&
-      validationRules.maxLength.value) ||
-    maxLength;
-
   return (
     <Controller
       name={fieldName}
       control={control}
-      rules={validationRules}
       render={({ field , fieldState}) => {
         const val = field.value || "";
         const charCount =
@@ -71,7 +63,7 @@ const FormField = <TFieldValues extends FieldValues>({
               value={val}
               onChange={(e) => {
                 let inputVal = e.target.value;
-                if (maxLen) inputVal = inputVal.slice(0, maxLen);
+                if (maxLength) inputVal = inputVal.slice(0, maxLength);
                 field.onChange(inputVal);
               }}
               {...rest}
@@ -87,9 +79,9 @@ const FormField = <TFieldValues extends FieldValues>({
                   {errors[fieldName]?.message as string}
                 </span>
               ) : (
-                maxLen && (
+                maxLength && (
                   <span>
-                    {charCount}/{maxLen}
+                    {charCount}/{maxLength}
                   </span>
                 )
               )}
