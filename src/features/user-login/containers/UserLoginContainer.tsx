@@ -22,8 +22,9 @@ type Inputs = z.infer<typeof schema>;
 export default function UserLoginContainer() {
   const router = useRouter();
   const search = useSearchParams();
-  const rawCb = search.get("callbackUrl"); 
+  const rawCb = search.get("callbackUrl");
   const callbackUrl = rawCb ?? "/id-accept";
+  const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   const form = useForm<Inputs>({
@@ -40,15 +41,18 @@ export default function UserLoginContainer() {
   usePersistedForm<Inputs>(form, "auth:login", 30);
 
   const onSubmit: SubmitHandler<Inputs> = async ({ email }) => {
+    setError(null);
     setIsPending(true);
     try {
       const res = await signIn("credentials", {
         email,
-        companyId: "66d5c2a9f5f0a3e2b82f3a19",
-        callbackUrl,  
+        companyId: "68ba8e8bb9d343d98dd97a99",
+        callbackUrl,
+        redirect: false,
       });
 
       if (!res || !res.ok) {
+        setError("Login failed. Please try again.");
         console.error("Login failed", res?.error);
         return;
       }
@@ -56,6 +60,7 @@ export default function UserLoginContainer() {
       const next = search.get("next") || "/id-accept";
       router.replace(next);
     } catch (e) {
+      setError("Request failed. Please try again.");
       console.error("Login error", e);
     } finally {
       setIsPending(false);
@@ -63,11 +68,12 @@ export default function UserLoginContainer() {
   };
 
   return (
-      <UserLoginView
-        errors={errors}
-        handleSubmit={handleSubmit}
-        register={register as any}
-        onSubmit={onSubmit}
-      />
+    <UserLoginView
+      error={error}
+      errors={errors}
+      handleSubmit={handleSubmit}
+      register={register as any}
+      onSubmit={onSubmit}
+    />
   );
 }
