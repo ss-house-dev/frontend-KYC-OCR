@@ -16,10 +16,10 @@ export type OcrResponse = {
 
 export async function uploadIdCardOcr(
   file: File,
-  kycRequestId?: string, 
+  kycRequestId?: string,
   onProgress?: (pct: number) => void
 ): Promise<OcrResponse> {
-    if (!kycRequestId) {
+  if (!kycRequestId) {
     throw new Error("Missing kycRequestId. Please sign in first.");
   }
   const formData = new FormData();

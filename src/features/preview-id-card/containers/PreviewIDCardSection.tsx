@@ -12,6 +12,7 @@ import { idCardFormSchema, IdCardFormData } from "./../schemas/idcard";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useIdCardOcr } from "@/features/preview-id-card/hooks/useIdCardOcr";
 import { useCanSubmit } from "../hooks/useCanSubmit";
+import { useIdcardSubmit } from "../hooks/useIdcardSubmit";
 
 const defaultFormValues: IdCardFormData = {
   idNumber: "",
@@ -31,6 +32,7 @@ export default function VerifyIdentityScreen() {
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [pendingData, setPendingData] = useState<IdCardFormData | null>(null);
+  const { submit, isUploading, progress, error } = useIdcardSubmit();
   const [originalData, setOriginalData] = useState({
     firstNameThai: "",
     lastNameThai: "",
@@ -112,7 +114,7 @@ export default function VerifyIdentityScreen() {
     ],
   });
 
-  const onSubmit = (data: IdCardFormData) => {
+  const onSubmit = async (data: IdCardFormData) => {
     const firstNameSimilarity = calculateSimilarity(
       originalData.firstNameThai,
       data.firstNameThai
@@ -138,8 +140,46 @@ export default function VerifyIdentityScreen() {
     if (overallSimilarityThai < 60 || overallSimilarityEng < 60) {
       setPendingData(data);
       setShowDialog(true);
-    } else {
+      return;
+    }
+
+    try {
+      const captured =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("capturedIdCardImage")
+          : null;
+      if (!captured) throw new Error("Missing captured ID card image file");
+
+      const file = await (async () => {
+        const res = await fetch(captured);
+        const blob = await res.blob();
+        return new File([blob], "idcard.jpg", {
+          type: blob.type || "image/jpeg",
+        });
+      })();
+
+      await submit({
+        file,
+        kycRequestId: kycRequestId!,
+        fields: {
+          idNumber: data.idNumber,
+          firstNameThai: data.firstNameThai,
+          lastNameThai: data.lastNameThai,
+          firstNameEng: data.firstNameEng,
+          lastNameEng: data.lastNameEng,
+          dateOfBirth: data.birthDateThai,
+          dateOfIssue: data.issueDateThai,
+          dateOfExpiry: data.expiryDateThai,
+          address: data.address,
+          titleNameThai: data.titleThai,
+          laserId: data.laserId,
+        },
+      });
+      console.log("Submit successful");
       router.push("/face-accept");
+    } catch (err) {
+      console.error(err);
+      // alert(err instanceof Error ? err.message : "Submit failed");
     }
   };
 
