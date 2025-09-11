@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 
 const IconArrowLeft = () => (
   <svg
@@ -28,16 +27,17 @@ export default function CropHeader({
 }) {
   return (
     <div className="relative flex items-center justify-center p-5 border-b border-gray-200">
-      <Link
-        href="/book-bank-accept"
+      <button
+        type="button"
         aria-label="Back"
         className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-lg
              focus-visible:outline focus-visible:outline-2
              focus-visible:outline-offset-2 focus-visible:outline-[#2152b6]"
+        onClick={onBack}
       >
         <IconArrowLeft />
         <span className="sr-only">Back</span>
-      </Link>
+      </button>
       <h1 className="text-xl font-semibold mx-auto text-[#0F2D73]">{title}</h1>
       <div className="w-5" />
     </div>
