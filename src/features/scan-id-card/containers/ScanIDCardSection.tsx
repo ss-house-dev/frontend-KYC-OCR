@@ -27,8 +27,6 @@ const IconArrowLeft = () => (
   </svg>
 );
 
-// ❌ ลบ useRef นอก component ออก (ต้นเหตุ Invalid hook call)
-
 const videoConstraints = {
   width: 1280,
   height: 720,
@@ -88,19 +86,17 @@ export default function ScanIDCardSection({
   const [cvReady, setCvReady] = useState(false);
   const [readyToShoot, setReadyToShoot] = useState(false);
 
-  // ใหม่: สำหรับ AC2
-  const [manualVisible, setManualVisible] = useState(false); // แสดงปุ่มหลัง 10s
-  const manualTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // AC2: แสดงปุ่มหลัง 10 วินาที
+  const [manualVisible, setManualVisible] = useState(false);
+  const manualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ใหม่: กันออโต้ช็อตยิงซ้ำ (AC1)
+  // AC1: กันยิงซ้ำ
   const [autoFired, setAutoFired] = useState(false);
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const router = useRouter();
 
-  // ✅ ย้ายเข้ามาไว้ใน component
-  const autoTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // โหลด OpenCV (เดิม)
+  // โหลด OpenCV
   useEffect(() => {
     if (typeof cv !== "undefined") {
       setCvReady(true);
@@ -124,7 +120,7 @@ export default function ScanIDCardSection({
     document.body.appendChild(s);
   }, [onStatusChange]);
 
-  // วิเคราะห์ภาพ (เดิม แต่แก้ข้อความเมื่อพร้อม)
+  // วิเคราะห์ภาพ หา card ในเฟรม + เช็ค brightness/sharpness
   const analyse = useCallback(() => {
     const cam = webcamRef.current;
     const cvs = canvasRef.current;
@@ -138,14 +134,14 @@ export default function ScanIDCardSection({
     cvs.height = cam.video.videoHeight;
     ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
 
-    let src: CVMat | undefined,
-      gray: CVMat | undefined,
-      laplacian: CVMat | undefined,
-      meanMat: CVMat | undefined,
-      stdDev: CVMat | undefined,
-      edges: CVMat | undefined,
-      contours: CVMatVector | undefined,
-      hierarchy: CVMat | undefined;
+    let src: any,
+      gray: any,
+      laplacian: any,
+      meanMat: any,
+      stdDev: any,
+      edges: any,
+      contours: any,
+      hierarchy: any;
 
     try {
       src = cv.imread(cvs);
@@ -212,7 +208,6 @@ export default function ScanIDCardSection({
 
       if (found) {
         setReadyToShoot(true);
-        // ปรับข้อความให้ตรง AC (ไม่มีจุด)
         onStatusChange("Image is ready to capture", "green");
       } else {
         setReadyToShoot(false);
@@ -234,9 +229,9 @@ export default function ScanIDCardSection({
     }
   }, [cvReady, onStatusChange]);
 
-  // วิเคราะห์ซ้ำทุก 700ms (เดิม)
+  // วิเคราะห์ซ้ำทุก ~700ms
   useEffect(() => {
-    let iv: NodeJS.Timeout | null = null;
+    let iv: ReturnType<typeof setInterval> | null = null;
     if (cvReady) {
       iv = setInterval(analyse, 700);
     }
@@ -245,7 +240,7 @@ export default function ScanIDCardSection({
     };
   }, [cvReady, analyse]);
 
-  // ตั้งเวลาครบ 10 วินาทีค่อยโชว์ปุ่ม (AC2)
+  // ปุ่มมือโผล่หลัง 10 วิ (AC2)
   useEffect(() => {
     manualTimerRef.current = setTimeout(() => setManualVisible(true), 10_000);
     return () => {
@@ -253,8 +248,11 @@ export default function ScanIDCardSection({
     };
   }, []);
 
-  // ถ่าย + ครอปเฉพาะกรอบกลาง (เดิม)
+  // ฟังก์ชันถ่ายภาพ + ครอปกลาง + fallback เป็น getScreenshot()
   const shoot = useCallback(() => {
+    // กันพลาด: ต้องพร้อมจริงเท่านั้นถึงจะยิง
+    if (!readyToShoot) return;
+
     const videoEl = (webcamRef.current?.video ??
       null) as HTMLVideoElement | null;
     let imgData: string | null = null;
@@ -267,36 +265,32 @@ export default function ScanIDCardSection({
       });
     }
 
-    // Fallback: ถ้าครอปไม่ได้ ใช้ getScreenshot()
-    if (!imgData) {
-      imgData = webcamRef.current?.getScreenshot() ?? null;
-    }
+    if (!imgData) imgData = webcamRef.current?.getScreenshot() ?? null;
     if (!imgData) return;
 
     onCapture(imgData);
     sessionStorage.setItem("capturedIdCardImage", imgData);
     sessionStorage.setItem("imageSource", "camera");
     router.push("/preview-id-card");
-  }, [onCapture, router]);
+  }, [readyToShoot, onCapture, router]);
 
-  // เมื่อพร้อมจริง → ยิงออโต้ + ซ่อนปุ่ม (AC1)  (hook ต้องอยู่นอก shoot)
+  // ✅ ออโต้ช็อตทำงานเฉพาะก่อนเข้าโหมด AC2 เท่านั้น (!manualVisible)
   useEffect(() => {
-    if (readyToShoot && !autoFired && !autoTimerRef.current) {
-      // ซ่อนปุ่มมือ และเคลียร์ตัวจับเวลา 10s ทิ้ง
+    if (!manualVisible && readyToShoot && !autoFired && !autoTimerRef.current) {
       setManualVisible(false);
       if (manualTimerRef.current) {
         clearTimeout(manualTimerRef.current);
         manualTimerRef.current = null;
       }
-
-      // ตั้งยิงแบบหน่วงเล็กน้อย โดยไม่คืน cleanup มาล้าง timer ตอน state แกว่ง
       autoTimerRef.current = setTimeout(() => {
-        shoot();
-        setAutoFired(true);
+        if (readyToShoot) {
+          shoot();
+          setAutoFired(true);
+        }
         autoTimerRef.current = null;
-      }, 150); // 150–300ms ก็ได้
+      }, 200);
     }
-  }, [readyToShoot, autoFired, shoot]);
+  }, [manualVisible, readyToShoot, autoFired, shoot]);
 
   // ล้าง timer ตอน unmount
   useEffect(() => {
@@ -361,8 +355,12 @@ export default function ScanIDCardSection({
 
         {/* แสดงปุ่มเฉพาะเคส AC2: ครบ 10s และยังไม่ได้ออโต้ช็อต */}
         {manualVisible && !autoFired && (
-          // ให้กดได้แม้ยังไม่ ready ตาม AC2 → isReady = true
-          <CaptureButton onClick={shoot} isReady={true} />
+          <CaptureButton
+            onClick={() => {
+              if (readyToShoot) shoot(); // กดได้เมื่อขึ้นเขียวเท่านั้น
+            }}
+            isReady={readyToShoot} // สถานะปุ่มเท่ากับความพร้อมจริง
+          />
         )}
       </div>
     </div>
