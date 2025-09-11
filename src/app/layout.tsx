@@ -5,6 +5,10 @@ import "./globals.css";
 import QueryProvider from "@/lib/react-query/QueryClientProvider";
 import { Toaster } from "@/components/ui/toaster";
 
+import Providers from "./providers";
+import ResumeGate from "./ResumeGate";
+import RouteTracker from "./RouteTracker";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -32,8 +36,14 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh`}
       >
-        <QueryProvider>{children}</QueryProvider>
+
+        <Providers>
+          {children}
+          <RouteTracker ttlMin={30} />
+          <ResumeGate ttlMin={30} enabled />
+        </Providers>
         <Toaster />
+
       </body>
     </html>
   );

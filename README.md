@@ -10,8 +10,12 @@ pnpm add @tanstack/react-query @tanstack/react-query-devtools
 pnpm add react-hook-form
 **Zod validation**
 pnpm add zod
-**React-i18-next**
+
+**React-i18-next** 
 pnpm add -D vitest
+**Next Auth** 
+pnpm add next-auth
+
 
 pnpm add -D @svgr/webpack
 

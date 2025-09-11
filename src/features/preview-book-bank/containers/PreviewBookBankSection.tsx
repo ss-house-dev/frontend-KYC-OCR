@@ -6,6 +6,7 @@ import FormBookBank from "../components/FormBookBank";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { uploadBookBankOcr, OcrResponse } from "../services";
+import { usePersistedForm } from "@/lib/client/usePersistedForm";
 import AlertPopUp from "@/components/AlertPopUp";
 
 const defaultFormValues = {
@@ -80,6 +81,10 @@ export default function BookBankPage() {
     accountNameThai: string;
   }>({ accountNameThai: "" });
 
+  const form = useForm<BookBankFormValues>({
+    defaultValues: defaultFormValues,
+    mode: "onChange",
+  });
   const {
     handleSubmit,
     watch,
@@ -89,10 +94,9 @@ export default function BookBankPage() {
     setError,
     trigger,
     formState: { errors, isValid },
-  } = useForm<BookBankFormValues>({
-    defaultValues: defaultFormValues,
-    mode: "onChange",
-  });
+  } = form;
+
+  usePersistedForm<BookBankFormValues>(form, "book-bank:form", 30, ["errors"]);
 
   const ocrMutation = useMutation({
     mutationKey: ["uploadBookBankOcr"],

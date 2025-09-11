@@ -267,6 +267,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               />
             )}
           />
+
           <Controller
             name={"birthDateThai" as Path<TFieldValues>}
             control={control}
