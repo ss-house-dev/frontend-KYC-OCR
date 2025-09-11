@@ -9,6 +9,9 @@ import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask"
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
 import Link from "next/link";
 
+type CVMat = any;
+type CVMatVector = any;
+
 const IconArrowLeft = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -94,6 +97,12 @@ export default function ScanIDCardSection({
   const [autoFired, setAutoFired] = useState(false);
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ใช้ ref ถือค่าพร้อมล่าสุด กัน race ระหว่างตั้ง timer กับตอนยิง
+  const readyRef = useRef(false);
+  useEffect(() => {
+    readyRef.current = readyToShoot;
+  }, [readyToShoot]);
+
   const router = useRouter();
 
   // โหลด OpenCV
@@ -134,14 +143,14 @@ export default function ScanIDCardSection({
     cvs.height = cam.video.videoHeight;
     ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
 
-    let src: any,
-      gray: any,
-      laplacian: any,
-      meanMat: any,
-      stdDev: any,
-      edges: any,
-      contours: any,
-      hierarchy: any;
+    let src: CVMat | undefined,
+      gray: CVMat | undefined,
+      laplacian: CVMat | undefined,
+      meanMat: CVMat | undefined,
+      stdDev: CVMat | undefined,
+      edges: CVMat | undefined,
+      contours: CVMatVector | undefined,
+      hierarchy: CVMat | undefined;
 
     try {
       src = cv.imread(cvs);
@@ -274,21 +283,25 @@ export default function ScanIDCardSection({
     router.push("/preview-id-card");
   }, [readyToShoot, onCapture, router]);
 
-  // ✅ ออโต้ช็อตทำงานเฉพาะก่อนเข้าโหมด AC2 เท่านั้น (!manualVisible)
+  // ✅ ออโต้ช็อตทำงานเฉพาะก่อนเข้าโหมด AC2 เท่านั้น
   useEffect(() => {
     if (!manualVisible && readyToShoot && !autoFired && !autoTimerRef.current) {
-      setManualVisible(false);
+      // จับ snapshot ของสถานะตอนตั้ง timer + ใช้ ref เช็กซ้ำตอนยิง
+      const readyAtSchedule = readyToShoot;
+
       if (manualTimerRef.current) {
         clearTimeout(manualTimerRef.current);
         manualTimerRef.current = null;
       }
+
       autoTimerRef.current = setTimeout(() => {
-        if (readyToShoot) {
+        // ต้องพร้อมทั้งตอนตั้ง timer และตอนจะยิงจริง เพื่อลด false positive
+        if (readyAtSchedule && readyRef.current) {
           shoot();
           setAutoFired(true);
         }
         autoTimerRef.current = null;
-      }, 200);
+      }, 150);
     }
   }, [manualVisible, readyToShoot, autoFired, shoot]);
 
