@@ -39,7 +39,7 @@ const BookBankCropper = forwardRef<BookBankCropperRef, Props>(
           scalable={false}
           rotatable={false}
           // ปลดล็อกอัตราส่วน
-          aspectRatio={NaN}
+          aspectRatio={undefined}
           autoCropArea={0.85}
           viewMode={1}
           guides={true}
