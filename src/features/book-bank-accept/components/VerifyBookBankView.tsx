@@ -41,8 +41,8 @@ export default function VerifyBookBankView({
   return (
     <div className="flex flex-col h-screen bg-white font-inter">
       <div className="mx-auto w-full max-w-[480px] flex min-h-screen flex-col">
-        <main className="flex-grow flex flex-col p-6 pt-8">
-          <div className="w-full mb-8">
+        <main className=" flex flex-col p-6 pt-8 pb-[96px] [padding-bottom:calc(96px+env(safe-area-inset-bottom))]">
+          <div className="w-full mb-6">
             <div className="flex items-baseline justify-between gap-4">
               <span className="text-[18px]  text-gray-600 whitespace-nowrap">
                 Step 1 of 3
@@ -59,7 +59,7 @@ export default function VerifyBookBankView({
             </div>
           </div>
 
-          <div className="mb-6 flex flex-col items-center text-center">
+          <div className=" flex flex-col items-center text-center">
             <h2
               className="font-bold m-0 inline whitespace-nowrap"
               style={{ color: "#0F2D73", fontSize: "20px", lineHeight: "20px" }}
@@ -79,7 +79,7 @@ export default function VerifyBookBankView({
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="grid grid-cols-3 gap-3 my-4">
+          <div className="grid grid-cols-3 gap-3 my-4 mt-0">
             <div className="flex items-center justify-center">
               <Image
                 src="\book-bank-accept\book-bank-sample-correct.svg"
@@ -243,77 +243,57 @@ export default function VerifyBookBankView({
             </div>
           </div>
         </main>
-        <footer className="p-6  bg-white">
-          <label
-            htmlFor="consent-checkbox"
-            className="flex items-start space-x-3 cursor-pointer"
-          >
-            <div className="relative flex-shrink-0 mt-1">
-              <input
-                id="consent-checkbox"
-                type="checkbox"
-                checked={isChecked}
-                onChange={(e) => onCheckboxChange(e.target.checked)}
-                className="sr-only"
-              />
 
-              <label
-                htmlFor="consent-checkbox"
-                className="block h-5 w-5 absolute left-0 top-0 cursor-pointer border rounded-[6px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1849D6]/40"
-                style={{
-                  borderColor: isChecked ? "#1849D6" : "#D1D5DB",
-                  backgroundColor: isChecked ? "#1849D6" : "#fff",
-                }}
-              >
+        <footer className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur  border-gray-200">
+          <div className="mx-auto w-full max-w-[480px] p-6 pt-0 pb-[calc(16px+env(safe-area-inset-bottom))]">
+            <label className="flex cursor-pointer items-start gap-3">
+              <div className="relative mt-0.5 flex-shrink-0">
+                <input
+                  id="consent-checkbox"
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={(e) => onCheckboxChange(e.target.checked)}
+                  className="peer sr-only"
+                />
                 <span
                   aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    top: "1px",
-                    left: "5px",
-                    width: "8px",
-                    height: "12px",
-                    borderRight: `2px solid ${
-                      isChecked ? "#fff" : "transparent"
-                    }`,
-                    borderBottom: `2px solid ${
-                      isChecked ? "#fff" : "transparent"
-                    }`,
-                    transform: "rotate(45deg)",
-                    pointerEvents: "none",
-                  }}
+                  className="block h-5 w-5 rounded-[6px] border transition-colors
+                             border-[#D1D5DB] bg-white
+                             peer-focus-visible:ring-2 peer-focus-visible:ring-[#1849D6]/40
+                             peer-checked:border-[#1849D6] peer-checked:bg-[#1849D6]"
                 />
-              </label>
-            </div>
+                <svg
+                  className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity
+                             peer-checked:opacity-100"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
 
-            <svg
-              className="h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              <span className="text-sm text-black" style={{ fontSize: "14px" }}>
+                I consent to Kyra KYC processing my personal and biometric data
+                for identity verification, AML compliance, and as per its
+                privacy policy.
+              </span>
+            </label>
+
+            <div className="mt-4"></div>
+            <button
+              onClick={onStartScan}
+              disabled={!isChecked}
+              className={`w-full rounded-lg py-3 text-base text-white transition-colors duration-300 ${
+                isChecked ? "bg-[#2152b6]" : "cursor-not-allowed bg-gray-400"
+              }`}
             >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span className="text-sm text-black" style={{ fontSize: "14px" }}>
-              I consent to Kyra KYC processing my personal and biometric data
-              for identity verification, AML compliance, and as per its privacy
-              policy.
-            </span>
-          </label>
-          <div className="mt-4"></div>
-          <button
-            onClick={onStartScan}
-            disabled={!isChecked}
-            className={`w-full py-3 rounded-lg text-white  text-base transition-colors duration-300 ${
-              isChecked ? "bg-[#2152b6]" : "bg-gray-400 cursor-not-allowed"
-            }`}
-          >
-            Get Started
-          </button>
+              Get Started
+            </button>
+          </div>
         </footer>
       </div>
     </div>

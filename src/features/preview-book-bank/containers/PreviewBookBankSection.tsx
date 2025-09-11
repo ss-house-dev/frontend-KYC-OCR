@@ -142,7 +142,7 @@ export default function BookBankPage() {
 
   useEffect(() => {
     const processImageOnMount = async () => {
-      const dataUrl = sessionStorage.getItem("capturedBookBankImage");
+      const dataUrl = sessionStorage.getItem("croppedBookBankImage");
 
       if (!dataUrl) {
         router.replace("/book-bank-accept");
