@@ -9,6 +9,9 @@ import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask"
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
 import Link from "next/link";
 
+type CVMat = any;
+type CVMatVector = any;
+
 const IconArrowLeft = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -82,9 +85,25 @@ export default function ScanIDCardSection({
 }: Props) {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [cvReady, setCvReady] = useState(false);
   const [readyToShoot, setReadyToShoot] = useState(false);
-  const timer = useRef<NodeJS.Timeout | null>(null);
+
+  // AC2: แสดงปุ่มหลัง 10 วินาที
+  const [manualVisible, setManualVisible] = useState(false);
+  const manualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // AC1: กันยิงซ้ำ
+  const [autoFired, setAutoFired] = useState(false);
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ใช้ ref ถือค่าพร้อมล่าสุด กัน race ระหว่างตั้ง timer กับตอนยิง
+  const readyRef = useRef(false);
+  useEffect(() => {
+    readyRef.current = readyToShoot;
+  }, [readyToShoot]);
+
+  const router = useRouter();
 
   // โหลด OpenCV
   useEffect(() => {
@@ -110,7 +129,7 @@ export default function ScanIDCardSection({
     document.body.appendChild(s);
   }, [onStatusChange]);
 
-  // วิเคราะห์ภาพ
+  // วิเคราะห์ภาพ หา card ในเฟรม + เช็ค brightness/sharpness
   const analyse = useCallback(() => {
     const cam = webcamRef.current;
     const cvs = canvasRef.current;
@@ -153,7 +172,6 @@ export default function ScanIDCardSection({
       laplacian = new cv.Mat();
       cv.Laplacian(gray, laplacian, cv.CV_64F);
 
-      // CHANGED: ใช้ CV_64F และอ่านค่าแบบปลอดภัย
       meanMat = new cv.Mat(1, 1, cv.CV_64F);
       stdDev = new cv.Mat(1, 1, cv.CV_64F);
       cv.meanStdDev(laplacian, meanMat, stdDev);
@@ -199,7 +217,7 @@ export default function ScanIDCardSection({
 
       if (found) {
         setReadyToShoot(true);
-        onStatusChange("Image is ready to capture.", "green");
+        onStatusChange("Image is ready to capture", "green");
       } else {
         setReadyToShoot(false);
         onStatusChange("Place and align your ID card in the frame.", "red");
@@ -220,35 +238,79 @@ export default function ScanIDCardSection({
     }
   }, [cvReady, onStatusChange]);
 
+  // วิเคราะห์ซ้ำทุก ~700ms
   useEffect(() => {
+    let iv: ReturnType<typeof setInterval> | null = null;
     if (cvReady) {
-      timer.current = setInterval(analyse, 700);
+      iv = setInterval(analyse, 700);
     }
     return () => {
-      if (timer.current) clearInterval(timer.current);
+      if (iv) clearInterval(iv);
     };
   }, [cvReady, analyse]);
 
-  const router = useRouter();
+  // ปุ่มมือโผล่หลัง 10 วิ (AC2)
+  useEffect(() => {
+    manualTimerRef.current = setTimeout(() => setManualVisible(true), 10_000);
+    return () => {
+      if (manualTimerRef.current) clearTimeout(manualTimerRef.current);
+    };
+  }, []);
 
-  // ถ่าย + ครอปเฉพาะกรอบกลาง
-  const shoot = () => {
+  // ฟังก์ชันถ่ายภาพ + ครอปกลาง + fallback เป็น getScreenshot()
+  const shoot = useCallback(() => {
+    // กันพลาด: ต้องพร้อมจริงเท่านั้นถึงจะยิง
+    if (!readyToShoot) return;
+
     const videoEl = (webcamRef.current?.video ??
       null) as HTMLVideoElement | null;
-    if (!videoEl) return;
+    let imgData: string | null = null;
 
-    const imgData = cropCenterFromVideo(videoEl, {
-      maxRatio: 0.85,
-      aspectW: 8.8,
-      aspectH: 5.6,
-    });
+    if (videoEl) {
+      imgData = cropCenterFromVideo(videoEl, {
+        maxRatio: 0.85,
+        aspectW: 8.8,
+        aspectH: 5.6,
+      });
+    }
+
+    if (!imgData) imgData = webcamRef.current?.getScreenshot() ?? null;
     if (!imgData) return;
 
     onCapture(imgData);
     sessionStorage.setItem("capturedIdCardImage", imgData);
     sessionStorage.setItem("imageSource", "camera");
     router.push("/preview-id-card");
-  };
+  }, [readyToShoot, onCapture, router]);
+
+  // ✅ ออโต้ช็อตทำงานเฉพาะก่อนเข้าโหมด AC2 เท่านั้น
+  useEffect(() => {
+    if (!manualVisible && readyToShoot && !autoFired && !autoTimerRef.current) {
+      // จับ snapshot ของสถานะตอนตั้ง timer + ใช้ ref เช็กซ้ำตอนยิง
+      const readyAtSchedule = readyToShoot;
+
+      if (manualTimerRef.current) {
+        clearTimeout(manualTimerRef.current);
+        manualTimerRef.current = null;
+      }
+
+      autoTimerRef.current = setTimeout(() => {
+        // ต้องพร้อมทั้งตอนตั้ง timer และตอนจะยิงจริง เพื่อลด false positive
+        if (readyAtSchedule && readyRef.current) {
+          shoot();
+          setAutoFired(true);
+        }
+        autoTimerRef.current = null;
+      }, 150);
+    }
+  }, [manualVisible, readyToShoot, autoFired, shoot]);
+
+  // ล้าง timer ตอน unmount
+  useEffect(() => {
+    return () => {
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    };
+  }, []);
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black ">
@@ -260,7 +322,22 @@ export default function ScanIDCardSection({
              focus-visible:outline-offset-2 focus-visible:outline-[#2152b6]"
         style={{ top: "max(env(safe-area-inset-top, 0px), 1rem)" }}
       >
-        <IconArrowLeft />
+        {/* Icon Back */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-6 h-6"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15.75 19.5L8.25 12l7.5-7.5"
+          />
+        </svg>
         <span className="sr-only">Back</span>
       </Link>
 
@@ -289,7 +366,15 @@ export default function ScanIDCardSection({
           </div>
         </div>
 
-        <CaptureButton onClick={shoot} isReady={readyToShoot} />
+        {/* แสดงปุ่มเฉพาะเคส AC2: ครบ 10s และยังไม่ได้ออโต้ช็อต */}
+        {manualVisible && !autoFired && (
+          <CaptureButton
+            onClick={() => {
+              if (readyToShoot) shoot(); // กดได้เมื่อขึ้นเขียวเท่านั้น
+            }}
+            isReady={readyToShoot} // สถานะปุ่มเท่ากับความพร้อมจริง
+          />
+        )}
       </div>
     </div>
   );
