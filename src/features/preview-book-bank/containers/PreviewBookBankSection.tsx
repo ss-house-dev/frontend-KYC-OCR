@@ -2,17 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { Path, useForm } from "react-hook-form";
-import FormBookBank from "../components/FormBookBank";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { uploadBookBankOcr, OcrResponse } from "../services";
-import { usePersistedForm } from "@/lib/client/usePersistedForm";
-import AlertPopUp from "@/components/AlertPopUp";
-import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
 import { useSession } from "next-auth/react";
+import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
 import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
+import { usePersistedForm } from "@/lib/client/usePersistedForm";
 import { bookbankFormSchema, BookBankFormData } from "./../schemas/bookbank";
 import { useBookBankSubmit } from "../hooks/useBookBankSubmit";
+import { useBookBankOcr, type OriginalNames } from "../hooks/useBookBankOcr";
+import { uploadBookBankOcr, OcrResponse } from "../services";
+import FormBookBank from "../components/FormBookBank";
+import AlertPopUp from "@/components/AlertPopUp";
 
 const defaultFormValues: BookBankFormData = {
   bank: "",
@@ -35,11 +36,11 @@ export default function BookBankPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [pendingData, setPendingData] = useState<BookBankFormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { submit, isUploading, progress, error } = useBookBankSubmit();
-  const [originalData, setOriginalData] = useState<{
-    accountNameThai: string;
-    accountNameEng: string;
-  }>({ accountNameThai: "", accountNameEng: "" });
+  const { submit } = useBookBankSubmit();
+  const [originalData, setOriginalData] = useState<OriginalNames>({
+    accountNameThai: null,
+    accountNameEng: null,
+  });
 
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
@@ -74,16 +75,16 @@ export default function BookBankPage() {
 
       // เก็บข้อมูลเดิมจาก OCR
       setOriginalData({
-        accountNameThai: ocrData.accountNameThai || "",
-        accountNameEng: ocrData.accountNameEng || "",
+        accountNameThai: ocrData.accountNameThai ?? null,
+        accountNameEng: ocrData.accountNameEng ?? null,
       });
 
       reset({
         bank: "",
-        branchNameThai: ocrData.branchNameThai || "",
-        accountNameThai: ocrData.accountNameThai || "",
-        accountNameEng: ocrData.accountNameEng || "",
-        accountNumber: ocrData.accountNumber || "",
+        branchNameThai: ocrData.branchNameThai ?? "",
+        accountNameThai: ocrData.accountNameThai ?? "",
+        accountNameEng: ocrData.accountNameEng ?? "",
+        accountNumber: ocrData.accountNumber ?? "",
       });
 
       setTimeout(async () => {
@@ -124,7 +125,6 @@ export default function BookBankPage() {
         router.replace("/book-bank-accept");
         return;
       }
-
       setPreviewImage(dataUrl);
 
       try {
@@ -142,7 +142,6 @@ export default function BookBankPage() {
     }
   }, [status]);
 
-  // ใช้ custom hook สำหรับเช็ค canSubmit
   const watchedValues = watch();
   const canSubmit = React.useMemo(() => {
     if (isSubmitting) return false;
@@ -167,20 +166,28 @@ export default function BookBankPage() {
   }, [watchedValues, errors, isValid, isSubmitting]);
 
   const onSubmit = async (data: BookBankFormData) => {
-    // console.log("Form submitted:", data);
     setIsSubmitting(true);
 
-    // เช็คความคล้ายของชื่อ
-    const accountNameThaiSimilarity = calculateSimilarity(
-      originalData.accountNameThai,
-      data.accountNameThai
-    );
-    const accountNameEngSimilarity = calculateSimilarity(
-      originalData.accountNameEng,
-      data.accountNameEng
-    );
+    const THRESHOLD = 60;
+    const mismatches: string[] = [];
 
-    if (accountNameThaiSimilarity < 60 || accountNameEngSimilarity < 60) {
+    // เช็คความคล้ายของชื่อ
+    if (originalData.accountNameThai) {
+      const simTH = calculateSimilarity(
+        originalData.accountNameThai,
+        data.accountNameThai
+      );
+      if (simTH < THRESHOLD) mismatches.push("Account Name (TH)");
+    }
+    if (originalData.accountNameEng) {
+      const simEN = calculateSimilarity(
+        originalData.accountNameEng,
+        data.accountNameEng
+      );
+      if (simEN < THRESHOLD) mismatches.push("Account Name (ENG)");
+    }
+
+    if (mismatches.length > 0) {
       setPendingData(data);
       setShowDialog(true);
       return;
@@ -206,11 +213,11 @@ export default function BookBankPage() {
 
       await submit({
         file,
-        kycRequestId: kycRequestId!, 
-        bankName, 
+        kycRequestId: kycRequestId!,
+        bankName,
         accountNo: data.accountNumber,
         accountNameThai: data.accountNameThai,
-        accountNameEng: data.accountNameEng ?? "", 
+        accountNameEng: data.accountNameEng ?? "",
         branchName: data.branchNameThai,
       });
 
@@ -232,12 +239,9 @@ export default function BookBankPage() {
     <>
       <FormBookBank
         onSubmit={handleSubmit(onSubmit)}
-        watch={watch}
         control={control}
         errors={errors}
         capturedImage={previewImage}
-        bankOptions={bankOptions}
-        isValid={isValid}
         canSubmit={canSubmit}
         isLoading={ocrMutation.isPending}
         loadingProgress={loadingProgress}

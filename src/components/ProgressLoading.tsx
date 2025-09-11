@@ -12,7 +12,7 @@ const ProgressLoading: React.FC<ProgressLoadingProps> = ({ progress }) => {
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="w-full h-48 bg-white rounded-xl mb-5 border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+    <div className="w-full h-48 bg-white rounded-xl mb-5 border-2 border-dashed border-[#1849D6] flex flex-col items-center justify-center">
       <div className="relative w-24 h-24">
         <svg className="w-full h-full" viewBox="0 0 100 100">
           <circle

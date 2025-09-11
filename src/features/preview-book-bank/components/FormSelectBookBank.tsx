@@ -22,14 +22,12 @@ interface FormSelectBookBankProps<TFieldValues extends FieldValues> {
   fieldName: Path<TFieldValues>;
   label: string;
   control: Control<TFieldValues>;
-  errors: FieldErrors<TFieldValues>;
 }
 
 const FormSelectBookBank = <TFieldValues extends FieldValues>({
   fieldName,
   label,
   control,
-  errors,
 }: FormSelectBookBankProps<TFieldValues>) => {
   const bankOptions = [
     { value: "kbank", label: "KBANK", image: "/logo-bank/kbank.jpg" },

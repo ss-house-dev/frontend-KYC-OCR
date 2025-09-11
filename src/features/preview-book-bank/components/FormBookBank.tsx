@@ -1,11 +1,8 @@
 import React from "react";
 import {
-  UseFormRegister,
   FieldErrors,
   FieldValues,
   UseFormHandleSubmit,
-  UseFormWatch,
-  Controller,
   Control,
   Path,
 } from "react-hook-form";
@@ -30,22 +27,12 @@ const IconInfo = () => (
   </svg>
 );
 
-interface BookBankFormValues {
-  bank: string;
-  branch: string;
-  accountNameThai: string;
-  accountNameEng: string;
-  accountNo: string;
-}
 interface FormBookBankProps<TFieldValues extends FieldValues> {
   onSubmit: ReturnType<UseFormHandleSubmit<TFieldValues>>;
-  watch: UseFormWatch<TFieldValues>;
   control: Control<TFieldValues>;
-  canSubmit: boolean;
   errors: FieldErrors<TFieldValues>;
-  bankOptions: { value: string; label: string; image: string }[];
   capturedImage: string | null;
-  isValid: boolean;
+  canSubmit: boolean;
   isLoading: boolean;
   loadingProgress: number;
   isSubmitting?: boolean;
@@ -53,12 +40,9 @@ interface FormBookBankProps<TFieldValues extends FieldValues> {
 
 const FormBookBank = <TFieldValues extends FieldValues>({
   onSubmit,
-  watch,
   control,
   errors,
   capturedImage,
-  bankOptions,
-  isValid,
   canSubmit,
   isLoading,
   loadingProgress,
@@ -91,7 +75,6 @@ const FormBookBank = <TFieldValues extends FieldValues>({
               fieldName={"bank" as Path<TFieldValues>}
               label="Select a Bank"
               control={control}
-              errors={errors}
             />
           </div>
 

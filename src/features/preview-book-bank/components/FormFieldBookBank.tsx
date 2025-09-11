@@ -5,7 +5,6 @@ import {
   Controller,
   Control,
   FieldErrors,
-  RegisterOptions,
   FieldValues,
   Path,
 } from "react-hook-form";
@@ -57,7 +56,6 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
                 : ""
             }`}
           />
-
           <div className="text-xs text-muted-foreground min-h-[1rem]">
             <span className="text-destructive text-sm">
               {errors[fieldName]?.message as string}
