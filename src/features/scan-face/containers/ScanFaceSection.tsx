@@ -1,7 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-const FailModal = dynamic(() => import("../components/FailModal"), { ssr: false });
+const FailModal = dynamic(() => import("../components/FailModal"), {
+  ssr: false,
+});
 
 import React, { useRef, useEffect, useState } from "react";
 import { useFaceMesh } from "../hooks/useFaceMesh";
@@ -20,7 +22,7 @@ export default function ScanFaceSection() {
 
   const {
     state,
-    detectionResult,        
+    detectionResult,
     setupCamera,
     failed,
     restartFromSetup,
@@ -91,7 +93,7 @@ export default function ScanFaceSection() {
         <VideoCanvas
           canvasRef={canvasRef}
           state={state}
-          detectionResults={detectionResults}  
+          detectionResults={detectionResults}
           videoElement={videoRef.current || undefined}
         />
 
@@ -109,7 +111,7 @@ export default function ScanFaceSection() {
 
         <ScanOverlayHUD
           state={state}
-          detectionResults={detectionResults}   
+          detectionResults={detectionResults}
           visible={true}
         />
 
