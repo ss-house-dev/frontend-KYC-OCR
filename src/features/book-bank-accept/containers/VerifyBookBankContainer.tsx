@@ -71,9 +71,9 @@ export default function VerifyBookBankContainer() {
 
       setSheetOpen(false);
 
-      // บังคับรี-mount หน้า preview ทุกครั้ง
+      // บังคับรี หน้า crop ทุกครั้ง
       const v = Date.now().toString();
-      router.push(`/preview-book-bank?v=${v}`);
+      router.push(`/book-bank-crop?v=${v}`);
     } finally {
       // ให้เลือกไฟล์ชื่อเดิมซ้ำได้
       e.target.value = "";

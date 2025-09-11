@@ -18,10 +18,10 @@ export default function VerifyFaceView() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white font-inter gap-[86px]">
-      <main className="flex-1 px-5 pt-8  max-w-md w-full mx-auto">
+      <main className="flex-1 px-5 pt-8 max-w-md w-full mx-auto pb-[96px] [padding-bottom:calc(96px+env(safe-area-inset-bottom))]">
         <div className="w-full mb-6 flex items-baseline justify-between text-gray-600">
-          <span className="text-[15px]">Step 2 of 3</span>
-          <span className="text-[15px]">Face Verification</span>
+          <span className="text-[18px]">Step 2 of 3</span>
+          <span className="text-[18px]">Face Verification</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-6 max-w-md">
@@ -39,7 +39,7 @@ export default function VerifyFaceView() {
           </p>
         </div>
 
-        <ul className="mt-6 divide-y divide-gray-200">
+        <ul className="mt-0 divide-y divide-gray-200">
           <li className="flex gap-4 p-4">
             <Image
               src="/face-accept/hold-your-phone.png"
@@ -95,91 +95,57 @@ export default function VerifyFaceView() {
         </ul>
       </main>
 
-      <footer className="p-6  bg-white">
-        <svg
-          className="h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span className="text-sm text-black" style={{ fontSize: "14px" }}>
-          <label
-            htmlFor="consent-checkbox"
-            className="flex items-start space-x-3 cursor-pointer"
-          >
-            <div className="relative flex-shrink-0 mt-1">
+      <footer className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur  border-gray-200">
+        <div className="max-w-md w-full mx-auto p-6 pt-0 pb-[calc(16px+env(safe-area-inset-bottom))]">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <div className="relative mt-0.5 flex-shrink-0">
               <input
                 id="consent-checkbox"
                 type="checkbox"
                 checked={isChecked}
                 onChange={(e) => onCheckboxChange(e.target.checked)}
-                className="sr-only"
+                className="peer sr-only"
               />
-
-              <label
-                htmlFor="consent-checkbox"
-                className="block h-5 w-5 absolute left-0 top-0 cursor-pointer border rounded-[6px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1849D6]/40"
-                style={{
-                  borderColor: isChecked ? "#1849D6" : "#D1D5DB",
-                  backgroundColor: isChecked ? "#1849D6" : "#fff",
-                }}
+              <span
+                aria-hidden="true"
+                className="block h-5 w-5 rounded-[6px] border transition-colors
+                           border-[#D1D5DB] bg-white
+                           peer-focus-visible:ring-2 peer-focus-visible:ring-[#1849D6]/40
+                           peer-checked:border-[#1849D6] peer-checked:bg-[#1849D6]"
+              />
+              <svg
+                className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity
+                           peer-checked:opacity-100"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    top: "1px",
-                    left: "5px",
-                    width: "8px",
-                    height: "12px",
-                    borderRight: `2px solid ${
-                      isChecked ? "#fff" : "transparent"
-                    }`,
-                    borderBottom: `2px solid ${
-                      isChecked ? "#fff" : "transparent"
-                    }`,
-                    transform: "rotate(45deg)",
-                    pointerEvents: "none",
-                  }}
-                />
-              </label>
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
             </div>
 
-            <svg
-              className="h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
             <span className="text-sm text-black" style={{ fontSize: "14px" }}>
               I consent to Kyra KYC processing my personal and biometric data
               for identity verification, AML compliance, and as per its privacy
               policy.
             </span>
           </label>
-          <div className="mt-4"></div>
+
+          <div className="mt-4" />
           <button
             onClick={onStartScan}
             disabled={!isChecked}
-            className={`w-full py-3 rounded-lg text-white  text-base transition-colors duration-300 ${
-              isChecked ? "bg-[#2152b6]" : "bg-gray-400 cursor-not-allowed"
+            className={`w-full rounded-lg py-3 text-base text-white transition-colors duration-300 ${
+              isChecked ? "bg-[#2152b6]" : "cursor-not-allowed bg-gray-400"
             }`}
           >
             Get Started
           </button>
-        </span>
+        </div>
       </footer>
     </div>
   );
