@@ -27,6 +27,8 @@ const IconArrowLeft = () => (
   </svg>
 );
 
+// ❌ ลบ useRef นอก component ออก (ต้นเหตุ Invalid hook call)
+
 const videoConstraints = {
   width: 1280,
   height: 720,
@@ -82,11 +84,23 @@ export default function ScanIDCardSection({
 }: Props) {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [cvReady, setCvReady] = useState(false);
   const [readyToShoot, setReadyToShoot] = useState(false);
-  const timer = useRef<NodeJS.Timeout | null>(null);
 
-  // โหลด OpenCV
+  // ใหม่: สำหรับ AC2
+  const [manualVisible, setManualVisible] = useState(false); // แสดงปุ่มหลัง 10s
+  const manualTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ใหม่: กันออโต้ช็อตยิงซ้ำ (AC1)
+  const [autoFired, setAutoFired] = useState(false);
+
+  const router = useRouter();
+
+  // ✅ ย้ายเข้ามาไว้ใน component
+  const autoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // โหลด OpenCV (เดิม)
   useEffect(() => {
     if (typeof cv !== "undefined") {
       setCvReady(true);
@@ -110,7 +124,7 @@ export default function ScanIDCardSection({
     document.body.appendChild(s);
   }, [onStatusChange]);
 
-  // วิเคราะห์ภาพ
+  // วิเคราะห์ภาพ (เดิม แต่แก้ข้อความเมื่อพร้อม)
   const analyse = useCallback(() => {
     const cam = webcamRef.current;
     const cvs = canvasRef.current;
@@ -153,7 +167,6 @@ export default function ScanIDCardSection({
       laplacian = new cv.Mat();
       cv.Laplacian(gray, laplacian, cv.CV_64F);
 
-      // CHANGED: ใช้ CV_64F และอ่านค่าแบบปลอดภัย
       meanMat = new cv.Mat(1, 1, cv.CV_64F);
       stdDev = new cv.Mat(1, 1, cv.CV_64F);
       cv.meanStdDev(laplacian, meanMat, stdDev);
@@ -199,7 +212,8 @@ export default function ScanIDCardSection({
 
       if (found) {
         setReadyToShoot(true);
-        onStatusChange("Image is ready to capture.", "green");
+        // ปรับข้อความให้ตรง AC (ไม่มีจุด)
+        onStatusChange("Image is ready to capture", "green");
       } else {
         setReadyToShoot(false);
         onStatusChange("Place and align your ID card in the frame.", "red");
@@ -220,35 +234,76 @@ export default function ScanIDCardSection({
     }
   }, [cvReady, onStatusChange]);
 
+  // วิเคราะห์ซ้ำทุก 700ms (เดิม)
   useEffect(() => {
+    let iv: NodeJS.Timeout | null = null;
     if (cvReady) {
-      timer.current = setInterval(analyse, 700);
+      iv = setInterval(analyse, 700);
     }
     return () => {
-      if (timer.current) clearInterval(timer.current);
+      if (iv) clearInterval(iv);
     };
   }, [cvReady, analyse]);
 
-  const router = useRouter();
+  // ตั้งเวลาครบ 10 วินาทีค่อยโชว์ปุ่ม (AC2)
+  useEffect(() => {
+    manualTimerRef.current = setTimeout(() => setManualVisible(true), 10_000);
+    return () => {
+      if (manualTimerRef.current) clearTimeout(manualTimerRef.current);
+    };
+  }, []);
 
-  // ถ่าย + ครอปเฉพาะกรอบกลาง
-  const shoot = () => {
+  // ถ่าย + ครอปเฉพาะกรอบกลาง (เดิม)
+  const shoot = useCallback(() => {
     const videoEl = (webcamRef.current?.video ??
       null) as HTMLVideoElement | null;
-    if (!videoEl) return;
+    let imgData: string | null = null;
 
-    const imgData = cropCenterFromVideo(videoEl, {
-      maxRatio: 0.85,
-      aspectW: 8.8,
-      aspectH: 5.6,
-    });
+    if (videoEl) {
+      imgData = cropCenterFromVideo(videoEl, {
+        maxRatio: 0.85,
+        aspectW: 8.8,
+        aspectH: 5.6,
+      });
+    }
+
+    // Fallback: ถ้าครอปไม่ได้ ใช้ getScreenshot()
+    if (!imgData) {
+      imgData = webcamRef.current?.getScreenshot() ?? null;
+    }
     if (!imgData) return;
 
     onCapture(imgData);
     sessionStorage.setItem("capturedIdCardImage", imgData);
     sessionStorage.setItem("imageSource", "camera");
     router.push("/preview-id-card");
-  };
+  }, [onCapture, router]);
+
+  // เมื่อพร้อมจริง → ยิงออโต้ + ซ่อนปุ่ม (AC1)  (hook ต้องอยู่นอก shoot)
+  useEffect(() => {
+    if (readyToShoot && !autoFired && !autoTimerRef.current) {
+      // ซ่อนปุ่มมือ และเคลียร์ตัวจับเวลา 10s ทิ้ง
+      setManualVisible(false);
+      if (manualTimerRef.current) {
+        clearTimeout(manualTimerRef.current);
+        manualTimerRef.current = null;
+      }
+
+      // ตั้งยิงแบบหน่วงเล็กน้อย โดยไม่คืน cleanup มาล้าง timer ตอน state แกว่ง
+      autoTimerRef.current = setTimeout(() => {
+        shoot();
+        setAutoFired(true);
+        autoTimerRef.current = null;
+      }, 150); // 150–300ms ก็ได้
+    }
+  }, [readyToShoot, autoFired, shoot]);
+
+  // ล้าง timer ตอน unmount
+  useEffect(() => {
+    return () => {
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    };
+  }, []);
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black ">
@@ -260,7 +315,22 @@ export default function ScanIDCardSection({
              focus-visible:outline-offset-2 focus-visible:outline-[#2152b6]"
         style={{ top: "max(env(safe-area-inset-top, 0px), 1rem)" }}
       >
-        <IconArrowLeft />
+        {/* Icon Back */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-6 h-6"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15.75 19.5L8.25 12l7.5-7.5"
+          />
+        </svg>
         <span className="sr-only">Back</span>
       </Link>
 
@@ -289,7 +359,11 @@ export default function ScanIDCardSection({
           </div>
         </div>
 
-        <CaptureButton onClick={shoot} isReady={readyToShoot} />
+        {/* แสดงปุ่มเฉพาะเคส AC2: ครบ 10s และยังไม่ได้ออโต้ช็อต */}
+        {manualVisible && !autoFired && (
+          // ให้กดได้แม้ยังไม่ ready ตาม AC2 → isReady = true
+          <CaptureButton onClick={shoot} isReady={true} />
+        )}
       </div>
     </div>
   );
