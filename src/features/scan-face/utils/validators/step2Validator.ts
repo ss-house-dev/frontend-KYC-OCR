@@ -58,8 +58,8 @@ export class Step2Validator {
       yaw_right: "Please turn your face right.",
       pitch_up: "Nod your head up.",
       pitch_down: "Nod your head down.",
-      blink: "Please blink your eyes.",
-      mouth: "Please open your mouth.",
+      blink: "Please blink slowly.",
+      mouth: "Please Close and open your mouth.",
     };
     return instructions[phase];
   }
