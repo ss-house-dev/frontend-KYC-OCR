@@ -38,23 +38,9 @@ export const bookbankFormSchema = z.object({
     .min(1, "Unable to extract data. Kindly rescan your document.")
     .max(13)
     .refine(
-      (val) => accountNumberPattern.test(val)
-    )
-    .refine(
-      (val) => {
-        const digitsOnly = val.replace(/-/g, "");
-        return digitsOnly.length <= 13;
-      }
-    ),
+      (val) => accountNumberPattern.test(val),
 
-  errors: z
-    .array(
-      z.object({
-        field: z.string(),
-        message: z.string(),
-      })
     )
-    .optional(),
 });
 
 export type BookBankFormData = z.infer<typeof bookbankFormSchema>;

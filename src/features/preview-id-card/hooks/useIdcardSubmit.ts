@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { IdcardSubmit } from "@/features/preview-id-card/services/api-id-card"; 
+import { IdcardSubmit } from "@/features/preview-id-card/services/api-idcard"; 
 
 type SubmitPayload = {
   file: File;

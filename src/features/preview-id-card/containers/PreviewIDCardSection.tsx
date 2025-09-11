@@ -204,7 +204,7 @@ export default function VerifyIdentityScreen() {
 
       <AlertPopUp
         isOpen={showDialog}
-        title="Edited Name Doesn’t Match"
+        title="Edited Name Doesn&rsquo;t Match"
         message="Your edited name is very different the extracted name, Please correct it to continue."
         onRetry={() => {
           setShowDialog(false);

@@ -48,6 +48,7 @@ interface FormBookBankProps<TFieldValues extends FieldValues> {
   isValid: boolean;
   isLoading: boolean;
   loadingProgress: number;
+  isSubmitting?: boolean;
 }
 
 const FormBookBank = <TFieldValues extends FieldValues>({
@@ -61,6 +62,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
   canSubmit,
   isLoading,
   loadingProgress,
+  isSubmitting = false,
 }: FormBookBankProps<TFieldValues>) => {
   return (
     <form onSubmit={onSubmit} className="p-6 max-w-md mx-auto">
@@ -86,7 +88,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
         <div className="space-y-6">
           <div className="space-y-2">
             <FormSelectBookBank
-              fieldName={"bookbankOption" as Path<TFieldValues>}
+              fieldName={"bank" as Path<TFieldValues>}
               label="Select a Bank"
               control={control}
               errors={errors}
@@ -138,12 +140,14 @@ const FormBookBank = <TFieldValues extends FieldValues>({
       <div className="mt-6">
         <button
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || isSubmitting}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
+            canSubmit && !isSubmitting 
+              ? "bg-[#2152b6] hover:bg-[#1a4299]" 
+              : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Confirm
+          {isSubmitting ? "Processing..." : "Confirm"}
         </button>
       </div>
     </form>

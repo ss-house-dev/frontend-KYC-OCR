@@ -12,17 +12,15 @@ import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
 import { useSession } from "next-auth/react";
 import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
 import { bookbankFormSchema, BookBankFormData } from "./../schemas/bookbank";
+import { useBookBankSubmit } from "../hooks/useBookBankSubmit";
 
-const defaultFormValues = {
+const defaultFormValues: BookBankFormData = {
   bank: "",
   branchNameThai: "",
   accountNameThai: "",
   accountNameEng: "",
   accountNumber: "",
-  // errors: [{ field: "", message: "" }],
 };
-
-type BookBankFormValues = typeof defaultFormValues;
 
 const bankOptions = [
   { value: "kbank", label: "KBANK", image: "/logobank/KBANK.jpg" },
@@ -33,10 +31,11 @@ const bankOptions = [
 export default function BookBankPage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
-  const [canSubmit, setCanSubmit] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [pendingData, setPendingData] = useState<any>(null);
+  const [pendingData, setPendingData] = useState<BookBankFormData | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submit, isUploading, progress, error } = useBookBankSubmit();
   const [originalData, setOriginalData] = useState<{
     accountNameThai: string;
     accountNameEng: string;
@@ -45,26 +44,23 @@ export default function BookBankPage() {
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
 
-  const form = useForm<BookBankFormValues>({
+  const form = useForm<BookBankFormData>({
     resolver: zodResolver(bookbankFormSchema),
     defaultValues: defaultFormValues,
     mode: "onChange",
-    criteriaMode: "all",
-    shouldFocusError: true,
   });
 
   const {
     handleSubmit,
     watch,
     reset,
-    register,
     control,
     setError,
     trigger,
     formState: { errors, isValid },
   } = form;
 
-  usePersistedForm<BookBankFormData>(form, "book-bank:form", 30, ["errors"]);
+  usePersistedForm<BookBankFormData>(form, "book-bank:form", 30);
 
   const ocrMutation = useMutation({
     mutationKey: ["uploadBookBankOcr", kycRequestId],
@@ -83,6 +79,7 @@ export default function BookBankPage() {
       });
 
       reset({
+        bank: "",
         branchNameThai: ocrData.branchNameThai || "",
         accountNameThai: ocrData.accountNameThai || "",
         accountNameEng: ocrData.accountNameEng || "",
@@ -100,13 +97,13 @@ export default function BookBankPage() {
 
         for (const { field, value } of requiredFields) {
           if (!value || value.trim() === "") {
-            await trigger(field as Path<BookBankFormValues>);
+            await trigger(field as Path<BookBankFormData>);
           }
         }
 
         // set API errors into form
         (ocrData.errors || []).forEach((err) => {
-          setError(err.field as Path<BookBankFormValues>, {
+          setError(err.field as Path<BookBankFormData>, {
             type: "manual",
             message: err.message,
           });
@@ -127,49 +124,51 @@ export default function BookBankPage() {
         router.replace("/book-bank-accept");
         return;
       }
-      if (dataUrl) setPreviewImage(dataUrl);
 
-      if (dataUrl) {
-        try {
-          const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
-          ocrMutation.mutate(file);
-        } catch (e) {
-          console.error("Failed to process image from sessionStorage:", e);
-          alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
-          router.replace("/book-bank-accept");
-        }
-      } else {
-        console.warn(
-          "No image in session. Falling back to test image '/idcard.jpg'"
-        );
-        try {
-          const response = await fetch(dataUrl);
-          const blob = await response.blob();
-          const file = new File([blob], dataUrl, { type: blob.type });
-          ocrMutation.mutate(file);
-        } catch (fetchError) {
-          console.error("Failed to fetch test image:", fetchError);
-          alert("ไม่พบรูปภาพสำหรับทดสอบ");
-          router.replace("/book-bank-accept");
-        }
+      setPreviewImage(dataUrl);
+
+      try {
+        const file = base64StringToFile(dataUrl, "bookbank_from_session.jpg");
+        ocrMutation.mutate(file);
+      } catch (e) {
+        console.error("Failed to process image from sessionStorage:", e);
+        alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
+        router.replace("/book-bank-accept");
       }
     };
-    processImageOnMount();
-  }, []);
 
+    if (status !== "loading") {
+      processImageOnMount();
+    }
+  }, [status]);
+
+  // ใช้ custom hook สำหรับเช็ค canSubmit
   const watchedValues = watch();
+  const canSubmit = React.useMemo(() => {
+    if (isSubmitting) return false;
 
-  useEffect(() => {
-    const allFieldsFilled = Object.values(watchedValues).every(
-      (value) => value !== "" && value !== null && value !== undefined
-    );
+    // เช็คว่าทุก field มีค่า
+    const requiredFields = [
+      "bank",
+      "branchNameThai",
+      "accountNameThai",
+      "accountNameEng",
+      "accountNumber",
+    ];
+    const allFieldsFilled = requiredFields.every((field) => {
+      const value = watchedValues[field as keyof BookBankFormData];
+      return value && value.toString().trim() !== "";
+    });
+
+    // เช็คว่าไม่มี error
     const noErrors = Object.keys(errors).length === 0;
 
-    setCanSubmit(allFieldsFilled && noErrors);
-  }, [watchedValues, errors]);
+    return allFieldsFilled && noErrors && isValid;
+  }, [watchedValues, errors, isValid, isSubmitting]);
 
-  const onSubmit = (data: BookBankFormValues) => {
-    console.log("Form submitted:", data);
+  const onSubmit = async (data: BookBankFormData) => {
+    // console.log("Form submitted:", data);
+    setIsSubmitting(true);
 
     // เช็คความคล้ายของชื่อ
     const accountNameThaiSimilarity = calculateSimilarity(
@@ -184,14 +183,49 @@ export default function BookBankPage() {
     if (accountNameThaiSimilarity < 60 || accountNameEngSimilarity < 60) {
       setPendingData(data);
       setShowDialog(true);
-    } else {
+      return;
+    }
+
+    try {
+      const captured =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("capturedBookBankImage")
+          : null;
+      if (!captured) throw new Error("Missing captured BookBank image file");
+
+      const file = await (async () => {
+        const res = await fetch(captured);
+        const blob = await res.blob();
+        return new File([blob], "bookbank.jpg", {
+          type: blob.type || "image/jpeg",
+        });
+      })();
+
+      const bankName =
+        bankOptions.find((b) => b.value === data.bank)?.label ?? data.bank;
+
+      await submit({
+        file,
+        kycRequestId: kycRequestId!, 
+        bankName, 
+        accountNo: data.accountNumber,
+        accountNameThai: data.accountNameThai,
+        accountNameEng: data.accountNameEng ?? "", 
+        branchName: data.branchNameThai,
+      });
+
       router.push("/verification-complete");
+    } catch (error) {
+      console.error("Submit failed:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleRetry = () => {
     setShowDialog(false);
     setPendingData(null);
+    setIsSubmitting(false);
   };
 
   return (
@@ -207,12 +241,13 @@ export default function BookBankPage() {
         canSubmit={canSubmit}
         isLoading={ocrMutation.isPending}
         loadingProgress={loadingProgress}
+        isSubmitting={isSubmitting}
       />
 
       <AlertPopUp
         isOpen={showDialog}
-        title="Edited Name Doesn&rsquo;t Match"
-        message={`Your edited name is very different the extracted name, Please correct it to continue.`}
+        title="Edited Name Doesn't Match"
+        message="Your edited name is very different from the extracted name. Do you want to continue with the edited name?"
         onRetry={handleRetry}
       />
     </>

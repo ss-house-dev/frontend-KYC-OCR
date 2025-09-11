@@ -4,7 +4,7 @@ import { useState, useCallback, Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import type { UseFormReturn, Path, FieldValues } from "react-hook-form";
-import { uploadIdCardOcr, type OcrResponse } from "../services/ocr-id-card";
+import { uploadIdCardOcr, type OcrResponse } from "../services/ocridcard";
 import { base64StringToFile } from "@/lib/utils/index";
 
 type OriginalNames = {
