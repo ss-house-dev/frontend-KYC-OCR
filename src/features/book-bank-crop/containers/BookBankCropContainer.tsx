@@ -2,17 +2,26 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import BookBankCropper, { BookBankCropperRef } from "../components/BookBankCropper";
+import BookBankCropper, {
+  BookBankCropperRef,
+} from "../components/BookBankCropper";
 import CropHeader from "../components/CropHeader";
 import CropGuideDialog from "../components/CropGuideDialog";
 import CropFooter from "../components/CropFooter";
+import { useToast } from "@/components/ui/use-toast";
 
 function getItemSafe(key: string) {
-  try { return sessionStorage.getItem(key); } catch { return null; }
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
 }
 
 function setItemSafe(key: string, val: string) {
-  try { sessionStorage.setItem(key, val); } catch {}
+  try {
+    sessionStorage.setItem(key, val);
+  } catch {}
 }
 
 const BookBankCropContainer = () => {
@@ -20,16 +29,22 @@ const BookBankCropContainer = () => {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(true);
   const cropperApiRef = useRef<BookBankCropperRef>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const s = getItemSafe("capturedBookBankImage");
     if (!s) {
-      alert("ยังไม่มีรูปที่เลือก กรุณาอัปโหลดอีกครั้ง");
-      router.back();
+      toast({
+        title: "ไม่พบรูปภาพ",
+        description: "กรุณาอัปโหลดภาพสมุดบัญชีอีกครั้ง",
+        variant: "destructive",
+        duration: 4000,
+      });
+      router.replace("/book-bank-accept");
       return;
     }
     setImgSrc(s);
-  }, [router]);
+  }, [router, toast]);
 
   const onConfirm = useCallback(() => {
     const dataUrl = cropperApiRef.current?.getCroppedDataURL();
@@ -49,11 +64,7 @@ const BookBankCropContainer = () => {
       <CropHeader title="Crop Book Bank" onBack={() => router.back()} />
       <div className="relative grow bg-neutral-900">
         {imgSrc && (
-          <BookBankCropper
-            ref={cropperApiRef}
-            image={imgSrc}
-            aspect={3 / 4}
-          />
+          <BookBankCropper ref={cropperApiRef} image={imgSrc} aspect={3 / 4} />
         )}
         {showGuide && <CropGuideDialog onClose={() => setShowGuide(false)} />}
       </div>

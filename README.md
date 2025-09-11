@@ -23,6 +23,9 @@ pnpm add @mediapipe/face_detection @mediapipe/face_mesh @mediapipe/camera_utils 
 
 pnpm add cropperjs@1.6.2
 
+pnpm add sonner
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

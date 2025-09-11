@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "cropperjs/dist/cropper.css";
 import "./globals.css";
 import QueryProvider from "@/lib/react-query/QueryClientProvider";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh`}
       >
         <QueryProvider>{children}</QueryProvider>
+        <Toaster />
       </body>
     </html>
   );
