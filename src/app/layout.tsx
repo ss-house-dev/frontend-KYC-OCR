@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "cropperjs/dist/cropper.css";
 import "./globals.css";
-import QueryProvider from "@/lib/react-query/QueryClientProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { Suspense } from "react";
 
 import Providers from "./providers";
 import ResumeGate from "./ResumeGate";
@@ -36,14 +36,14 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh`}
       >
-
         <Providers>
-          {children}
-          <RouteTracker ttlMin={30} />
-          <ResumeGate ttlMin={30} enabled />
+          <Suspense fallback={null}>
+            {children}
+            <RouteTracker ttlMin={30} />
+            <ResumeGate ttlMin={30} enabled />
+          </Suspense>
         </Providers>
         <Toaster />
-
       </body>
     </html>
   );

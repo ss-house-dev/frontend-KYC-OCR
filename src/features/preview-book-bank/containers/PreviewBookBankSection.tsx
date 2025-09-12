@@ -74,7 +74,7 @@ export default function BookBankPage() {
 
       // เก็บข้อมูลเดิมจาก OCR
       setOriginalData({
-         accountNameThai: ocrData.accountNameThai || "",
+        accountNameThai: ocrData.accountNameThai || "",
         accountNameEng: ocrData.accountNameEng || "",
       });
 
