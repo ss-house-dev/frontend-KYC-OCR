@@ -27,13 +27,17 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-            {
+      {
         source: "/kyc/:path*",
         destination: "http://141.11.156.52:3205/kyc/:path*",
       },
       {
-        source: '/ocr/:path*',
-        destination: 'http://141.11.156.52:3207/ocr/:path*',
+        source: "/ocr/:path*",
+        destination: "http://141.11.156.52:3207/ocr/:path*",
+      },
+      {
+        source: "/submit/:path*",
+        destination: "http://141.11.156.52:3208/submit/:path*",
       },
     ];
   },

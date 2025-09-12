@@ -5,7 +5,6 @@ import {
   Controller,
   Control,
   FieldErrors,
-  RegisterOptions,
   FieldValues,
   Path,
 } from "react-hook-form";
@@ -19,7 +18,6 @@ interface FormFieldBookBankProps<TFieldValues extends FieldValues>
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
   maxLength?: number;
-  validationRules?: RegisterOptions<TFieldValues, Path<TFieldValues>>;
   ignoreChars?: string[];
 }
 
@@ -29,7 +27,6 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
   control,
   errors,
   maxLength,
-  validationRules,
   ignoreChars,
   ...rest
 }: FormFieldBookBankProps<TFieldValues>) => {
@@ -40,7 +37,6 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
     <Controller
       name={fieldName}
       control={control}
-      rules={validationRules}
       render={({ field, fieldState }) => (
         <div className="space-y-1">
           <div className="flex justify-between items-center">
@@ -60,7 +56,6 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
                 : ""
             }`}
           />
-
           <div className="text-xs text-muted-foreground min-h-[1rem]">
             <span className="text-destructive text-sm">
               {errors[fieldName]?.message as string}

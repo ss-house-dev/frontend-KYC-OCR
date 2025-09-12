@@ -87,20 +87,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"idNumber" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-              validate: (value: string) => {
-                const digitsOnly = value.replace(/-/g, "");
-
-                if (digitsOnly.length !== 13) {
-                  return "ID number must be exactly 13 digits";
-                }
-                if (!/^[0-9]+$/.test(digitsOnly)) {
-                  return "ID number must contain only digits";
-                }
-                return true;
-              },
-            }}
             render={({ field }) => (
               <FormField
                 fieldName={"idNumber" as Path<TFieldValues>}
@@ -119,9 +105,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"issueDateThai" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-            }}
             render={({ field }) => (
               <FormField
                 fieldName={"issueDateThai" as Path<TFieldValues>}
@@ -140,9 +123,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"expiryDateThai" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-            }}
             render={({ field }) => (
               <FormField
                 fieldName={"expiryDateThai" as Path<TFieldValues>}
@@ -161,10 +141,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"laserId" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: true,
-              pattern: /^[A-Za-z]{2}\d-\d{7}-\d{2}$/,
-            }}
             render={({ field }) => (
               <FormLaserId
                 fieldName={"laserId" as Path<TFieldValues>}
@@ -173,20 +149,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 placeholder="Enter Laser ID number"
                 type="text"
                 value={field.value}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/-/g, "");
-                  const raw12 = raw.slice(0, 12);
-                  let formatted = "";
-                  if (raw12.length > 0) {
-                    formatted += raw12.slice(0, 3);
-                    if (raw12.length > 3) formatted += "-" + raw12.slice(3, 10);
-                    if (raw12.length > 10)
-                      formatted += "-" + raw12.slice(10, 12);
-                  }
-                  setLaserCharCount(raw12.length);
-                  field.onChange(formatted);
-                }}
-                maxLength={12}
+                pattern="[A-Za-z]{2}\d-\d{7}-\d{2}"
+                maxLength={14}
                 ignoreChars={["-"]}
                 counterValue={laserCharCount}
                 errors={errors}
@@ -199,9 +163,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"titleThai" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "This field is needed",
-            }}
             render={({ field }) => (
               <FormSelect
                 fieldName={"titleThai" as Path<TFieldValues>}
@@ -218,17 +179,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"firstNameThai" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "This field is needed.",
-              maxLength: {
-                value: 50,
-                message: "Cannot exceed 50 characters",
-              },
-              pattern: {
-                value: /^[\u0E00-\u0E7F]+$/,
-                message: "Invalid format. Please enter the correct characters.",
-              },
-            }}
             render={({ field }) => (
               <FormField
                 fieldName={"firstNameThai" as Path<TFieldValues>}
@@ -246,14 +196,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"lastNameThai" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "This field is needed.",
-              maxLength: 50,
-              pattern: {
-                value: /^[\u0E00-\u0E7F]+$/,
-                message: "Invalid format. Please enter the correct characters.",
-              },
-            }}
             render={({ field }) => (
               <FormField
                 fieldName={"lastNameThai" as Path<TFieldValues>}
@@ -269,11 +211,42 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           />
 
           <Controller
+            name={"firstNameEng" as Path<TFieldValues>}
+            control={control}
+            render={({ field }) => (
+              <FormField
+                fieldName={"firstNameEng" as Path<TFieldValues>}
+                label="First name (ENG)"
+                placeholder="Enter your First name"
+                type="text"
+                value={field.value}
+                control={control}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
+
+          <Controller
+            name={"lastNameEng" as Path<TFieldValues>}
+            control={control}
+            render={({ field }) => (
+              <FormField
+                fieldName={"lastNameEng" as Path<TFieldValues>}
+                label="Last name (ENG)"
+                placeholder="Enter your Last name"
+                type="text"
+                control={control}
+                value={field.value}
+                maxLength={50}
+                errors={errors}
+              />
+            )}
+          />
+
+          <Controller
             name={"birthDateThai" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-            }}
             render={({ field }) => (
               <FormField
                 fieldName={"birthDateThai" as Path<TFieldValues>}
@@ -297,17 +270,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           <Controller
             name={"address" as Path<TFieldValues>}
             control={control}
-            rules={{
-              required: "This field is needed.",
-              maxLength: {
-                value: 200,
-                message: "",
-              },
-            }}
             render={({ field, fieldState }) => {
               const fieldError = errors.address;
               const hasError = !!(fieldError || fieldState.error);
-
               return (
                 <>
                   <Textarea

@@ -9,15 +9,22 @@ export type OcrResponse = {
   expiryDateThai?: string;
   address?: string;
   titleThai?: string;
+  firstNameEng?: string;
+  lastNameEng?: string;
   errors: { field: string; message: string }[];
 };
 
 export async function uploadIdCardOcr(
   file: File,
+  kycRequestId?: string,
   onProgress?: (pct: number) => void
 ): Promise<OcrResponse> {
+  if (!kycRequestId) {
+    throw new Error("Missing kycRequestId. Please sign in first.");
+  }
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("kycRequestId", kycRequestId);
 
   const res = await axios.post("/ocr/idcard", formData, {
     headers: { "Content-Type": "multipart/form-data" },

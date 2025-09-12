@@ -1,11 +1,8 @@
 import React from "react";
 import {
-  UseFormRegister,
   FieldErrors,
   FieldValues,
   UseFormHandleSubmit,
-  UseFormWatch,
-  Controller,
   Control,
   Path,
 } from "react-hook-form";
@@ -30,38 +27,26 @@ const IconInfo = () => (
   </svg>
 );
 
-interface BookBankFormValues {
-  bank: string;
-  branch: string;
-  accountName: string;
-  accountNo: string;
-}
 interface FormBookBankProps<TFieldValues extends FieldValues> {
   onSubmit: ReturnType<UseFormHandleSubmit<TFieldValues>>;
-  register: UseFormRegister<TFieldValues>;
-  watch: UseFormWatch<TFieldValues>;
   control: Control<TFieldValues>;
-  canSubmit: boolean;
   errors: FieldErrors<TFieldValues>;
-  bankOptions: { value: string; label: string; image: string }[];
   capturedImage: string | null;
-  isValid: boolean;
+  canSubmit: boolean;
   isLoading: boolean;
   loadingProgress: number;
+  isSubmitting?: boolean;
 }
 
 const FormBookBank = <TFieldValues extends FieldValues>({
   onSubmit,
-  watch,
   control,
   errors,
-  register,
   capturedImage,
-  bankOptions,
-  isValid,
   canSubmit,
   isLoading,
   loadingProgress,
+  isSubmitting = false,
 }: FormBookBankProps<TFieldValues>) => {
   return (
     <form onSubmit={onSubmit} className="p-6 max-w-md mx-auto">
@@ -87,101 +72,65 @@ const FormBookBank = <TFieldValues extends FieldValues>({
         <div className="space-y-6">
           <div className="space-y-2">
             <FormSelectBookBank
-              fieldName={"bookbankOption" as Path<TFieldValues>}
+              fieldName={"bank" as Path<TFieldValues>}
               label="Select a Bank"
               control={control}
-              errors={errors}
-              validationRules={{ required: "This field is needed." }}
             />
           </div>
 
           {/* === ช่อง Branch === */}
-          <Controller
-            name={"branchNameThai" as Path<TFieldValues>}
+          <FormFieldBookBank
+            fieldName={"branchNameThai" as Path<TFieldValues>}
+            label="Branch"
+            placeholder="Enter Branch"
+            type="text"
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-              pattern: {
-                value: /^[\u0E00-\u0E7F ]+$/,
-                message: "Invalid format. Please enter the correct characters.",
-              },
-            }}
-            render={({ field }) => (
-              <FormFieldBookBank
-                fieldName={"branchNameThai" as Path<TFieldValues>}
-                label="Branch"
-                placeholder="Enter Branch"
-                type="text"
-                value={field.value}
-                control={control}
-                errors={errors}
-              />
-            )}
+            errors={errors}
           />
 
-          {/* === ช่อง Account Name === */}
-          <Controller
-            name={"accountNameThai" as Path<TFieldValues>}
+          {/* === ช่อง Account Name (TH) === */}
+          <FormFieldBookBank
+            fieldName={"accountNameThai" as Path<TFieldValues>}
+            label="Account Name (TH)"
+            placeholder="Enter Name"
+            type="text"
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-              pattern: {
-                value: /^[\u0E00-\u0E7F ]+$/,
-                message: "Invalid format. Please enter the correct characters.",
-              },
-            }}
-            render={({ field }) => (
-              <FormFieldBookBank
-                fieldName={"accountNameThai" as Path<TFieldValues>}
-                label="Account Name (TH)"
-                placeholder="Enter Name"
-                type="text"
-                value={field.value}
-                control={control}
-                errors={errors}
-              />
-            )}
+            errors={errors}
+          />
+
+          {/* === ช่อง Account Name (ENG) === */}
+          <FormFieldBookBank
+            fieldName={"accountNameEng" as Path<TFieldValues>}
+            label="Account Name (ENG)"
+            placeholder="Enter Name"
+            type="text"
+            control={control}
+            errors={errors}
           />
 
           {/* === ช่อง Account No. === */}
-          <Controller
-            name={"accountNumber" as Path<TFieldValues>}
+          <FormFieldBookBank
+            fieldName={"accountNumber" as Path<TFieldValues>}
+            label="Account No."
+            placeholder="Enter Account no."
+            type="text"
             control={control}
-            rules={{
-              required: "Unable to extract data. Kindly rescan your document.",
-              maxLength: 13,
-              validate: (value: string) => {
-                const digitsOnly = value.replace(/-/g, "");
-                if (digitsOnly.length > 13) return false;
-                if (value.length > 0 && !/^[0-9-]+$/.test(value)) return false;
-                return true;
-              },
-            }}
-            render={({ field }) => (
-              <FormFieldBookBank
-                fieldName={"accountNumber" as Path<TFieldValues>}
-                label="Account No."
-                placeholder="Enter Account no."
-                type="text"
-                control={control}
-                value={field.value}
-                onChange={field.onChange}
-                errors={errors}
-                disabled
-              />
-            )}
+            errors={errors}
+            disabled
           />
         </div>
       </div>
       <div className="mt-6">
         <button
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || isSubmitting}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
+            canSubmit && !isSubmitting 
+              ? "bg-[#2152b6] hover:bg-[#1a4299]" 
+              : "bg-gray-400 cursor-not-allowed"
           }`}
         >
-          Confirm
+          {isSubmitting ? "Processing..." : "Confirm"}
         </button>
       </div>
     </form>

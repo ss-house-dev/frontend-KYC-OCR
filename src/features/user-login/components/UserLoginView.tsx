@@ -42,13 +42,7 @@ export default function UserLoginView({
             autoComplete="email"
             placeholder="Enter your E-mail"
             className="bg-white"
-            {...register("email", {
-              required: "Please enter your email address.",
-              pattern: {
-                value: /.+@.+\..+/,
-                message: "Please enter a valid email address.",
-              },
-            })}
+            {...register("email")}
           />
 
           {errors.email ? (
