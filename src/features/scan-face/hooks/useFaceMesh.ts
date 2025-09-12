@@ -446,9 +446,9 @@ export function useFaceMesh(
         processDetectionResults(res);
       });
 
-      const targetW = isAndroid ? 640 : CONFIG.DISPLAY.WIDTH;
-      const targetH = isAndroid ? 480 : CONFIG.DISPLAY.HEIGHT;
-      const targetFps = isAndroid ? 24 : 30;
+      const targetW = isAndroid ? 640 : 1280;
+      const targetH = Math.round((targetW * 9) / 16);
+      const targetFps = isAndroid ? 30 : 60;
 
       const constraints: MediaStreamConstraints = {
         video: {
@@ -495,7 +495,13 @@ export function useFaceMesh(
       console.error("Camera setup error:", error);
       throw error;
     }
-  }, [processDetectionResults, setStateSafe, stopCurrentSession, videoRef, canvasRef]);
+  }, [
+    processDetectionResults,
+    setStateSafe,
+    stopCurrentSession,
+    videoRef,
+    canvasRef,
+  ]);
 
   // visibilitychange: หยุด/เริ่มกล้องจริง ๆ ลดงานพื้นหลัง
   useEffect(() => {
