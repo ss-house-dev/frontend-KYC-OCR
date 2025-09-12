@@ -10,7 +10,6 @@ import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
 import { bookbankFormSchema, BookBankFormData } from "./../schemas/bookbank";
 import { useBookBankSubmit } from "../hooks/useBookBankSubmit";
-import { useBookBankOcr, type OriginalNames } from "../hooks/useBookBankOcr";
 import { uploadBookBankOcr, OcrResponse } from "../services";
 import FormBookBank from "../components/FormBookBank";
 import AlertPopUp from "@/components/AlertPopUp";
@@ -37,10 +36,10 @@ export default function BookBankPage() {
   const [pendingData, setPendingData] = useState<BookBankFormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submit } = useBookBankSubmit();
-  const [originalData, setOriginalData] = useState<OriginalNames>({
-    accountNameThai: null,
-    accountNameEng: null,
-  });
+  const [originalData, setOriginalData] = useState<{
+    accountNameThai: string;
+    accountNameEng: string;
+  }>({ accountNameThai: "", accountNameEng: "" });
 
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
@@ -75,8 +74,8 @@ export default function BookBankPage() {
 
       // เก็บข้อมูลเดิมจาก OCR
       setOriginalData({
-        accountNameThai: ocrData.accountNameThai ?? null,
-        accountNameEng: ocrData.accountNameEng ?? null,
+         accountNameThai: ocrData.accountNameThai || "",
+        accountNameEng: ocrData.accountNameEng || "",
       });
 
       reset({
