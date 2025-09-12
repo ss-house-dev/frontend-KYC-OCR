@@ -39,7 +39,7 @@ export const bookbankFormSchema = z.object({
     .max(13)
     .refine(
       (val) => accountNumberPattern.test(val),
-
+      ""
     )
 });
 

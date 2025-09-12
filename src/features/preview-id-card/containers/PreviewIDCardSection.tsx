@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
-import { calculateSimilarity } from "@/lib/utils/index";
+import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
 import FormIdCard from "../components/FormIdCard";
 import AlertPopUp from "@/components/AlertPopUp";
 import { idCardFormSchema, IdCardFormData } from "./../schemas/idcard";
@@ -32,7 +32,7 @@ export default function VerifyIdentityScreen() {
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [pendingData, setPendingData] = useState<IdCardFormData | null>(null);
-  const { submit, isUploading, progress, error } = useIdcardSubmit();
+  const { submit } = useIdcardSubmit();
   const [originalData, setOriginalData] = useState({
     firstNameThai: "",
     lastNameThai: "",
@@ -150,13 +150,7 @@ export default function VerifyIdentityScreen() {
           : null;
       if (!captured) throw new Error("Missing captured ID card image file");
 
-      const file = await (async () => {
-        const res = await fetch(captured);
-        const blob = await res.blob();
-        return new File([blob], "idcard.jpg", {
-          type: blob.type || "image/jpeg",
-        });
-      })();
+      const file = base64StringToFile(captured, "idcard.jpg");
 
       await submit({
         file,

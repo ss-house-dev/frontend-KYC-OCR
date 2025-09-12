@@ -31,6 +31,7 @@ export async function IdcardSubmit({
   formData.append("file", file);
   formData.append("kycRequestId", kycRequestId);
 
+  //titleNameEng เป็น null ได้ เพราะไม่ได้มีการรับ title เป็นภาษาอังกฤษจาก user แต่api มีการรับfeild นี้ (อาจเพิ่มการmapกับtitleThaiในอนาคต)
   Object.entries(fields).forEach(([key, value]) => {
   if (key === "titleNameEng" && value == null) {
     formData.append("titleNameEng", "null"); 

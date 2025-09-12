@@ -200,13 +200,7 @@ export default function BookBankPage() {
           : null;
       if (!captured) throw new Error("Missing captured BookBank image file");
 
-      const file = await (async () => {
-        const res = await fetch(captured);
-        const blob = await res.blob();
-        return new File([blob], "bookbank.jpg", {
-          type: blob.type || "image/jpeg",
-        });
-      })();
+      const file = base64StringToFile(captured, "bookbank.jpg");
 
       const bankName =
         bankOptions.find((b) => b.value === data.bank)?.label ?? data.bank;
