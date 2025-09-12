@@ -4,7 +4,7 @@ services:
     image: gumon.dev/ss-house/frontend-kyra:0.2.5
     container_name: frontend-kyra
     ports:
-      - "80:3400"
+      - "3400:3000"
     env_file:
       - .env
     environment:
@@ -14,7 +14,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'node -e "require(''http'').get(''http://localhost:''+ (process.env.PORT||3400), r=>process.exit(r.statusCode===200?0:1)).on(''error'',()=>process.exit(1))"',
+          'node -e "require(''http'').get(''http://localhost:''+ (process.env.PORT||3000), r=>process.exit(r.statusCode===200?0:1)).on(''error'',()=>process.exit(1))"',
         ]
       interval: 30s
       timeout: 5s
