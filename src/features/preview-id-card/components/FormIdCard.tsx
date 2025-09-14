@@ -45,6 +45,7 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
   isValid: boolean;
   isLoading: boolean;
   loadingProgress: number;
+  isSubmitting?: boolean;
 }
 
 const FormIdCard = <TFieldValues extends FieldValues>({
@@ -57,6 +58,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   capturedImage,
   isLoading,
   loadingProgress,
+  isSubmitting
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
 
@@ -315,7 +317,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
-          Confirm
+          {isSubmitting ? "Confirm" : "Confirm"}
         </button>
       </div>
     </form>

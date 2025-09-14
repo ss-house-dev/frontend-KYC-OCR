@@ -33,6 +33,7 @@ export default function VerifyIdentityScreen() {
   const [showDialog, setShowDialog] = useState(false);
   const [pendingData, setPendingData] = useState<IdCardFormData | null>(null);
   const { submit } = useIdcardSubmit();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [originalData, setOriginalData] = useState({
     firstNameThai: "",
     lastNameThai: "",
@@ -51,7 +52,7 @@ export default function VerifyIdentityScreen() {
 
   const {
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors, isValid},
     watch,
     control,
   } = form;
@@ -98,23 +99,29 @@ export default function VerifyIdentityScreen() {
     }
   }, [status]);
 
-  const canSubmit = useCanSubmit<IdCardFormData>(watch, errors, {
-    required: [
-      "idNumber",
-      "issueDateThai",
-      "expiryDateThai",
-      "birthDateThai",
-      "titleThai",
-      "firstNameThai",
-      "lastNameThai",
-      "firstNameEng",
-      "lastNameEng",
-      "address",
-      "laserId",
-    ],
-  });
+  const canSubmit = useCanSubmit<IdCardFormData>(
+    watch,
+    errors,
+    {
+      required: [
+        "idNumber",
+        "issueDateThai",
+        "expiryDateThai",
+        "birthDateThai",
+        "titleThai",
+        "firstNameThai",
+        "lastNameThai",
+        "firstNameEng",
+        "lastNameEng",
+        "address",
+        "laserId",
+      ],
+    },
+  );
 
   const onSubmit = async (data: IdCardFormData) => {
+    setIsSubmitting(true);
+
     const firstNameSimilarity = calculateSimilarity(
       originalData.firstNameThai,
       data.firstNameThai
@@ -194,6 +201,7 @@ export default function VerifyIdentityScreen() {
         isValid={isValid}
         isLoading={ocr.isUploading}
         loadingProgress={ocr.loadingProgress}
+        isSubmitting={isSubmitting}
       />
 
       <AlertPopUp
