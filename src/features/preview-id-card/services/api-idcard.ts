@@ -4,6 +4,7 @@ type IdcardSubmitArgs = {
   file: File;
   kycRequestId: string;
   idNumber: string;
+  idNumberFormatted: string;
   titleNameThai: string;
   titleNameEng?: string;
   firstNameThai: string;

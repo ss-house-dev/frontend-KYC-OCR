@@ -71,6 +71,7 @@ export function useIdCardOcr<TForm extends FieldValues>({
       console.error("OCR upload failed:", err);
       onError?.(err);
     },
+    
   });
 
   const startFromSession = useCallback(() => {

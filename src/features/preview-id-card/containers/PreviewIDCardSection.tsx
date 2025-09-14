@@ -16,6 +16,7 @@ import { useIdcardSubmit } from "../hooks/useIdcardSubmit";
 
 const defaultFormValues: IdCardFormData = {
   idNumber: "",
+  idNumberFormatted: "",
   titleThai: "",
   issueDateThai: "",
   expiryDateThai: "",
@@ -65,6 +66,7 @@ export default function VerifyIdentityScreen() {
     onSetOriginal: setOriginalData,
     buildResetValues: (d) => ({
       idNumber: d.idNumber ?? "",
+      idNumberFormatted: d.idNumberFormatted ?? "",
       firstNameThai: d.firstNameThai ?? "",
       lastNameThai: d.lastNameThai ?? "",
       firstNameEng: d.firstNameEng ?? "",
@@ -76,12 +78,13 @@ export default function VerifyIdentityScreen() {
       titleThai: d.titleThai ?? "",
     }),
     requiredFields: [
+      "idNumber",
+      "idNumberFormatted",
       "titleThai",
       "firstNameThai",
       "lastNameThai",
       "firstNameEng",
       "lastNameEng",
-      "idNumber",
       "birthDateThai",
       "issueDateThai",
       "expiryDateThai",
@@ -105,6 +108,7 @@ export default function VerifyIdentityScreen() {
     {
       required: [
         "idNumber",
+        "idNumberFormatted",
         "issueDateThai",
         "expiryDateThai",
         "birthDateThai",

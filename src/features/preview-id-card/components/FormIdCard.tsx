@@ -87,11 +87,11 @@ const FormIdCard = <TFieldValues extends FieldValues>({
       <div className="space-y-4">
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <Controller
-            name={"idNumber" as Path<TFieldValues>}
+            name={"idNumberFormatted" as Path<TFieldValues>}
             control={control}
             render={({ field }) => (
               <FormField
-                fieldName={"idNumber" as Path<TFieldValues>}
+                fieldName={"idNumberFormatted" as Path<TFieldValues>}
                 label="ID Number"
                 placeholder="Enter 13-digit Citizen ID number"
                 type="text"
