@@ -143,8 +143,6 @@ export default function BookBankPage() {
 
   const watchedValues = watch();
   const canSubmit = React.useMemo(() => {
-    if (isSubmitting) return false;
-
     // เช็คว่าทุก field มีค่า
     const requiredFields = [
       "bank",
@@ -162,7 +160,7 @@ export default function BookBankPage() {
     const noErrors = Object.keys(errors).length === 0;
 
     return allFieldsFilled && noErrors && isValid;
-  }, [watchedValues, errors, isValid, isSubmitting]);
+  }, [watchedValues, errors, isValid]);
 
   const onSubmit = async (data: BookBankFormData) => {
     setIsSubmitting(true);

@@ -45,6 +45,7 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
   isValid: boolean;
   isLoading: boolean;
   loadingProgress: number;
+  isSubmitting?: boolean;
 }
 
 const FormIdCard = <TFieldValues extends FieldValues>({
@@ -57,6 +58,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   capturedImage,
   isLoading,
   loadingProgress,
+  isSubmitting
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
 
@@ -85,11 +87,11 @@ const FormIdCard = <TFieldValues extends FieldValues>({
       <div className="space-y-4">
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <Controller
-            name={"idNumber" as Path<TFieldValues>}
+            name={"idNumberFormatted" as Path<TFieldValues>}
             control={control}
             render={({ field }) => (
               <FormField
-                fieldName={"idNumber" as Path<TFieldValues>}
+                fieldName={"idNumberFormatted" as Path<TFieldValues>}
                 label="ID Number"
                 placeholder="Enter 13-digit Citizen ID number"
                 type="text"
@@ -315,7 +317,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
-          Confirm
+          {isSubmitting ? "Confirm" : "Confirm"}
         </button>
       </div>
     </form>

@@ -123,14 +123,14 @@ const FormBookBank = <TFieldValues extends FieldValues>({
       <div className="mt-6">
         <button
           type="submit"
-          disabled={!canSubmit || isSubmitting}
+          disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
             canSubmit && !isSubmitting 
               ? "bg-[#2152b6] hover:bg-[#1a4299]" 
-              : "bg-gray-400 cursor-not-allowed"
+              : "bg-gray-400"
           }`}
         >
-          {isSubmitting ? "Processing..." : "Confirm"}
+          {isSubmitting ? "Confirm" : "Confirm"}
         </button>
       </div>
     </form>

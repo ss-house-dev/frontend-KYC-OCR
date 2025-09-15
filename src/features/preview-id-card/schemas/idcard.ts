@@ -6,6 +6,10 @@ const engNamePattern = /^[A-Za-z\s]+$/;
 export const idCardFormSchema = z.object({
   idNumber: z
     .string()
+    .min(1, "Unable to extract data. Kindly rescan your document."),
+
+  idNumberFormatted: z
+    .string()
     .min(1, "Unable to extract data. Kindly rescan your document.")
     .refine((val) => {
       const digitsOnly = val.replace(/-/g, "");

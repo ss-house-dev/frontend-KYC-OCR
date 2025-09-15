@@ -2,6 +2,7 @@ import axios from "axios";
 
 export type OcrResponse = {
   idNumber?: string;
+  idNumberFormatted?: string;
   firstNameThai?: string;
   lastNameThai?: string;
   birthDateThai?: string;

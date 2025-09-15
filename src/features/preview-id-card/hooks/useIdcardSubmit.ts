@@ -8,6 +8,7 @@ type SubmitPayload = {
   kycRequestId: string;
   fields: Partial<{
     idNumber: string;
+    idNumberFormatted: string;
     titleNameThai: string;
     titleNameEng?: string;
     firstNameThai: string;
@@ -32,6 +33,7 @@ export function useIdcardSubmit() {
         file,
         kycRequestId,
         idNumber: fields.idNumber || "",
+        idNumberFormatted: fields.idNumberFormatted || "",
         titleNameThai: fields.titleNameThai || "",
         titleNameEng: fields.titleNameEng,
         firstNameThai: fields.firstNameThai || "",
