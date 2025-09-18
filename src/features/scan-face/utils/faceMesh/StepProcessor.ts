@@ -4,11 +4,10 @@ import { Step1Validator, Step2Validator } from "../validators";
 import { FaceMeshState } from "./FaceMeshState";
 import { EMAManager } from "./EMAManager";
 
+const USE_TRACKER_FOR_HEAD = true;
+
 export class StepProcessor {
-  constructor(
-    private state: FaceMeshState,
-    private ema: EMAManager
-  ) {}
+  constructor(private state: FaceMeshState, private ema: EMAManager) {}
 
   // runtime flags updated per frame in processStep2
   private _okLight: boolean = true;
@@ -107,10 +106,8 @@ export class StepProcessor {
     } else if (exitCondition?.()) {
       this.state.holdStart = null;
     }
-  
   }
 
-  
   private isYawMoving(): boolean {
     const yf = this.ema.yawFast.value ?? 0;
     const ys = this.ema.yawSlow.value ?? 0;
@@ -189,9 +186,7 @@ export class StepProcessor {
       this.state.subPhase = "mouth";
       this.state.blinkCloseStart = null;
     }
-
   }
-
 
   private handleMouth(marValue: number) {
     const baselineMAR = this.ema.marBase.value ?? marValue;
