@@ -142,25 +142,14 @@ export default function BookBankPage() {
   }, [status]);
 
   const watchedValues = watch();
-  const canSubmit = React.useMemo(() => {
-    // เช็คว่าทุก field มีค่า
-    const requiredFields = [
-      "bank",
-      "branchNameThai",
-      "accountNameThai",
-      "accountNameEng",
-      "accountNumber",
-    ];
-    const allFieldsFilled = requiredFields.every((field) => {
-      const value = watchedValues[field as keyof BookBankFormData];
-      return value && value.toString().trim() !== "";
-    });
-
-    // เช็คว่าไม่มี error
-    const noErrors = Object.keys(errors).length === 0;
-
-    return allFieldsFilled && noErrors && isValid;
-  }, [watchedValues, errors, isValid]);
+ const canSubmit = React.useMemo(() => {
+  const required: (keyof BookBankFormData)[] = ["bank","branchNameThai","accountNameThai","accountNameEng","accountNumber"];
+  const allFilled = required.every((f) => {
+    const v = watchedValues[f];
+    return v && v.toString().trim() !== "";
+  });
+  return allFilled && isValid; 
+}, [watchedValues, isValid]);
 
   const onSubmit = async (data: BookBankFormData) => {
     setIsSubmitting(true);

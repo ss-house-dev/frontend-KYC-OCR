@@ -47,7 +47,8 @@ export default function UserLoginContainer() {
     try {
       const res = await signIn("credentials", {
         email,
-        companyId: "68ba8e8bb9d343d98dd97a99",
+        //กำหนด ID ของบริษัท
+        companyId: "68bfb3b096a51a838c2bcd83",
         callbackUrl,
         redirect: false,
       });
