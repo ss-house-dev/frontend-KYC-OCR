@@ -9,7 +9,7 @@ export const bookbankFormSchema = z.object({
     .string()
     .min(1),
 
-  branchNameThai: z
+  branchName: z
     .string()
     .min(1, "Unable to extract data. Kindly rescan your document.")
     .refine(

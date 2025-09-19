@@ -80,7 +80,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
 
           {/* === ช่อง Branch === */}
           <FormFieldBookBank
-            fieldName={"branchNameThai" as Path<TFieldValues>}
+            fieldName={"branchName" as Path<TFieldValues>}
             label="Branch"
             placeholder="Enter Branch"
             type="text"
