@@ -199,6 +199,34 @@ export function useFaceMesh(
     return prev === 0 ? next : alpha * next + (1 - alpha) * prev;
   }
 
+  // ดีเลย์ตอนเปลี่ยนเฟส
+  const phaseDelayTimerRef = useRef<number | null>(null);
+  const isPhaseDelayActiveRef = useRef(false);
+
+  function clearPhaseDelayTimer() {
+    if (phaseDelayTimerRef.current != null) {
+      clearTimeout(phaseDelayTimerRef.current);
+      phaseDelayTimerRef.current = null;
+    }
+  }
+
+  function schedulePhaseAdvance(nextPhase: Phase, delayMs = 0) {
+    // ถ้ามีดีเลย์ค้างอยู่ ไม่ต้องตั้งซ้ำ
+    if (isPhaseDelayActiveRef.current) return;
+
+    if (delayMs <= 0) {
+      managers.current.state.subPhase = nextPhase;
+      return;
+    }
+    isPhaseDelayActiveRef.current = true;
+    clearPhaseDelayTimer();
+    phaseDelayTimerRef.current = window.setTimeout(() => {
+      managers.current.state.subPhase = nextPhase;
+      isPhaseDelayActiveRef.current = false;
+      phaseDelayTimerRef.current = null;
+    }, delayMs);
+  }
+
   /** หาพิกัดปลายจมูก (px) โดยอิงการ mirror ให้ตรงกับที่ผู้ใช้เห็น */
   function getNosePxFromDet(
     det: DetectionResult,
@@ -243,15 +271,28 @@ export function useFaceMesh(
 
     const cur = managers.current.state.subPhase as Phase;
     const idx = allowed.indexOf(cur);
+
+    // ถ้ากำลังรอดีเลย์อยู่ ไม่ให้เปลี่ยนเฟสซ้ำ
+    if (isPhaseDelayActiveRef.current) return;
+
+    // ถ้าปัจจุบันยังไม่อยู่ใน allowed ให้ไปตัวแรก
     if (idx === -1) {
       managers.current.state.subPhase = allowed[0];
       return;
     }
+
+    // ยังมีตัวถัดไป
     if (idx < allowed.length - 1) {
-      managers.current.state.subPhase = allowed[idx + 1];
-    } else {
-      // อยู่ท้ายรายการแล้ว → ปล่อยให้ logic ด้านล่างจัดการ complete กลุ่ม
+      const next = allowed[idx + 1];
+
+      // ✅ กำหนดเงื่อนไขดีเลย์: หลังผ่าน yaw_left ให้รอ 2 วิ ก่อนจะไป yaw_right
+      if (cur === "yaw_left" && next === "yaw_right") {
+        schedulePhaseAdvance(next, 2000); // 2000 ms
+      } else {
+        schedulePhaseAdvance(next, 0);
+      }
     }
+    // ถ้าอยู่ตัวท้ายแล้ว ปล่อยให้ logic จบกลุ่มจัดการต่อไป
   }
 
   const processDetectionResults = useCallback(
@@ -506,6 +547,7 @@ export function useFaceMesh(
       faceMeshRef.current = null;
 
       processingRef.current = false;
+      clearPhaseDelayTimer();
       closingRef.current = false;
     }
   }, []);
@@ -622,6 +664,7 @@ export function useFaceMesh(
 
     lastCapAtRef.current = {};
     captureStore.clear();
+    clearPhaseDelayTimer();
 
     try {
       await setupCamera();
