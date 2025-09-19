@@ -16,7 +16,7 @@ import AlertPopUp from "@/components/AlertPopUp";
 
 const defaultFormValues: BookBankFormData = {
   bank: "",
-  branchNameThai: "",
+  branchName: "",
   accountNameThai: "",
   accountNameEng: "",
   accountNumber: "",
@@ -80,7 +80,7 @@ export default function BookBankPage() {
 
       reset({
         bank: "",
-        branchNameThai: ocrData.branchNameThai ?? "",
+        branchName: ocrData.branchName ?? "",
         accountNameThai: ocrData.accountNameThai ?? "",
         accountNameEng: ocrData.accountNameEng ?? "",
         accountNumber: ocrData.accountNumber ?? "",
@@ -89,7 +89,7 @@ export default function BookBankPage() {
       setTimeout(async () => {
         // ตรวจสอบและ set error สำหรับ field ที่ required แต่ไม่มีค่า
         const requiredFields = [
-          { field: "branchNameThai", value: ocrData.branchNameThai },
+          { field: "branchNameThai", value: ocrData.branchName },
           { field: "accountNameThai", value: ocrData.accountNameThai },
           { field: "accountNameEng", value: ocrData.accountNameEng },
           { field: "accountNumber", value: ocrData.accountNumber },
@@ -143,7 +143,7 @@ export default function BookBankPage() {
 
   const watchedValues = watch();
  const canSubmit = React.useMemo(() => {
-  const required: (keyof BookBankFormData)[] = ["bank","branchNameThai","accountNameThai","accountNameEng","accountNumber"];
+  const required: (keyof BookBankFormData)[] = ["bank","branchName","accountNameThai","accountNameEng","accountNumber"];
   const allFilled = required.every((f) => {
     const v = watchedValues[f];
     return v && v.toString().trim() !== "";
@@ -198,7 +198,7 @@ export default function BookBankPage() {
         accountNo: data.accountNumber,
         accountNameThai: data.accountNameThai,
         accountNameEng: data.accountNameEng ?? "",
-        branchName: data.branchNameThai,
+        branchName: data.branchName,
       });
 
       router.push("/verification-complete");

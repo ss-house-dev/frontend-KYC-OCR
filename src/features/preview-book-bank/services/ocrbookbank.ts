@@ -4,7 +4,7 @@ export type OcrResponse = {
   accountNumber?: string;
   accountNameThai?: string;
   accountNameEng?: string;
-  branchNameThai?: string;
+  branchName?: string;
   errors: { field: string; message: string }[];
 };
 
