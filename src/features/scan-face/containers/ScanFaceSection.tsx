@@ -14,6 +14,25 @@ import { CONFIG } from "../configs/constant";
 import Image from "next/image";
 import { Step1Validator } from "../utils/validators/step1Validator";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+const IconArrowLeft = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-6 h-6"
+    aria-hidden="true"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.75 19.5L8.25 12l7.5-7.5"
+    />
+  </svg>
+);
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -88,6 +107,33 @@ export default function ScanFaceSection() {
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
+      <Link
+        href="/face-accept"
+        aria-label="Back"
+        className="fixed left-4 top-4 z-40 text-white p-2
+             focus-visible:outline focus-visible:outline-2
+             focus-visible:outline-offset-2 focus-visible:outline-[#2152b6]"
+        style={{ top: "max(env(safe-area-inset-top, 0px), 1rem)" }}
+      >
+        {/* Icon Back */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-6 h-6"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M15.75 19.5L8.25 12l7.5-7.5"
+          />
+        </svg>
+        <span className="sr-only">Back</span>
+      </Link>
+
       <div className="fixed inset-0 bg-black">
         <video ref={videoRef} playsInline className="hidden" muted autoPlay />
         <VideoCanvas
