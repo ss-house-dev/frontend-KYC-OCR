@@ -14,7 +14,17 @@ import {
   drawLandmarks,
 } from "../utils/canvasDraw";
 
-const SHOW_OVERLAY = false; // true = วาดกรอบ, ข้อความ, landmarks
+const SHOW_OVERLAY = true; // true = วาดกรอบ, ข้อความ, landmarks
+
+/** 👻 ทำให้ overlay วาดจริงแต่โปร่งใส (ยังคงคำนวณ/เรียกฟังก์ชันวาดครบ) */
+const OVERLAY_VISUAL_ALPHA = 0; // 0 = มองไม่เห็น, 1 = ปกติ
+function withOverlayAlpha(ctx: CanvasRenderingContext2D, draw: () => void) {
+  if (!SHOW_OVERLAY) return;
+  ctx.save();
+  ctx.globalAlpha *= OVERLAY_VISUAL_ALPHA;
+  draw();
+  ctx.restore();
+}
 
 /** ====== ค่าจาก CONFIG สำหรับ Landmarks ====== */
 const LM_CFG = (CONFIG as any).LANDMARKS ?? {};
@@ -100,19 +110,19 @@ export function VideoCanvas({
     ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    // 2) Overlay
+    // 2) Overlay per step (ยังคงคำนวณ/เรียกฟังก์ชันวาด แต่ทำให้โปร่งใส)
     if (state.step === 1) {
       drawStep1(ctx, detectionResults, canvas.width, canvas.height);
     } else if (state.step === 2) {
       drawStep2(ctx, detectionResults[0], state, canvas.width, canvas.height);
     } else if (state.step === 3) {
-      if (SHOW_OVERLAY) {
+      withOverlayAlpha(ctx, () => {
         banner(ctx, " ", 60);
-      }
+      });
     }
 
-    // 3) วาด crosshair กลางจอ (บนสุด)
-    if (SHOW_OVERLAY) {
+    // 3) crosshair กลางจอ (บนสุด)
+    withOverlayAlpha(ctx, () => {
       drawCrosshair(
         ctx,
         canvas.width / 2,
@@ -121,7 +131,7 @@ export function VideoCanvas({
         2,
         "#22c55e"
       );
-    }
+    });
   }, [state, detectionResults, videoElement, canvasRef]);
 
   return (
@@ -147,7 +157,8 @@ function drawStep1(
     canvasHeight
   );
 
-  if (SHOW_OVERLAY) {
+  // วาดกรอบ/ข้อความ/landmarks แบบโปร่งใส (ยังคงเรียกฟังก์ชันวาดครบ)
+  withOverlayAlpha(ctx, () => {
     alertFrame(
       ctx,
       validation.isValid ? "rgba(255,255,255,1)" : "rgba(255,0,0,1)",
@@ -163,11 +174,12 @@ function drawStep1(
 
     if (LM_SHOW_STEP1) {
       detectionResults.forEach((d) => {
-        if (!d.landmarks) return;
+        const lms = d.landmarks; // LM[] | null
+        if (!lms) return;        // แคบชนิดให้เป็น LM[]
         if (LM_MODE === "nose") {
-          drawNoseLandmarks(ctx, d.landmarks, canvasWidth, canvasHeight);
+          drawNoseLandmarks(ctx, lms, canvasWidth, canvasHeight);
         } else {
-          // drawLandmarks(ctx, d.landmarks as any, LM_RADIUS, LM_COLOR);
+          drawLandmarks(ctx, lms as any, LM_RADIUS, LM_COLOR);
         }
       });
     }
@@ -175,8 +187,9 @@ function drawStep1(
     if (validation.message) {
       banner(ctx, validation.message, 80);
     }
-  }
+  });
 
+  // NOTE: sharpen/PiP ปล่อยวาดปกติ (ไม่ใช่กรอบ/ข้อความ/landmarks)
   if (CONFIG.SHARPEN.ENABLED) {
     const pipW = 160,
       pipH = 120;
@@ -196,23 +209,31 @@ function drawStep2(
   canvasWidth: number,
   canvasHeight: number
 ) {
-  if (!detection?.landmarks || state.phase === "-") return;
+  if (!detection || state.phase === "-") return;
 
-  if (SHOW_OVERLAY && LM_SHOW_STEP2) {
-    if (LM_MODE === "nose") {
-      drawNoseLandmarks(ctx, detection.landmarks, canvasWidth, canvasHeight);
-    } else {
-      drawLandmarks(ctx, detection.landmarks as any, LM_RADIUS, LM_COLOR);
+  const lms = detection.landmarks; // LM[] | null
+  if (!lms) return;                // แคบชนิดให้เป็น LM[] ต่อจากนี้
+
+  // Landmarks (โปร่งใส)
+  withOverlayAlpha(ctx, () => {
+    if (LM_SHOW_STEP2) {
+      if (LM_MODE === "nose") {
+        drawNoseLandmarks(ctx, lms, canvasWidth, canvasHeight);
+      } else {
+        drawLandmarks(ctx, lms as any, LM_RADIUS, LM_COLOR);
+      }
     }
-  }
+  });
 
+  // ข้อความคำสั่งของเฟส (โปร่งใส)
   const instruction = Step2Validator.getPhaseInstruction(state.phase as any);
-  banner(ctx, instruction, 120);
+  withOverlayAlpha(ctx, () => {
+    banner(ctx, instruction, 120);
+  });
 
-  // แสดง metric พื้นฐานเพื่อดีบัก
+  // คำนวณ metric ต่อ (ไม่เกี่ยวกับการแสดงผล)
   const noseIdx = 1;
-  const lm = detection.landmarks as LM[];
-  const nose = lm?.[noseIdx];
+  const nose = lms[noseIdx];
   if (nose) {
     let xPx = nose.x * canvasWidth;
     const yPx = nose.y * canvasHeight;
@@ -222,8 +243,9 @@ function drawStep2(
     const dx = xPx - cx;
     const dy = yPx - cy;
 
-    ctx.save();
-    if (SHOW_OVERLAY) {
+    // debug text + กรอบ status (โปร่งใส)
+    withOverlayAlpha(ctx, () => {
+      ctx.save();
       ctx.fillStyle = "white";
       ctx.font = "16px system-ui";
       const lines = [
@@ -231,14 +253,16 @@ function drawStep2(
         `dx: ${dx.toFixed(1)} px, dy: ${dy.toFixed(1)} px`,
       ];
       lines.forEach((t, i) => ctx.fillText(t, 10, 56 + i * 18));
-    }
-    ctx.restore();
+      ctx.restore();
 
-    // กรอบสีบอกสถานะคร่าว ๆ (เฉพาะแสดงผล)
-    alertFrame(ctx, "rgba(255,255,255,0.6)", 4);
+      alertFrame(ctx, "rgba(255,255,255,0.6)", 4);
+    });
   }
 
+  // mouth phase banner (โปร่งใส)
   if (state.phase === "mouth" && detection.marValue !== null) {
-    banner(ctx, "Now, please close your mouth", 150);
+    withOverlayAlpha(ctx, () => {
+      banner(ctx, "Now, please close your mouth", 150);
+    });
   }
 }
