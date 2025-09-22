@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import { captureStore } from "@/features/scan-face/state/captureStore";
 
 export default function FaceVerificationPage() {
@@ -11,7 +11,9 @@ export default function FaceVerificationPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col items-center p-6">
-      <h1 className="text-xl font-semibold text-[#053] mb-4">Face Verification</h1>
+      <h1 className="text-xl font-semibold text-[#053] mb-4">
+        Face Verification
+      </h1>
 
       <div className="w-full max-w-md rounded-2xl bg-white shadow p-5">
         <p className="text-center text-emerald-600 font-semibold mb-2">
@@ -38,7 +40,7 @@ export default function FaceVerificationPage() {
         )}
 
         {/* รูปแต่ละ movement (สูงสุด 10 รูป/กลุ่ม) */}
-        {(["yaw", "pitch", "blink", "mouth"] as const).map((g) => {
+        {/* {(["yaw", "pitch", "blink", "mouth"] as const).map((g) => {
           const items = data.movements[g];
           if (!items?.length) return null;
           return (
@@ -53,11 +55,11 @@ export default function FaceVerificationPage() {
               </div>
             </div>
           );
-        })}
+        })} */}
 
         <button
           onClick={() => {
-            router.push("/book-bank-accept"); 
+            router.push("/book-bank-accept");
           }}
           className="mt-4 w-full rounded-2xl px-5 py-3 text-white text-[15px] font-medium bg-[#1766FF] hover:bg-[#155BE6] transition"
         >
