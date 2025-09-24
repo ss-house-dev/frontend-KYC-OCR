@@ -1,5 +1,5 @@
 import PreviewIDCardSection from "@/features/preview-id-card/containers/PreviewIDCardSection";
-import Link from "next/link";
+import BackLink from "@/components/BackLink";
 
 const IconArrowLeft = () => (
   <svg
@@ -23,16 +23,10 @@ export default function Home() {
     <div className="bg-gray-50 flex justify-center">
       <div className="w-full max-w-md bg-white min-h-screen">
         <header className="relative flex items-center justify-center p-5 border-b border-gray-200">
-          <Link
-            href="/scan-id-card"
-            aria-label="Back"
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-lg
-             focus-visible:outline focus-visible:outline-2
-             focus-visible:outline-offset-2 focus-visible:outline-[#2152b6]"
-          >
+          <BackLink>
             <IconArrowLeft />
             <span className="sr-only">Back</span>
-          </Link>
+          </BackLink>
           <h1 className="text-xl font-bold text-[#0F2D73]">
             ID Card Verification
           </h1>

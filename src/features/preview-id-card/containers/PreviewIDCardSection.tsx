@@ -5,7 +5,11 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { usePersistedForm } from "@/lib/client/usePersistedForm";
-import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
+import {
+  base64StringToFile,
+  calculateSimilarity,
+  loadFormFromCookie,
+} from "@/lib/utils/index";
 import FormIdCard from "../components/FormIdCard";
 import AlertPopUp from "@/components/AlertPopUp";
 import { idCardFormSchema, IdCardFormData } from "./../schemas/idcard";
@@ -13,6 +17,22 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useIdCardOcr } from "@/features/preview-id-card/hooks/useIdCardOcr";
 import { useCanSubmit } from "../hooks/useCanSubmit";
 import { useIdcardSubmit } from "../hooks/useIdcardSubmit";
+
+// ✅ Interface สำหรับ OCR cookie data
+interface OcrCookieData {
+  idNumber?: string;
+  idNumberFormatted?: string;
+  firstNameThai?: string;
+  lastNameThai?: string;
+  firstNameEng?: string;
+  lastNameEng?: string;
+  birthDateThai?: string;
+  issueDateThai?: string;
+  expiryDateThai?: string;
+  address?: string;
+  titleThai?: string;
+  laserId?: string;
+}
 
 const defaultFormValues: IdCardFormData = {
   idNumber: "",
@@ -45,6 +65,12 @@ export default function VerifyIdentityScreen() {
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
 
+  // ✅ log session / kycRequestId
+  useEffect(() => {
+    console.log("[VerifyIdentityScreen] Session:", session);
+    console.log("[VerifyIdentityScreen] kycRequestId:", kycRequestId);
+  }, [session, kycRequestId]);
+
   const form = useForm<IdCardFormData>({
     resolver: zodResolver(idCardFormSchema),
     defaultValues: defaultFormValues,
@@ -53,12 +79,10 @@ export default function VerifyIdentityScreen() {
 
   const {
     handleSubmit,
-    formState: { errors, isValid},
+    formState: { errors, isValid },
     watch,
     control,
   } = form;
-
-  usePersistedForm<IdCardFormData>(form, "id-accept:form", 30, ["errors"]);
 
   const ocr = useIdCardOcr<IdCardFormData>({
     kycRequestId,
@@ -96,35 +120,58 @@ export default function VerifyIdentityScreen() {
     },
   });
 
+  // ✅ ตรวจสอบว่ามีข้อมูล OCR ใน cookie หรือไม่
+  const hasOcrData = () => {
+    const cookieData = loadFormFromCookie<OcrCookieData>("idcard_ocr_response");
+    return !!(cookieData && cookieData.idNumber && cookieData.idNumber.trim().length > 0);
+  };
+
+  // ✅ ใช้ usePersistedForm เฉพาะเมื่อไม่มี OCR loading และมีข้อมูล OCR แล้ว
+  const shouldPersist = !ocr.isUploading && hasOcrData();
+  
+  if (shouldPersist) {
+    usePersistedForm<IdCardFormData>(form, "id-accept:form", 30, ["errors"]);
+    console.log("[VerifyIdentityScreen] usePersistedForm enabled");
+  } else {
+    console.log("[VerifyIdentityScreen] usePersistedForm disabled - OCR loading or no data");
+  }
+
+  // ✅ ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
   useEffect(() => {
     if (status !== "loading") {
+      console.log(
+        "[VerifyIdentityScreen] Starting OCR or loading from cookie..."
+      );
       ocr.startFromSession();
+
+      // log ค่าใน cookie ทุกครั้งที่ mount
+      const cookieData = loadFormFromCookie<OcrCookieData>("idcard_ocr_response");
+      console.log("[VerifyIdentityScreen] Cookie data on mount:", cookieData);
     }
   }, [status]);
 
-  const canSubmit = useCanSubmit<IdCardFormData>(
-    watch,
-    errors,
-    {
-      required: [
-        "idNumber",
-        "idNumberFormatted",
-        "issueDateThai",
-        "expiryDateThai",
-        "birthDateThai",
-        "titleThai",
-        "firstNameThai",
-        "lastNameThai",
-        "firstNameEng",
-        "lastNameEng",
-        "address",
-        "laserId",
-      ],
-    },
-  );
+  const canSubmit = useCanSubmit<IdCardFormData>(watch, errors, {
+    required: [
+      "idNumber",
+      "idNumberFormatted",
+      "issueDateThai",
+      "expiryDateThai",
+      "birthDateThai",
+      "titleThai",
+      "firstNameThai",
+      "lastNameThai",
+      "firstNameEng",
+      "lastNameEng",
+      "address",
+      "laserId",
+    ],
+  });
 
   const onSubmit = async (data: IdCardFormData) => {
     setIsSubmitting(true);
+
+    console.log("[VerifyIdentityScreen] Submitting form data:", data);
+    console.log("[VerifyIdentityScreen] Original OCR data:", originalData);
 
     const firstNameSimilarity = calculateSimilarity(
       originalData.firstNameThai,
@@ -159,6 +206,10 @@ export default function VerifyIdentityScreen() {
         typeof window !== "undefined"
           ? sessionStorage.getItem("capturedIdCardImage")
           : null;
+      console.log(
+        "[VerifyIdentityScreen] Captured image from sessionStorage:",
+        captured ? "FOUND" : "NOT FOUND"
+      );
       if (!captured) throw new Error("Missing captured ID card image file");
 
       const file = base64StringToFile(captured, "idcard.jpg");

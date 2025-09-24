@@ -12,11 +12,11 @@ import {
 import FormField from "@/features/preview-id-card/components/FormField";
 import FormSelect from "@/features/preview-id-card/components/FormSelect";
 import FullScreenLoader from "@/components/FullScreenLoader";
-import ProgressLoading from "../../../components/ProgressLoading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FormLaserId from "./FormLaserId";
+import { saveFormToCookie } from "@/lib/utils/index";
 
 const IconInfo = () => (
   <svg
@@ -38,7 +38,7 @@ const IconInfo = () => (
 interface FormIdCardProps<TFieldValues extends FieldValues> {
   handleSubmit: UseFormHandleSubmit<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
-  watch?: UseFormWatch<TFieldValues>;
+  watch: UseFormWatch<TFieldValues>; 
   canSubmit: boolean;
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
@@ -48,6 +48,8 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
   loadingProgress: number;
   isSubmitting?: boolean;
 }
+
+const COOKIE_KEY = "idcard_ocr_data";
 
 const FormIdCard = <TFieldValues extends FieldValues>({
   handleSubmit,
@@ -63,6 +65,14 @@ const FormIdCard = <TFieldValues extends FieldValues>({
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
 
+  // ✅ บันทึกลง cookie ทุกครั้งที่ค่าฟอร์มเปลี่ยน
+  const allValues = watch();
+  useEffect(() => {
+    if (allValues) {
+      saveFormToCookie(COOKIE_KEY, allValues);
+    }
+  }, [allValues]);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">
       <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
@@ -72,7 +82,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           securely.
         </p>
       </div>
-      
+
       <div className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] overflow-hidden">
         <div className="relative w-full aspect-[8.8/5.6] flex items-center justify-center">
           {isLoading ? (
