@@ -11,6 +11,7 @@ import {
 } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
 import FormSelect from "@/features/preview-id-card/components/FormSelect";
+import FullScreenLoader from "@/components/FullScreenLoader";
 import ProgressLoading from "../../../components/ProgressLoading";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -58,7 +59,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   capturedImage,
   isLoading,
   loadingProgress,
-  isSubmitting
+  isSubmitting,
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
 
@@ -71,18 +72,27 @@ const FormIdCard = <TFieldValues extends FieldValues>({
           securely.
         </p>
       </div>
-
-      {isLoading ? (
-        <ProgressLoading progress={loadingProgress} />
-      ) : (
-        capturedImage && (
-          <img
-            src={capturedImage}
-            alt="Thai National ID Card"
-            className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
-          />
-        )
-      )}
+      
+      <div className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] overflow-hidden">
+        <div className="relative w-full aspect-[8.8/5.6] flex items-center justify-center">
+          {isLoading ? (
+            <>
+              <FullScreenLoader />
+              <p className="text-[#1849D6] font-medium z-10">
+                Image loading...
+              </p>
+            </>
+          ) : (
+            capturedImage && (
+              <img
+                src={capturedImage}
+                alt="Thai National ID Card"
+                className="w-full h-full object-contain"
+              />
+            )
+          )}
+        </div>
+      </div>
 
       <div className="space-y-4">
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
