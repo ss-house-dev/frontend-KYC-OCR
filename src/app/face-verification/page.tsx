@@ -38,7 +38,7 @@ export default function FaceVerificationPage() {
         )}
 
         {/* รูปแต่ละ movement (สูงสุด 10 รูป/กลุ่ม) */}
-        {(["yaw", "pitch", "blink", "mouth"] as const).map((g) => {
+        {/* {(["yaw", "pitch", "blink", "mouth"] as const).map((g) => {
           const items = data.movements[g];
           if (!items?.length) return null;
           return (
@@ -53,7 +53,7 @@ export default function FaceVerificationPage() {
               </div>
             </div>
           );
-        })}
+        })} */}
 
         <button
           onClick={() => {

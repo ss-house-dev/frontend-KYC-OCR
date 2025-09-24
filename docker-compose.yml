@@ -1,7 +1,7 @@
 # version: "3.9"
 services:
   web:
-    image: gumon.dev/ss-house/frontend-kyra:0.2.6
+    image: gumon.dev/ss-house/frontend-kyra:0.2.7
     container_name: frontend-kyra
     ports:
       - "3400:3000"
