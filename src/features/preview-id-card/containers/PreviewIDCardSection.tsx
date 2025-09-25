@@ -19,13 +19,13 @@ import { useIdCardOcr } from "@/features/preview-id-card/hooks/useIdCardOcr";
 import { useCanSubmit } from "../hooks/useCanSubmit";
 import { useIdcardSubmit } from "../hooks/useIdcardSubmit";
 
-// ✅ Cookie Keys Constants
+// Cookie Keys Constants
 const COOKIE_KEYS = {
   OCR_RESPONSE: "idcard_ocr_response",
   FORM_EDITED: "idcard_form_edited",
 } as const;
 
-// ✅ Interface สำหรับ OCR cookie data
+// Interface สำหรับ OCR cookie data
 interface OcrCookieData {
   idNumber?: string;
   idNumberFormatted?: string;
@@ -263,7 +263,6 @@ export default function VerifyIdentityScreen() {
         capturedImage={loadImageFromCookie()}
         isValid={isValid}
         isLoading={ocr.isUploading}
-        loadingProgress={ocr.loadingProgress}
         isSubmitting={isSubmitting}
       />
 

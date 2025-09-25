@@ -60,15 +60,15 @@ export const idCardFormSchema = z.object({
 
   birthDateThai: z
     .string()
-    .min(1, "Unable to extract data. Kindly rescan your document."),
+    .min(1, "This field is needed."),
 
   issueDateThai: z
     .string()
-    .min(1, "Unable to extract data. Kindly rescan your document."),
+    .min(1, "This field is needed."),
 
   expiryDateThai: z
     .string()
-    .min(1, "Unable to extract data. Kindly rescan your document."),
+    .min(1, "This field is needed."),
 
   address: z
     .string()

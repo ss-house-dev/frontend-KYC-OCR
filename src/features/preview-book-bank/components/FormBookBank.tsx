@@ -39,7 +39,6 @@ interface FormBookBankProps<TFieldValues extends FieldValues> {
   capturedImage: string | null;
   canSubmit: boolean;
   isLoading: boolean;
-  loadingProgress: number;
   isSubmitting?: boolean;
 }
 
@@ -131,13 +130,13 @@ const FormBookBank = <TFieldValues extends FieldValues>({
         <div className="space-y-6">
           <FormSelectBookBank
             fieldName={"bank" as Path<TFieldValues>}
-            label="Select a Bank"
+            label="Bank"
             control={control}
           />
 
           <FormFieldBookBank
             fieldName={"branchName" as Path<TFieldValues>}
-            label="Branch"
+            label="Branch (TH)"
             placeholder="Enter Branch"
             type="text"
             control={control}

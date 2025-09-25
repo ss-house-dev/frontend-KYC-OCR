@@ -175,7 +175,6 @@ useEffect(() => {
         capturedImage={ocr.imageSrc}
         canSubmit={canSubmit}
         isLoading={ocr.isUploading}
-        loadingProgress={ocr.loadingProgress}
         isSubmitting={isSubmitting}
       />
 

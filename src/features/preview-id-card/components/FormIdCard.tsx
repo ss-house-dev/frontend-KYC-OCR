@@ -7,7 +7,6 @@ import {
   Path,
   UseFormHandleSubmit,
   SubmitHandler,
-  SubmitErrorHandler,
 } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
 import FormSelect from "@/features/preview-id-card/components/FormSelect";
@@ -45,11 +44,10 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
   capturedImage: string | null;
   isValid: boolean;
   isLoading: boolean;
-  loadingProgress: number;
   isSubmitting?: boolean;
 }
 
-// ใช้ cookie key สำหรับข้อมูลที่แก้ไข (priority สูง)
+// ใช้ cookie key สำหรับข้อมูลที่แก้ไข 
 const EDITED_DATA_COOKIE_KEY = "idcard_form_edited";
 
 const FormIdCard = <TFieldValues extends FieldValues>({
@@ -61,7 +59,6 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   errors,
   capturedImage,
   isLoading,
-  loadingProgress,
   isSubmitting,
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
@@ -152,7 +149,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"idNumberFormatted" as Path<TFieldValues>}
                 label="ID Number"
-                placeholder="Enter 13-digit Citizen ID number"
+                placeholder="Enter your ID Number"
                 type="text"
                 control={control}
                 value={field.value}
@@ -169,8 +166,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"issueDateThai" as Path<TFieldValues>}
-                label="Date of Issue"
-                placeholder="DD-MM-YY"
+                label="Date of Issue (DD/MM/YYYY)"
+                placeholder="Enter your date of issue"
                 type="text"
                 disabled
                 value={field.value}
@@ -187,8 +184,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"expiryDateThai" as Path<TFieldValues>}
-                label="Date of Expiry"
-                placeholder="DD-MM-YY"
+                label="Date of Expiry (DD/MM/YYYY)"
+                placeholder="Enter your date of expiry"
                 type="text"
                 disabled
                 value={field.value}
@@ -205,9 +202,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormLaserId
                 fieldName={"laserId" as Path<TFieldValues>}
-                label="Laser ID"
+                label="Laser ID (Back of your ID Card)"
                 control={control}
-                placeholder="Enter Laser ID number"
+                placeholder="Enter your Laser ID"
                 type="text"
                 value={field.value}
                 pattern="[A-Za-z]{2}\d-\d{7}-\d{2}"
@@ -227,7 +224,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormSelect
                 fieldName={"titleThai" as Path<TFieldValues>}
-                label="Name Title"
+                label="Select your name title"
                 control={control}
                 errors={errors}
                 validationRules={{
@@ -244,7 +241,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"firstNameThai" as Path<TFieldValues>}
                 label="First name (TH)"
-                placeholder="Enter your First name"
+                placeholder="Enter your first name"
                 type="text"
                 value={field.value}
                 control={control}
@@ -261,7 +258,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"lastNameThai" as Path<TFieldValues>}
                 label="Last name (TH)"
-                placeholder="Enter your Last name"
+                placeholder="Enter your last name"
                 type="text"
                 control={control}
                 value={field.value}
@@ -278,7 +275,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"firstNameEng" as Path<TFieldValues>}
                 label="First name (ENG)"
-                placeholder="Enter your First name"
+                placeholder="Enter your first name"
                 type="text"
                 value={field.value}
                 control={control}
@@ -295,7 +292,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"lastNameEng" as Path<TFieldValues>}
                 label="Last name (ENG)"
-                placeholder="Enter your Last name"
+                placeholder="Enter your last name"
                 type="text"
                 control={control}
                 value={field.value}
@@ -311,8 +308,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"birthDateThai" as Path<TFieldValues>}
-                label="Date of Birth"
-                placeholder="DD-MM-YY"
+                label="Date of Birth (DD/MM/YYYY)"
+                placeholder="Enter your date of date of birth"
                 type="text"
                 disabled
                 value={field.value}
@@ -338,7 +335,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 <>
                   <Textarea
                     id="address"
-                    placeholder="Enter your Address"
+                    placeholder="Enter your address"
                     maxLength={200}
                     className={`h-24 resize-y mt-1 mb-1 bg-muted ${
                       hasError
