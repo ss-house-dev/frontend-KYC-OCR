@@ -10,6 +10,8 @@ import {
   calculateSimilarity,
   loadFormFromCookie,
 } from "@/lib/utils/index";
+import { loadIdCardDataWithPriority } from "@/lib/loadIdCardDataWithPriority";
+import { loadImageFromCookie } from "@/lib/imageStorage";
 import FormIdCard from "../components/FormIdCard";
 import AlertPopUp from "@/components/AlertPopUp";
 import { idCardFormSchema, IdCardFormData } from "./../schemas/idcard";
@@ -18,7 +20,13 @@ import { useIdCardOcr } from "@/features/preview-id-card/hooks/useIdCardOcr";
 import { useCanSubmit } from "../hooks/useCanSubmit";
 import { useIdcardSubmit } from "../hooks/useIdcardSubmit";
 
-// ✅ Interface สำหรับ OCR cookie data
+const COOKIE_KEYS = {
+  OCR_RESPONSE: "idcard_ocr_response", 
+  FORM_EDITED: "idcard_form_edited", 
+  FORM_PERSISTED: "id-accept:form", 
+} as const;
+
+// Interface สำหรับ OCR cookie data
 interface OcrCookieData {
   idNumber?: string;
   idNumberFormatted?: string;
@@ -65,7 +73,7 @@ export default function VerifyIdentityScreen() {
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
 
-  // ✅ log session / kycRequestId
+  // log session / kycRequestId
   useEffect(() => {
     console.log("[VerifyIdentityScreen] Session:", session);
     console.log("[VerifyIdentityScreen] kycRequestId:", kycRequestId);
@@ -120,33 +128,81 @@ export default function VerifyIdentityScreen() {
     },
   });
 
-  // ✅ ตรวจสอบว่ามีข้อมูล OCR ใน cookie หรือไม่
+  // ตรวจสอบว่ามีข้อมูล OCR ใน cookie หรือไม่
   const hasOcrData = () => {
-    const cookieData = loadFormFromCookie<OcrCookieData>("idcard_ocr_response");
-    return !!(cookieData && cookieData.idNumber && cookieData.idNumber.trim().length > 0);
+    const cookieData = loadFormFromCookie<OcrCookieData>(
+      COOKIE_KEYS.OCR_RESPONSE
+    );
+    return !!(
+      cookieData &&
+      cookieData.idNumber &&
+      cookieData.idNumber.trim().length > 0
+    );
   };
 
-  // ✅ ใช้ usePersistedForm เฉพาะเมื่อไม่มี OCR loading และมีข้อมูล OCR แล้ว
-  const shouldPersist = !ocr.isUploading && hasOcrData();
-  
-  if (shouldPersist) {
-    usePersistedForm<IdCardFormData>(form, "id-accept:form", 30, ["errors"]);
-    console.log("[VerifyIdentityScreen] usePersistedForm enabled");
-  } else {
-    console.log("[VerifyIdentityScreen] usePersistedForm disabled - OCR loading or no data");
-  }
+  // ฟังก์ชันดึงข้อมูลตาม priority: FORM_EDITED > OCR_RESPONSE
+  const loadDataWithPriority = loadIdCardDataWithPriority;
 
-  // ✅ ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
+  // เรียก hook ทุกครั้ง แต่ส่ง flag เข้าไป
+  const persistForm = usePersistedForm<IdCardFormData>(
+    form,
+    "id-accept:form",
+    30,
+    ["errors"]
+  );
+
+  useEffect(() => {
+    if (ocr.isUploading || !hasOcrData()) {
+      console.log("[VerifyIdentityScreen] usePersistedForm disabled");
+      // ไม่ต้องใช้ persistForm
+    } else {
+      console.log("[VerifyIdentityScreen] usePersistedForm enabled");
+      // persistForm จะเริ่มทำงานเอง
+    }
+  }, [ocr.isUploading]);
+
+  // ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
   useEffect(() => {
     if (status !== "loading") {
       console.log(
         "[VerifyIdentityScreen] Starting OCR or loading from cookie..."
       );
-      ocr.startFromSession();
+
+      // ตรวจสอบข้อมูลที่มีอยู่ก่อน
+      const existingData = loadDataWithPriority();
+      if (existingData) {
+        console.log("[VerifyIdentityScreen] Found existing data, skipping OCR");
+        // ใช้ข้อมูลที่มีอยู่แล้ว
+        const resetValues = {
+          idNumber: existingData.idNumber ?? "",
+          idNumberFormatted: existingData.idNumberFormatted ?? "",
+          firstNameThai: existingData.firstNameThai ?? "",
+          lastNameThai: existingData.lastNameThai ?? "",
+          firstNameEng: existingData.firstNameEng ?? "",
+          lastNameEng: existingData.lastNameEng ?? "",
+          birthDateThai: existingData.birthDateThai ?? "",
+          issueDateThai: existingData.issueDateThai ?? "",
+          expiryDateThai: existingData.expiryDateThai ?? "",
+          address: existingData.address ?? "",
+          titleThai: existingData.titleThai ?? "",
+        };
+        form.reset(resetValues);
+        setOriginalData({
+          firstNameThai: existingData.firstNameThai ?? "",
+          lastNameThai: existingData.lastNameThai ?? "",
+          firstNameEng: existingData.firstNameEng ?? "",
+          lastNameEng: existingData.lastNameEng ?? "",
+        });
+      } else {
+        console.log("[VerifyIdentityScreen] No existing data, starting OCR");
+        ocr.startFromSession();
+      }
 
       // log ค่าใน cookie ทุกครั้งที่ mount
-      const cookieData = loadFormFromCookie<OcrCookieData>("idcard_ocr_response");
-      console.log("[VerifyIdentityScreen] Cookie data on mount:", cookieData);
+      console.log("[VerifyIdentityScreen] Cookie data on mount:", {
+        edited: loadFormFromCookie<OcrCookieData>(COOKIE_KEYS.FORM_EDITED),
+        ocr: loadFormFromCookie<OcrCookieData>(COOKIE_KEYS.OCR_RESPONSE),
+      });
     }
   }, [status]);
 
@@ -202,20 +258,17 @@ export default function VerifyIdentityScreen() {
     }
 
     try {
-      const captured =
-        typeof window !== "undefined"
-          ? sessionStorage.getItem("capturedIdCardImage")
-          : null;
+      const captured = loadImageFromCookie(); // จะโหลดจาก sessionStorage ก่อน แล้วค่อย fallback cookie
       console.log(
-        "[VerifyIdentityScreen] Captured image from sessionStorage:",
+        "[VerifyIdentityScreen] Captured image from storage:",
         captured ? "FOUND" : "NOT FOUND"
       );
       if (!captured) throw new Error("Missing captured ID card image file");
 
-      const file = base64StringToFile(captured, "idcard.jpg");
+      const files = base64StringToFile(captured, "idcard.jpg");
 
       await submit({
-        file,
+        files,
         kycRequestId: kycRequestId!,
         fields: {
           idNumber: data.idNumber,
@@ -248,11 +301,7 @@ export default function VerifyIdentityScreen() {
         errors={errors}
         watch={watch}
         canSubmit={canSubmit}
-        capturedImage={
-          typeof window !== "undefined"
-            ? sessionStorage.getItem("capturedIdCardImage")
-            : null
-        }
+        capturedImage={loadImageFromCookie()} // ใช้ image จาก cookie (SSR-safe)
         isValid={isValid}
         isLoading={ocr.isUploading}
         loadingProgress={ocr.loadingProgress}

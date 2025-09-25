@@ -14,9 +14,9 @@ import FormSelect from "@/features/preview-id-card/components/FormSelect";
 import FullScreenLoader from "@/components/FullScreenLoader";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FormLaserId from "./FormLaserId";
-import { saveFormToCookie } from "@/lib/utils/index";
+import { saveFormToCookie, loadFormFromCookie } from "@/lib/utils/index";
 
 const IconInfo = () => (
   <svg
@@ -49,7 +49,8 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
   isSubmitting?: boolean;
 }
 
-const COOKIE_KEY = "idcard_ocr_data";
+// ✅ ใช้ cookie key สำหรับข้อมูลที่แก้ไข (priority สูง)
+const EDITED_DATA_COOKIE_KEY = "idcard_form_edited";
 
 const FormIdCard = <TFieldValues extends FieldValues>({
   handleSubmit,
@@ -64,14 +65,41 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   isSubmitting,
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
+  const initialDataRef = useRef<any>(null);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
-  // ✅ บันทึกลง cookie ทุกครั้งที่ค่าฟอร์มเปลี่ยน
+  // ✅ บันทึกข้อมูลเริ่มต้น (จาก OCR) เพื่อเปรียบเทียบ
   const allValues = watch();
   useEffect(() => {
-    if (allValues) {
-      saveFormToCookie(COOKIE_KEY, allValues);
+    if (allValues && !initialDataRef.current && !isFormInitialized) {
+      // บันทึกข้อมูลเริ่มต้นครั้งแรก (จาก OCR หรือ cookie)
+      const hasIdNumber = allValues.idNumber && String(allValues.idNumber).trim();
+      if (hasIdNumber) {
+        console.log("[FormIdCard] Recording initial data:", allValues);
+        initialDataRef.current = JSON.parse(JSON.stringify(allValues));
+        setIsFormInitialized(true);
+      }
     }
-  }, [allValues]);
+  }, [allValues, isFormInitialized]);
+
+  // ✅ บันทึกลง cookie เมื่อ user แก้ไขข้อมูล (ไม่ใช่ข้อมูลเริ่มต้น)
+  useEffect(() => {
+    if (allValues && initialDataRef.current && isFormInitialized && !isLoading) {
+      // เปรียบเทียบกับข้อมูลเริ่มต้น
+      const hasChanges = JSON.stringify(allValues) !== JSON.stringify(initialDataRef.current);
+      
+      if (hasChanges) {
+        console.log("[FormIdCard] Detected user changes, saving to edited cookie");
+        console.log("[FormIdCard] Initial data:", initialDataRef.current);
+        console.log("[FormIdCard] Current data:", allValues);
+        
+        // เฉพาะเมื่อ user แก้ไขข้อมูลเท่านั้น
+        saveFormToCookie(EDITED_DATA_COOKIE_KEY, allValues);
+      } else {
+        console.log("[FormIdCard] No changes detected, skipping cookie save");
+      }
+    }
+  }, [allValues, isFormInitialized, isLoading]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4">

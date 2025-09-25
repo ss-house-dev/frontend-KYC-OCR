@@ -11,6 +11,8 @@ import {
   loadFormFromCookie,
   clearFormCookie,
 } from "@/lib/utils/index";
+import { loadIdCardDataWithPriority } from "@/lib/loadIdCardDataWithPriority";
+import { hasStoredImage, loadImageFromCookie } from "@/lib/imageStorage";
 
 type OriginalNames = {
   firstNameThai: string;
@@ -45,6 +47,9 @@ export function useIdCardOcr<TForm extends FieldValues>({
   const [loadingProgress, setLoadingProgress] = useState(0);
 
   const COOKIE_KEY = "idcard_ocr_response"; // เปลี่ยน key ใหม่เพื่อไม่ conflict กับ usePersistedForm
+
+  // ✅ ใช้ shared function สำหรับ priority
+  const loadDataWithPriority = loadIdCardDataWithPriority;
 
   const mutation = useMutation({
     mutationKey: ["uploadIdCardOcr", kycRequestId],
@@ -94,6 +99,7 @@ export function useIdCardOcr<TForm extends FieldValues>({
         expiryDateThai: d.expiryDateThai || "",
         address: d.address || "",
         titleThai: d.titleThai || "",
+        // laserId: d.laserId || "",
         errors: d.errors || [],
       };
 
@@ -159,7 +165,9 @@ export function useIdCardOcr<TForm extends FieldValues>({
     // ✅ ลองอ่าน cookie พร้อม delay เล็กน้อยเพื่อให้ DOM stabilize
     setTimeout(() => {
       console.log("[useIdCardOcr] Attempting to load cookie...");
-      const cookieData = loadFormFromCookie<OcrResponse>(COOKIE_KEY);
+      
+      // ✅ ใช้ priority function แทนการอ่าน OCR cookie โดยตรง
+      const cookieData = loadDataWithPriority();
       console.log("[useIdCardOcr] Loaded cookie data:", cookieData);
       console.log("[useIdCardOcr] All cookie keys:", Object.keys(cookieData || {}));
       console.log("[useIdCardOcr] idNumber value:", cookieData?.idNumber, "length:", cookieData?.idNumber?.length);
@@ -197,22 +205,33 @@ export function useIdCardOcr<TForm extends FieldValues>({
       // ❌ ถ้าไม่มี cookie หรือ idNumber ว่าง → OCR ใหม่
       console.log("[useIdCardOcr] ❌ No valid cookie data, proceeding with OCR");
 
-      const imageSrc = sessionStorage.getItem(sessionImageKey);
+      // ✅ ตรวจสอบรูปจาก imageStorage ใหม่
+      const hasImage = hasStoredImage();
+      console.log("[useIdCardOcr] Has stored image:", hasImage);
+      
+      if (!hasImage) {
+        console.log("[useIdCardOcr] No stored image, redirecting to home");
+        router.replace(redirects.noImage || "/");
+        return;
+      }
+      
+      // ✅ โหลดรูปจาก storage
+      const imageSrc = loadImageFromCookie();
       if (!imageSrc) {
-        console.log("[useIdCardOcr] No image in sessionStorage, redirecting");
+        console.log("[useIdCardOcr] Failed to load image, redirecting");
         router.replace(redirects.noImage || "/");
         return;
       }
       
       try {
-        console.log("[useIdCardOcr] Creating file from base64 and starting OCR");
+        console.log("[useIdCardOcr] Creating file from stored image and starting OCR");
         const file = base64StringToFile(imageSrc, "idcard_from_session.jpg");
         mutation.mutate(file);
       } catch (e) {
         console.error("[useIdCardOcr] Error creating file:", e);
         onError?.(e);
       }
-    }, 100); // delay 100ms เพื่อให้ DOM และ cookies stabilize
+    }, 100); 
   }, [
     kycRequestId,
     sessionImageKey,

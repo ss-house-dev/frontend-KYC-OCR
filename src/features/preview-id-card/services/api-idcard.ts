@@ -1,7 +1,7 @@
 import axios from "axios";
 
 type IdcardSubmitArgs = {
-  file: File;
+  files: File;
   kycRequestId: string;
   idNumber: string;
   idNumberFormatted: string;
@@ -19,7 +19,7 @@ type IdcardSubmitArgs = {
 };
 
 export async function IdcardSubmit({
-  file,
+  files,
   kycRequestId,
   onProgress,
   ...fields
@@ -29,7 +29,7 @@ export async function IdcardSubmit({
   }
 
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", files);
   formData.append("kycRequestId", kycRequestId);
 
   //titleNameEng เป็น null ได้ เพราะไม่ได้มีการรับ title เป็นภาษาอังกฤษจาก user แต่api มีการรับfeild นี้ (อาจเพิ่มการmapกับtitleThaiในอนาคต)

@@ -7,6 +7,7 @@ import { CaptureButton } from "@/features/scan-id-card/components/CaptureButton"
 import { FrameSVG } from "@/features/scan-id-card/components/FrameSVG";
 import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask";
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
+import { saveImageToCookie } from "@/lib/imageStorage";
 import Link from "next/link";
 
 type CVMat = any;
@@ -77,6 +78,43 @@ function cropCenterFromVideo(
   return cvs.toDataURL("image/jpeg", 0.92);
 }
 
+// @ts-ignore
+declare const cv: any;
+
+function cropByCorners(src: CVMat, pts: { x: number; y: number }[]): string {
+  // เรียงจุด tl,tr,br,bl
+  pts.sort((a, b) => a.y - b.y || a.x - b.x);
+  const top = pts.slice(0, 2).sort((a, b) => a.x - b.x);
+  const bot = pts.slice(2, 4).sort((a, b) => a.x - b.x);
+  const ordered = [top[0], top[1], bot[1], bot[0]];
+
+  const w = 880,
+    h = 560;
+  const srcTri = cv.matFromArray(
+    4,
+    1,
+    cv.CV_32FC2,
+    ordered.flatMap((p) => [p.x, p.y])
+  );
+  const dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, w, 0, w, h, 0, h]);
+
+  const M = cv.getPerspectiveTransform(srcTri, dstTri);
+  const dst = new cv.Mat();
+  cv.warpPerspective(src, dst, M, new cv.Size(w, h));
+
+  const canvas = document.createElement("canvas");
+  cv.imshow(canvas, dst);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+  // cleanup
+  srcTri.delete();
+  dstTri.delete();
+  M.delete();
+  dst.delete();
+
+  return dataUrl;
+}
+
 export default function ScanIDCardSection({
   onCapture,
   onStatusChange,
@@ -104,6 +142,11 @@ export default function ScanIDCardSection({
   }, [readyToShoot]);
 
   const router = useRouter();
+
+  // ✨ state เก็บมุมการ์ด
+  const [cardCorners, setCardCorners] = useState<
+    { x: number; y: number }[] | null
+  >(null);
 
   // โหลด OpenCV
   useEffect(() => {
@@ -133,8 +176,7 @@ export default function ScanIDCardSection({
   const analyse = useCallback(() => {
     const cam = webcamRef.current;
     const cvs = canvasRef.current;
-    if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4)
-      return;
+    if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4) return;
 
     const ctx = cvs.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
@@ -188,38 +230,70 @@ export default function ScanIDCardSection({
       cv.Canny(gray, edges, 50, 150);
       contours = new cv.MatVector();
       hierarchy = new cv.Mat();
-      cv.findContours(
-        edges,
-        contours,
-        hierarchy,
-        cv.RETR_EXTERNAL,
-        cv.CHAIN_APPROX_SIMPLE
-      );
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      let found = false;
+      const W = cam.video.videoWidth;
+      const H = cam.video.videoHeight;
+
+      let bestCandidate: { pts: { x: number; y: number }[]; score: number; rect: any } | null = null;
+
       for (let i = 0; i < contours.size(); i++) {
         const c = contours.get(i);
         const peri = cv.arcLength(c, true);
         const approx = new cv.Mat();
-        cv.approxPolyDP(c, approx, 0.03 * peri, true);
+        cv.approxPolyDP(c, approx, 0.01 * peri, true); // ใช้ 0.01 เพื่อความละเอียดขึ้น
 
         if (approx.rows === 4) {
-          const r = cv.boundingRect(approx);
-          const ratio = r.width / r.height;
-          if (r.width > 200 && r.height > 100 && ratio > 1.4 && ratio < 1.9) {
-            found = true;
-            approx.delete();
-            break;
+          const rect = cv.boundingRect(approx);
+          const ratio = rect.width / rect.height;
+          const area = cv.contourArea(c);
+
+          if (
+            ratio > 1.5 && ratio < 1.65 &&             // อัตราส่วนบัตร
+            area > W * H * 0.15 && area < W * H * 0.45 // พื้นที่สมเหตุสมผล
+          ) {
+            const pts: { x: number; y: number }[] = [];
+            for (let j = 0; j < 4; j++) {
+              pts.push({ x: approx.intPtr(j, 0)[0], y: approx.intPtr(j, 0)[1] });
+            }
+
+            // คะแนน: ใกล้ center ดีกว่า
+            const cx = rect.x + rect.width / 2;
+            const cy = rect.y + rect.height / 2;
+            const score = Math.hypot(cx - W / 2, cy - H / 2);
+
+            if (!bestCandidate || score < bestCandidate.score) {
+              bestCandidate = { pts, score, rect };
+            }
           }
         }
         approx.delete();
       }
 
-      if (found) {
-        setReadyToShoot(true);
-        onStatusChange("Image is ready to capture", "green");
+      if (bestCandidate) {
+        // เช็คว่าบัตรอยู่ในกรอบกลาง
+        const frameX = W * 0.06, frameY = H * 0.06;
+        const frameW = W * 0.88, frameH = H * 0.88;
+
+        const rect = bestCandidate.rect;
+        const overlapX = Math.max(0, Math.min(rect.x + rect.width, frameX + frameW) - Math.max(rect.x, frameX));
+        const overlapY = Math.max(0, Math.min(rect.y + rect.height, frameY + frameH) - Math.max(rect.y, frameY));
+        const overlapArea = overlapX * overlapY;
+        const rectArea = rect.width * rect.height;
+        const overlapRatio = overlapArea / rectArea;
+
+        if (overlapRatio > 0.9) {
+          setReadyToShoot(true);
+          setCardCorners(bestCandidate.pts);
+          onStatusChange("Card aligned correctly", "green");
+        } else {
+          setReadyToShoot(false);
+          setCardCorners(bestCandidate.pts);
+          onStatusChange("Align the card inside the frame", "red");
+        }
       } else {
         setReadyToShoot(false);
+        setCardCorners(null);
         onStatusChange("Place and align your ID card in the frame.", "red");
       }
     } catch (e) {
@@ -259,14 +333,38 @@ export default function ScanIDCardSection({
 
   // ฟังก์ชันถ่ายภาพ + ครอปกลาง + fallback เป็น getScreenshot()
   const shoot = useCallback(() => {
-    // กันพลาด: ต้องพร้อมจริงเท่านั้นถึงจะยิง
-    if (!readyToShoot) return;
+    console.log(
+      "🚀 shoot() called. readyToShoot=",
+      readyToShoot,
+      "corners=",
+      cardCorners
+    );
 
-    const videoEl = (webcamRef.current?.video ??
-      null) as HTMLVideoElement | null;
+    const videoEl = webcamRef.current?.video as HTMLVideoElement | null;
+    if (!videoEl) {
+      console.warn("❌ no video element");
+      return;
+    }
+
     let imgData: string | null = null;
 
-    if (videoEl) {
+    if (readyToShoot && cardCorners) {
+      console.log("✅ cropping by corners...");
+
+      // เอา frame ปัจจุบันจาก video → วาดลง temp canvas
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = videoEl.videoWidth;
+      tempCanvas.height = videoEl.videoHeight;
+      const ctx = tempCanvas.getContext("2d");
+      ctx?.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
+
+      // อ่านภาพจาก canvas ไม่ใช่ video
+      const src = cv.imread(tempCanvas);
+
+      imgData = cropByCorners(src, cardCorners);
+      src.delete();
+    } else {
+      console.log("⚠️ fallback: crop center");
       imgData = cropCenterFromVideo(videoEl, {
         maxRatio: 0.85,
         aspectW: 8.8,
@@ -275,13 +373,20 @@ export default function ScanIDCardSection({
     }
 
     if (!imgData) imgData = webcamRef.current?.getScreenshot() ?? null;
-    if (!imgData) return;
+    if (!imgData) {
+      console.warn("❌ no image data captured");
+      return;
+    }
 
+    console.log("📸 captured image length=", imgData.length);
+
+    // ✅ บันทึกรูปด้วย cookie system ใหม่
     onCapture(imgData);
-    sessionStorage.setItem("capturedIdCardImage", imgData);
-    sessionStorage.setItem("imageSource", "camera");
+    saveImageToCookie(imgData);
+
+    console.log("➡️ navigating to /preview-id-card");
     router.push("/preview-id-card");
-  }, [readyToShoot, onCapture, router]);
+  }, [readyToShoot, onCapture, router, cardCorners]);
 
   // ✅ ออโต้ช็อตทำงานเฉพาะก่อนเข้าโหมด AC2 เท่านั้น
   useEffect(() => {
@@ -376,6 +481,25 @@ export default function ScanIDCardSection({
           />
         )}
       </div>
+
+      {/* Overlay มุมที่ detect ได้ */}
+      {cardCorners && (
+        <svg
+          className="absolute inset-0 z-30 pointer-events-none"
+          width="100%"
+          height="100%"
+        >
+          <polygon
+            points={cardCorners.map((p) => `${p.x},${p.y}`).join(" ")}
+            fill="none"
+            stroke="lime"
+            strokeWidth="3"
+          />
+          {cardCorners.map((p, idx) => (
+            <circle key={idx} cx={p.x} cy={p.y} r="6" fill="red" />
+          ))}
+        </svg>
+      )}
     </div>
   );
 }
