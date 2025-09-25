@@ -11,7 +11,7 @@ export const bookbankFormSchema = z.object({
 
   branchName: z
     .string()
-    .min(1, "Unable to extract data. Kindly rescan your document.")
+    .min(1, "This field is needed.")
     .refine(
       (val) => thaiPattern.test(val),
       "Invalid format. Please enter the correct characters."
