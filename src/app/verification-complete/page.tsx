@@ -2,9 +2,47 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { clearFormCookie } from "@/lib/utils/index";
+
+// รวม key ที่ต้องลบทั้ง idcard + bookbank
+const COOKIE_KEYS_TO_CLEAR = [
+  "idcard_ocr_response",
+  "idcard_form_edited",
+  "id-accept:form",
+  "bookbank_ocr_response",
+  "bookbank_form_edited",
+  "book-bank:form",
+];
+
+const SESSION_KEYS_TO_CLEAR = [
+  "capturedIdCardImage",
+  "croppedBookBankImage",
+  "capturedBookBankImage",
+];
 
 export default function FaceVerificationPage() {
   const router = useRouter();
+
+  const handleConfirm = () => {
+    console.log("[Confirm] Clearing all cookies and sessionStorage...");
+
+    // ล้าง cookies
+    COOKIE_KEYS_TO_CLEAR.forEach((key) => {
+      clearFormCookie(key);
+      console.log("[Confirm] Cleared cookie:", key);
+    });
+
+    // ล้าง sessionStorage
+    if (typeof window !== "undefined") {
+      SESSION_KEYS_TO_CLEAR.forEach((key) => {
+        sessionStorage.removeItem(key);
+        console.log("[Confirm] Cleared sessionStorage:", key);
+      });
+    }
+
+    // ไปหน้า login
+    router.push("/user-login");
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col items-center px-6 py-10 relative">
@@ -64,7 +102,7 @@ export default function FaceVerificationPage() {
       {/* Confirm button pinned bottom */}
       <div className="w-full max-w-md fixed bottom-0 left-0 right-0 mx-auto px-6 py-4 ">
         <button
-          onClick={() => router.push("/user-login")}
+          onClick={handleConfirm}
           className="w-full h-12 rounded-xl bg-[#1C55D9] text-white font-semibold text-base shadow "
         >
           Confirm

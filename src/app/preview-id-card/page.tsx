@@ -7,7 +7,7 @@ export default function Home() {
     <div className="bg-gray-50 flex justify-center">
       <div className="w-full max-w-md bg-white min-h-screen">
         <header className="relative flex items-center justify-center p-5 border-b border-gray-200">
-          <BackLink href="/scan-id-card">
+          <BackLink href="/scan-id-card" type="idcard">
             <ChevronLeft />
             <span className="sr-only">Back</span>
           </BackLink>

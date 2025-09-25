@@ -3,29 +3,43 @@
 import Link from "next/link";
 import { clearFormCookie } from "@/lib/utils/index";
 
-const COOKIE_KEYS_TO_CLEAR = [
-  "idcard_ocr_response",
-  "idcard_form_edited",
-  "id-accept:form",
-];
-
 type BackLinkProps = {
   children: React.ReactNode;
-  href: string; // ✅ รับจาก parent
+  href: string;
+  type: "idcard" | "bookbank"; // ✅ บังคับให้เลือกประเภท
 };
 
-export default function BackLink({ children, href }: BackLinkProps) {
-  const handleClick = () => {
-    console.log("[BackLink] Clearing all ID card related cookies and sessionStorage");
+// ✅ mapping cookies และ sessionStorage ตาม type
+const COOKIE_KEYS: Record<BackLinkProps["type"], string[]> = {
+  idcard: ["idcard_ocr_response", "idcard_form_edited", "id-accept:form"],
+  bookbank: [
+    "bookbank_ocr_response",
+    "bookbank_form_edited",
+    "book-bank:form",
+  ],
+};
 
-    COOKIE_KEYS_TO_CLEAR.forEach((key) => {
+const SESSION_KEYS: Record<BackLinkProps["type"], string[]> = {
+  idcard: ["capturedIdCardImage"],
+  bookbank: ["croppedBookBankImage", "capturedBookBankImage"],
+};
+
+export default function BackLink({ children, href, type }: BackLinkProps) {
+  const handleClick = () => {
+    console.log(`[BackLink] Clearing all ${type} related cookies and sessionStorage`);
+
+    // clear cookies
+    COOKIE_KEYS[type].forEach((key) => {
       clearFormCookie(key);
-      console.log("[BackLink] Cleared cookie:", key);
+      console.log(`[BackLink] Cleared cookie: ${key}`);
     });
 
+    // clear sessionStorage
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("capturedIdCardImage");
-      console.log("[BackLink] Cleared sessionStorage: capturedIdCardImage");
+      SESSION_KEYS[type].forEach((key) => {
+        sessionStorage.removeItem(key);
+        console.log(`[BackLink] Cleared sessionStorage: ${key}`);
+      });
     }
   };
 
