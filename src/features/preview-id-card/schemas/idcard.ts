@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const thaiNamePattern = /^[\u0E00-\u0E7F\s]+$/;
+const thaiNamePattern = /^(?!.*[\u0E50-\u0E59])[\u0E00-\u0E7F\s]+$/;
 const engNamePattern = /^[A-Za-z\s]+$/;
 
 export const idCardFormSchema = z.object({
