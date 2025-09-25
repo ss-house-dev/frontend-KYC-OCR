@@ -15,24 +15,7 @@ import Image from "next/image";
 import { Step1Validator } from "../utils/validators/step1Validator";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-const IconArrowLeft = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="w-6 h-6"
-    aria-hidden="true"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15.75 19.5L8.25 12l7.5-7.5"
-    />
-  </svg>
-);
+import { ChevronLeft } from "lucide-react";
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -116,21 +99,7 @@ export default function ScanFaceSection() {
         style={{ top: "max(env(safe-area-inset-top, 0px), 1rem)" }}
       >
         {/* Icon Back */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-6 h-6"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15.75 19.5L8.25 12l7.5-7.5"
-          />
-        </svg>
+        <ChevronLeft />
         <span className="sr-only">Back</span>
       </Link>
 

@@ -2,32 +2,27 @@
 
 import Link from "next/link";
 import { clearFormCookie } from "@/lib/utils/index";
-import { clearCapturedImage } from "@/lib/imageStorage";
 
-// ✅ ใช้ keys ที่ถูกต้อง
 const COOKIE_KEYS_TO_CLEAR = [
-  "idcard_ocr_response",  // OCR response data
-  "idcard_form_edited",   // User edited data
-  "id-accept:form"        // Persisted form data
+  "idcard_ocr_response",
+  "idcard_form_edited",
+  "id-accept:form",
 ];
 
-export default function BackLink({
-  children,
-  href = "/scan-id-card",
-}: {
+type BackLinkProps = {
   children: React.ReactNode;
-  href?: string;
-}) {
+  href: string; // ✅ รับจาก parent
+};
+
+export default function BackLink({ children, href }: BackLinkProps) {
   const handleClick = () => {
     console.log("[BackLink] Clearing all ID card related cookies and sessionStorage");
-    
-    // ✅ ล้าง cookies ทั้งหมดที่เกี่ยวข้อง
-    COOKIE_KEYS_TO_CLEAR.forEach(key => {
+
+    COOKIE_KEYS_TO_CLEAR.forEach((key) => {
       clearFormCookie(key);
       console.log("[BackLink] Cleared cookie:", key);
     });
-    
-    // ✅ ล้าง sessionStorage
+
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("capturedIdCardImage");
       console.log("[BackLink] Cleared sessionStorage: capturedIdCardImage");
