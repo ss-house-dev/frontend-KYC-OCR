@@ -29,7 +29,7 @@ export async function IdcardSubmit({
   }
 
   const formData = new FormData();
-  formData.append("file", files);
+  formData.append("files", files);
   formData.append("kycRequestId", kycRequestId);
 
   //titleNameEng เป็น null ได้ เพราะไม่ได้มีการรับ title เป็นภาษาอังกฤษจาก user แต่api มีการรับfeild นี้ (อาจเพิ่มการmapกับtitleThaiในอนาคต)
