@@ -28,6 +28,11 @@ export default function UserLoginContainer() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
+  // ✅ log ENV ทันทีตอน component mount
+  useEffect(() => {
+    console.log("🔍 NEXT_PUBLIC_COMPANY_ID =", process.env.NEXT_PUBLIC_COMPANY_ID);
+  }, []);
+
   const form = useForm<LoginInputs>({
     resolver: zodResolver(schema),
     defaultValues: { email: "" },
@@ -45,9 +50,10 @@ export default function UserLoginContainer() {
     setError(null);
     setIsPending(true);
     try {
+      console.log("🚀 Using companyId:", process.env.NEXT_PUBLIC_COMPANY_ID);
+
       const res = await signIn("credentials", {
         email,
-        //กำหนด ID ของบริษัท
         companyId: process.env.NEXT_PUBLIC_COMPANY_ID,
         callbackUrl,
         redirect: false,
@@ -74,7 +80,7 @@ export default function UserLoginContainer() {
       error={error}
       errors={errors}
       handleSubmit={handleSubmit}
-      register={register} 
+      register={register}
       onSubmit={onSubmit}
     />
   );
