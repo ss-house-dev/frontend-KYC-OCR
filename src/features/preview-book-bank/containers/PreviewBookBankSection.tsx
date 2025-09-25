@@ -1,19 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Path, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
 import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
-import { usePersistedForm } from "@/lib/client/usePersistedForm";
 import { bookbankFormSchema, BookBankFormData } from "./../schemas/bookbank";
 import { useBookBankSubmit } from "../hooks/useBookBankSubmit";
-import { uploadBookBankOcr, OcrResponse } from "../services";
 import FormBookBank from "../components/FormBookBank";
 import AlertPopUp from "@/components/AlertPopUp";
-import { useBookBankOcr } from "../hooks/useBookBankOcr"
+import { useBookBankOcr } from "../hooks/useBookBankOcr";
 
 const defaultFormValues: BookBankFormData = {
   bank: "",
@@ -30,9 +27,7 @@ const bankOptions = [
 ];
 
 export default function BookBankPage() {
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submit } = useBookBankSubmit();
@@ -62,16 +57,11 @@ export default function BookBankPage() {
   const {
     handleSubmit,
     watch,
-    reset,
     control,
-    setError,
-    trigger,
     formState: { errors, isValid },
   } = form;
 
-  usePersistedForm<BookBankFormData>(form, "book-bank:form", 30);
-
-const ocr = useBookBankOcr<BookBankFormData>({
+  const ocr = useBookBankOcr<BookBankFormData>({
   kycRequestId,
   form,
   onSetOriginal: setOriginalData,
@@ -82,50 +72,25 @@ const ocr = useBookBankOcr<BookBankFormData>({
     accountNameEng: d.accountNameEng ?? "",
     accountNumber: d.accountNumber ?? "",
   }),
-  requiredFields: ["bank", "branchName","accountNumber"],
+  requiredFields: ["bank", "branchName", "accountNumber"],
   onError: (err) => {
     console.error(err);
     setErrorAlert({
       isOpen: true,
       title: "Book Bank not found",
-      message: "Unable to detect book bank, please retake photo",
+      message: err instanceof Error ? err.message : "Upload failed",
       imageSrc: "/popup/error-ocr-bookbank.png",
       redirectTo: "/book-bank-accept",
     });
   },
 });
 
+// เรียก OCR / ใช้ cookie
 useEffect(() => {
   if (status !== "loading") {
     ocr.startFromSession();
   }
 }, [status]);
-
-
-  // useEffect(() => {
-  //   const processImageOnMount = async () => {
-  //     const dataUrl = sessionStorage.getItem("croppedBookBankImage");
-
-  //     if (!dataUrl) {
-  //       router.replace("/book-bank-accept");
-  //       return;
-  //     }
-  //     setPreviewImage(dataUrl);
-
-  //     try {
-  //       const files = base64StringToFile(dataUrl, "bookbank_from_session.jpg");
-  //       ocrMutation.mutate(files);
-  //     } catch (e) {
-  //       console.error("Failed to process image from sessionStorage:", e);
-  //       alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
-  //       router.replace("/book-bank-accept");
-  //     }
-  //   };
-
-  //   if (status !== "loading") {
-  //     processImageOnMount();
-  //   }
-  // }, [status]);
 
   const watchedValues = watch();
   const canSubmit = React.useMemo(() => {
@@ -204,9 +169,10 @@ useEffect(() => {
     <>
       <FormBookBank
         onSubmit={handleSubmit(onSubmit)}
+        watch={watch}
         control={control}
         errors={errors}
-        capturedImage={previewImage}
+        capturedImage={ocr.imageSrc}
         canSubmit={canSubmit}
         isLoading={ocr.isUploading}
         loadingProgress={ocr.loadingProgress}
