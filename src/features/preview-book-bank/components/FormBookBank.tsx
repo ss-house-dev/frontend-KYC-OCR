@@ -9,6 +9,7 @@ import {
 import ProgressLoading from "@/components/ProgressLoading";
 import FormSelectBookBank from "./FormSelectBookBank";
 import FormFieldBookBank from "./FormFieldBookBank";
+import FullScreenLoader from "@/components/FullScreenLoader";
 
 const IconInfo = () => (
   <svg
@@ -57,17 +58,26 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           verification and handled securely.
         </p>
       </div>
-      {isLoading ? (
-        <ProgressLoading progress={loadingProgress} />
-      ) : (
-        capturedImage && (
-          <img
-            src={capturedImage}
-            alt="Book Bank"
-            className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
-          />
-        )
-      )}
+
+      <div className="rounded-xl w-full mb-5 p-1 border-2 border-dashed border-[#1849D6] overflow-hidden">
+        <div className="relative w-full aspect-[8.8/5.6] flex items-center justify-center">
+          {isLoading ? (
+            <>
+              <FullScreenLoader />
+              <p className="font-medium z-10">Image loading...</p>
+            </>
+          ) : (
+            capturedImage && (
+              <img
+                src={capturedImage}
+                alt="Thai National ID Card"
+                className="w-full h-full object-contain rounded-xl"
+              />
+            )
+          )}
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-md p-6">
         <div className="space-y-6">
           <div className="space-y-2">
@@ -125,8 +135,8 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           type="submit"
           disabled={!canSubmit}
           className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
-            canSubmit && !isSubmitting 
-              ? "bg-[#2152b6] hover:bg-[#1a4299]" 
+            canSubmit && !isSubmitting
+              ? "bg-[#2152b6] hover:bg-[#1a4299]"
               : "bg-gray-400"
           }`}
         >

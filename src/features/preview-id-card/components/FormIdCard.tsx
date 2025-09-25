@@ -126,7 +126,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             {isLoading ? (
               <>
                 <FullScreenLoader />
-                <p className="text-[#1849D6] font-medium z-10">
+                <p className="font-medium z-10">
                   Image loading...
                 </p>
               </>

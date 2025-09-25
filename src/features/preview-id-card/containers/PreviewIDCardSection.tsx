@@ -68,7 +68,7 @@ export default function VerifyIdentityScreen() {
     lastNameEng: "",
   });
 
-  // ✅ state สำหรับ error alert
+  // state สำหรับ error alert
   const [errorAlert, setErrorAlert] = useState<{
     isOpen: boolean;
     title?: string;
@@ -141,7 +141,7 @@ export default function VerifyIdentityScreen() {
   });
 
 
-  // ✅ ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
+  // ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
   useEffect(() => {
     if (status !== "loading") {
       console.log(

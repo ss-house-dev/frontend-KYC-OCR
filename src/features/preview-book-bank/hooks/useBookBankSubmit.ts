@@ -4,7 +4,7 @@ import type { AxiosError } from "axios";
 import { BookBankSubmit } from "@/features/preview-book-bank/services/api-bookbank";
 
 type SubmitPayload = {
-  file: File;
+  files: File;
   kycRequestId: string;
   accountNo: string;
   accountNameThai: string;
@@ -20,7 +20,7 @@ export function useBookBankSubmit() {
     mutationKey: ["BookBankSubmit"],
     mutationFn: async (vars) => {
       const {
-        file,
+        files,
         kycRequestId,
         accountNo,
         accountNameThai,
@@ -43,7 +43,7 @@ export function useBookBankSubmit() {
       }
 
       const servicePayload = {
-        file,
+        files,
         kycRequestId,
         accountNo,
         accountNameThai,
@@ -53,10 +53,10 @@ export function useBookBankSubmit() {
         onProgress: (pct: number) => setProgress(pct),
       };
 
-      const { file: _f, onProgress: _cb, ...rest } = servicePayload;
+      const { files: _f, onProgress: _cb, ...rest } = servicePayload;
       console.log("Service payload:", {
         ...rest,
-        file: `File(${file.name}, ${file.type}, ${file.size})`,
+        file: `File(${files.name}, ${files.type}, ${files.size})`,
       });
 
       await BookBankSubmit(servicePayload);
