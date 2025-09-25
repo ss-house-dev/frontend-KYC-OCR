@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { usePersistedForm } from "@/lib/client/usePersistedForm";
 import {
   base64StringToFile,
   calculateSimilarity,
@@ -20,13 +19,13 @@ import { useIdCardOcr } from "@/features/preview-id-card/hooks/useIdCardOcr";
 import { useCanSubmit } from "../hooks/useCanSubmit";
 import { useIdcardSubmit } from "../hooks/useIdcardSubmit";
 
+// ✅ Cookie Keys Constants
 const COOKIE_KEYS = {
-  OCR_RESPONSE: "idcard_ocr_response", 
-  FORM_EDITED: "idcard_form_edited", 
-  FORM_PERSISTED: "id-accept:form", 
+  OCR_RESPONSE: "idcard_ocr_response",
+  FORM_EDITED: "idcard_form_edited",
 } as const;
 
-// Interface สำหรับ OCR cookie data
+// ✅ Interface สำหรับ OCR cookie data
 interface OcrCookieData {
   idNumber?: string;
   idNumberFormatted?: string;
@@ -60,7 +59,6 @@ const defaultFormValues: IdCardFormData = {
 export default function VerifyIdentityScreen() {
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
-  const [pendingData, setPendingData] = useState<IdCardFormData | null>(null);
   const { submit } = useIdcardSubmit();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [originalData, setOriginalData] = useState({
@@ -70,10 +68,18 @@ export default function VerifyIdentityScreen() {
     lastNameEng: "",
   });
 
+  // ✅ state สำหรับ error alert
+  const [errorAlert, setErrorAlert] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+    imageSrc?: string;
+    redirectTo?: string;
+  }>({ isOpen: false, message: "" });
+
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
 
-  // log session / kycRequestId
   useEffect(() => {
     console.log("[VerifyIdentityScreen] Session:", session);
     console.log("[VerifyIdentityScreen] kycRequestId:", kycRequestId);
@@ -124,69 +130,28 @@ export default function VerifyIdentityScreen() {
     ],
     onError: (err) => {
       console.error(err);
-      alert(err instanceof Error ? err.message : "Upload failed");
+      setErrorAlert({
+        isOpen: true,
+        title: "ID Card not found",
+        message: "Unable to detect ID Card, please retake photo",
+        imageSrc: "/popup/error-ocr-idcard.png",
+        redirectTo: "/scan-id-card",
+      });
     },
   });
 
-  // ตรวจสอบว่ามีข้อมูล OCR ใน cookie หรือไม่
-  const hasOcrData = () => {
-    const cookieData = loadFormFromCookie<OcrCookieData>(
-      COOKIE_KEYS.OCR_RESPONSE
-    );
-    return !!(
-      cookieData &&
-      cookieData.idNumber &&
-      cookieData.idNumber.trim().length > 0
-    );
-  };
 
-  // ฟังก์ชันดึงข้อมูลตาม priority: FORM_EDITED > OCR_RESPONSE
-  const loadDataWithPriority = loadIdCardDataWithPriority;
-
-  // เรียก hook ทุกครั้ง แต่ส่ง flag เข้าไป
-  const persistForm = usePersistedForm<IdCardFormData>(
-    form,
-    "id-accept:form",
-    30,
-    ["errors"]
-  );
-
-  useEffect(() => {
-    if (ocr.isUploading || !hasOcrData()) {
-      console.log("[VerifyIdentityScreen] usePersistedForm disabled");
-      // ไม่ต้องใช้ persistForm
-    } else {
-      console.log("[VerifyIdentityScreen] usePersistedForm enabled");
-      // persistForm จะเริ่มทำงานเอง
-    }
-  }, [ocr.isUploading]);
-
-  // ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
+  // ✅ ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
   useEffect(() => {
     if (status !== "loading") {
       console.log(
         "[VerifyIdentityScreen] Starting OCR or loading from cookie..."
       );
 
-      // ตรวจสอบข้อมูลที่มีอยู่ก่อน
-      const existingData = loadDataWithPriority();
+      const existingData = loadIdCardDataWithPriority();
       if (existingData) {
         console.log("[VerifyIdentityScreen] Found existing data, skipping OCR");
-        // ใช้ข้อมูลที่มีอยู่แล้ว
-        const resetValues = {
-          idNumber: existingData.idNumber ?? "",
-          idNumberFormatted: existingData.idNumberFormatted ?? "",
-          firstNameThai: existingData.firstNameThai ?? "",
-          lastNameThai: existingData.lastNameThai ?? "",
-          firstNameEng: existingData.firstNameEng ?? "",
-          lastNameEng: existingData.lastNameEng ?? "",
-          birthDateThai: existingData.birthDateThai ?? "",
-          issueDateThai: existingData.issueDateThai ?? "",
-          expiryDateThai: existingData.expiryDateThai ?? "",
-          address: existingData.address ?? "",
-          titleThai: existingData.titleThai ?? "",
-        };
-        form.reset(resetValues);
+        form.reset(existingData);
         setOriginalData({
           firstNameThai: existingData.firstNameThai ?? "",
           lastNameThai: existingData.lastNameThai ?? "",
@@ -198,7 +163,6 @@ export default function VerifyIdentityScreen() {
         ocr.startFromSession();
       }
 
-      // log ค่าใน cookie ทุกครั้งที่ mount
       console.log("[VerifyIdentityScreen] Cookie data on mount:", {
         edited: loadFormFromCookie<OcrCookieData>(COOKIE_KEYS.FORM_EDITED),
         ocr: loadFormFromCookie<OcrCookieData>(COOKIE_KEYS.OCR_RESPONSE),
@@ -252,17 +216,12 @@ export default function VerifyIdentityScreen() {
       (firstNameEngSimilarity + lastNameEngSimilarity) / 2;
 
     if (overallSimilarityThai < 60 || overallSimilarityEng < 60) {
-      setPendingData(data);
       setShowDialog(true);
       return;
     }
 
     try {
-      const captured = loadImageFromCookie(); // จะโหลดจาก sessionStorage ก่อน แล้วค่อย fallback cookie
-      console.log(
-        "[VerifyIdentityScreen] Captured image from storage:",
-        captured ? "FOUND" : "NOT FOUND"
-      );
+      const captured = loadImageFromCookie();
       if (!captured) throw new Error("Missing captured ID card image file");
 
       const files = base64StringToFile(captured, "idcard.jpg");
@@ -284,11 +243,11 @@ export default function VerifyIdentityScreen() {
           laserId: data.laserId,
         },
       });
+
       console.log("Submit successful");
       router.push("/face-accept");
     } catch (err) {
       console.error(err);
-      // alert(err instanceof Error ? err.message : "Submit failed");
     }
   };
 
@@ -301,21 +260,32 @@ export default function VerifyIdentityScreen() {
         errors={errors}
         watch={watch}
         canSubmit={canSubmit}
-        capturedImage={loadImageFromCookie()} // ใช้ image จาก cookie (SSR-safe)
+        capturedImage={loadImageFromCookie()}
         isValid={isValid}
         isLoading={ocr.isUploading}
         loadingProgress={ocr.loadingProgress}
         isSubmitting={isSubmitting}
       />
 
+      {/* Alert: case similarity ไม่ตรง */}
       <AlertPopUp
         isOpen={showDialog}
-        title="Edited Name Doesn&rsquo;t Match"
+        title="Edited Name Doesn’t Match"
         message="Your edited name is very different the extracted name, Please correct it to continue."
         onRetry={() => {
           setShowDialog(false);
-          setPendingData(null);
         }}
+        imageSrc="/popup/error-editname.png"
+      />
+
+      {/* Alert: case OCR error */}
+      <AlertPopUp
+        isOpen={errorAlert.isOpen}
+        title={errorAlert.title}
+        message={errorAlert.message}
+        onRetry={() => setErrorAlert({ ...errorAlert, isOpen: false })}
+        imageSrc={errorAlert.imageSrc}
+        redirectTo={errorAlert.redirectTo}
       />
     </>
   );

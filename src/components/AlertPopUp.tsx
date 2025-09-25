@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface AlertPopUpProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface AlertPopUpProps {
   message: string;
   onRetry: () => void;
   imageSrc?: string;
+  redirectTo?: string; 
 }
 
 const AlertPopUp: React.FC<AlertPopUpProps> = ({
@@ -16,8 +18,19 @@ const AlertPopUp: React.FC<AlertPopUpProps> = ({
   message,
   onRetry,
   imageSrc = "/scan-face/alert.png",
+  redirectTo,
 }) => {
+  const router = useRouter();
+
   if (!isOpen) return null;
+
+    const handleRetry = () => {
+    if (redirectTo) {
+      router.push(redirectTo); 
+    } else {
+      onRetry(); 
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -45,7 +58,7 @@ const AlertPopUp: React.FC<AlertPopUpProps> = ({
           </p>
 
           <button
-            onClick={onRetry}
+            onClick={handleRetry}
             className="w-[250px] rounded-3xl px-5 py-3 text-white text-[15px] font-medium bg-[#1C55D9] active:translate-y-[1px]"
           >
             Try again
