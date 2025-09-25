@@ -7,6 +7,7 @@ interface AlertPopUpProps {
   title?: string;
   message: string;
   onRetry: () => void;
+  imageSrc?: string;
 }
 
 const AlertPopUp: React.FC<AlertPopUpProps> = ({
@@ -14,19 +15,20 @@ const AlertPopUp: React.FC<AlertPopUpProps> = ({
   title ,
   message,
   onRetry,
+  imageSrc = "/scan-face/alert.png",
 }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="relative z-10 w-[420px] max-w-[92vw] rounded-2xl bg-white p-6 shadow-2xl">
+      <div className="relative z-10 w-[352px] max-w-[92vw] rounded-2xl bg-white p-4 shadow-2xl">
         <div className="flex flex-col items-center text-center">
           <div className="mb-4">
             <Image
-              src="/scan-face/alert.png"
+              src={imageSrc}
               alt="alert"
-              width={48}
-              height={48}
+              width={100}
+              height={100}
               priority
               draggable={false}
             />
@@ -44,7 +46,7 @@ const AlertPopUp: React.FC<AlertPopUpProps> = ({
 
           <button
             onClick={onRetry}
-            className="w-full rounded-2xl px-5 py-3 text-white text-[15px] font-medium bg-[#1766FF] hover:bg-[#155BE6] active:translate-y-[1px] transition-shadow shadow-[0_6px_20px_rgba(23,102,255,0.45)]"
+            className="w-[250px] rounded-3xl px-5 py-3 text-white text-[15px] font-medium bg-[#1C55D9] active:translate-y-[1px]"
           >
             Try again
           </button>
