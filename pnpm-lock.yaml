@@ -59,6 +59,9 @@ importers:
       cropperjs:
         specifier: ^1.6.2
         version: 1.6.2
+      dotenv:
+        specifier: ^17.2.2
+        version: 17.2.2
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.1.0)
