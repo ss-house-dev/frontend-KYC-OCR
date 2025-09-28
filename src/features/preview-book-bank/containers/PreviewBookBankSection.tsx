@@ -62,35 +62,35 @@ export default function BookBankPage() {
   } = form;
 
   const ocr = useBookBankOcr<BookBankFormData>({
-  kycRequestId,
-  form,
-  onSetOriginal: setOriginalData,
-  buildResetValues: (d) => ({
-    bank: "",
-    branchName: d.branchName ?? "",
-    accountNameThai: d.accountNameThai ?? "",
-    accountNameEng: d.accountNameEng ?? "",
-    accountNumber: d.accountNumber ?? "",
-  }),
-  requiredFields: ["bank", "branchName", "accountNumber"],
-  onError: (err) => {
-    console.error(err);
-    setErrorAlert({
-      isOpen: true,
-      title: "Book Bank not found",
-      message: err instanceof Error ? err.message : "Upload failed",
-      imageSrc: "/popup/error-ocr-bookbank.png",
-      redirectTo: "/book-bank-accept",
-    });
-  },
-});
+    kycRequestId,
+    form,
+    onSetOriginal: setOriginalData,
+    buildResetValues: (d) => ({
+      bank: "",
+      branchName: d.branchName ?? "",
+      accountNameThai: d.accountNameThai ?? "",
+      accountNameEng: d.accountNameEng ?? "",
+      accountNumber: d.accountNumber ?? "",
+    }),
+    requiredFields: ["bank", "branchName", "accountNumber"],
+    onError: (err) => {
+      console.error(err);
+      setErrorAlert({
+        isOpen: true,
+        title: "Book Bank not found",
+        message: err instanceof Error ? err.message : "Upload failed",
+        imageSrc: "/popup/error-ocr-bookbank.png",
+        redirectTo: "/book-bank-accept",
+      });
+    },
+  });
 
-// เรียก OCR / ใช้ cookie
-useEffect(() => {
-  if (status !== "loading") {
-    ocr.startFromSession();
-  }
-}, [status]);
+  // เรียก OCR / ใช้ cookie
+  useEffect(() => {
+    if (status !== "loading") {
+      ocr.startFromSession();
+    }
+  }, [status]);
 
   const watchedValues = watch();
   const canSubmit = React.useMemo(() => {
