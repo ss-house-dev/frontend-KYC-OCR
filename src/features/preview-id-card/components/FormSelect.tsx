@@ -36,9 +36,9 @@ const FormSelect = <TFieldValues extends FieldValues>({
   validationRules,
 }: FormSelectProps<TFieldValues>) => {
   const titleThai = [
-    { value: "นาย", label: "นาย" },
-    { value: "นาง", label: "นาง" },
-    { value: "นางสาว", label: "นางสาว" },
+    { value: "นาย", label: "นาย (Mr.)" },
+    { value: "นาง", label: "นาง (Mrs.)" },
+    { value: "นางสาว", label: "นางสาว (Ms.)" },
   ];
 
   const fieldError = errors[fieldName];

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 type BookBankSubmitArgs = {
-  file: File;
+  files: File;
   kycRequestId: string;
   accountNo: string;
   accountNameThai: string;
@@ -12,7 +12,7 @@ type BookBankSubmitArgs = {
 };
 
 export async function BookBankSubmit({
-  file,
+  files,
   kycRequestId,
   onProgress,
   ...fields
@@ -22,7 +22,7 @@ export async function BookBankSubmit({
   }
 
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("files", files);
   formData.append("kycRequestId", kycRequestId);
 
   Object.entries(fields).forEach(([key, value]) => {

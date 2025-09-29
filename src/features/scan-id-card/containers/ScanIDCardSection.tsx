@@ -9,28 +9,12 @@ import { CaptureButton } from "@/features/scan-id-card/components/CaptureButton"
 import { FrameSVG } from "@/features/scan-id-card/components/FrameSVG";
 import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask";
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
+import { saveImageToCookie } from "@/lib/imageStorage";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 
 type CVMat = any;
 type CVMatVector = any;
-
-const IconArrowLeft = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="w-6 h-6"
-    aria-hidden="true"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15.75 19.5L8.25 12l7.5-7.5"
-    />
-  </svg>
-);
 
 const videoConstraints = {
   width: 1280,
@@ -175,6 +159,7 @@ export default function ScanIDCardSection({
 
   // วิเคราะห์ภาพ หา card ในเฟรม + เช็ค brightness/sharpness
   const analyse = useCallback(() => {
+    
   const cam = webcamRef.current;
   const cvs = canvasRef.current;
   if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4) return;
@@ -271,47 +256,47 @@ export default function ScanIDCardSection({
       approx.delete();
     }
 
-    if (bestCandidate) {
-      // เช็คว่าบัตรอยู่ในกรอบกลาง
-      const frameX = W * 0.06, frameY = H * 0.06;
-      const frameW = W * 0.88, frameH = H * 0.88;
+      if (bestCandidate) {
+        // เช็คว่าบัตรอยู่ในกรอบกลาง
+        const frameX = W * 0.06, frameY = H * 0.06;
+        const frameW = W * 0.88, frameH = H * 0.88;
 
-      const rect = bestCandidate.rect;
-      const overlapX = Math.max(0, Math.min(rect.x + rect.width, frameX + frameW) - Math.max(rect.x, frameX));
-      const overlapY = Math.max(0, Math.min(rect.y + rect.height, frameY + frameH) - Math.max(rect.y, frameY));
-      const overlapArea = overlapX * overlapY;
-      const rectArea = rect.width * rect.height;
-      const overlapRatio = overlapArea / rectArea;
+        const rect = bestCandidate.rect;
+        const overlapX = Math.max(0, Math.min(rect.x + rect.width, frameX + frameW) - Math.max(rect.x, frameX));
+        const overlapY = Math.max(0, Math.min(rect.y + rect.height, frameY + frameH) - Math.max(rect.y, frameY));
+        const overlapArea = overlapX * overlapY;
+        const rectArea = rect.width * rect.height;
+        const overlapRatio = overlapArea / rectArea;
 
-      if (overlapRatio > 0.9) {
-        setReadyToShoot(true);
-        setCardCorners(bestCandidate.pts);
-        onStatusChange("Card aligned correctly", "green");
+        if (overlapRatio > 0.9) {
+          setReadyToShoot(true);
+          setCardCorners(bestCandidate.pts);
+          onStatusChange("Image is ready to capture.", "green");
+        } else {
+          setReadyToShoot(false);
+          setCardCorners(bestCandidate.pts);
+          onStatusChange("Please align your ID card in the frame.", "red");
+        }
       } else {
         setReadyToShoot(false);
-        setCardCorners(bestCandidate.pts);
-        onStatusChange("Align the card inside the frame", "red");
+        setCardCorners(null);
+        onStatusChange("Please align your ID card in the frame.", "red");
       }
-    } else {
+    } catch (e) {
+      console.error(e);
       setReadyToShoot(false);
-      setCardCorners(null);
-      onStatusChange("Place and align your ID card in the frame.", "red");
+      onStatusChange("An error occurred during analysis", "red");
+    } finally {
+      src?.delete();
+      gray?.delete();
+      laplacian?.delete();
+      meanMat?.delete();
+      stdDev?.delete();
+      edges?.delete();
+      contours?.delete();
+      hierarchy?.delete();
     }
-  } catch (e) {
-    console.error(e);
-    setReadyToShoot(false);
-    onStatusChange("An error occurred during analysis", "red");
-  } finally {
-    src?.delete();
-    gray?.delete();
-    laplacian?.delete();
-    meanMat?.delete();
-    stdDev?.delete();
-    edges?.delete();
-    contours?.delete();
-    hierarchy?.delete();
-  }
-}, [cvReady, onStatusChange]);
+  }, [cvReady, onStatusChange]);
 
 
 
@@ -335,61 +320,68 @@ export default function ScanIDCardSection({
   }, []);
 
   // ฟังก์ชันถ่ายภาพ + ครอปกลาง + fallback เป็น getScreenshot()
-  const shoot = useCallback(() => {
-    console.log(
-      "🚀 shoot() called. readyToShoot=",
-      readyToShoot,
-      "corners=",
-      cardCorners
-    );
+const shoot = useCallback(() => {
+  console.log(
+    "🚀 shoot() called. readyToShoot=",
+    readyToShoot,
+    "corners=",
+    cardCorners
+  );
 
-    const videoEl = webcamRef.current?.video as HTMLVideoElement | null;
-    if (!videoEl) {
-      console.warn("❌ no video element");
-      return;
-    }
+  const videoEl = webcamRef.current?.video as HTMLVideoElement | null;
+  if (!videoEl) {
+    console.warn("❌ no video element");
+    return;
+  }
 
-    let imgData: string | null = null;
+  let imgData: string | null = null;
 
-    if (readyToShoot && cardCorners) {
-      console.log("✅ cropping by corners...");
+  if (readyToShoot && cardCorners) {
+    console.log("✅ cropping by corners...");
 
-      // เอา frame ปัจจุบันจาก video → วาดลง temp canvas
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = videoEl.videoWidth;
-      tempCanvas.height = videoEl.videoHeight;
-      const ctx = tempCanvas.getContext("2d");
-      ctx?.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
+    // เอา frame ปัจจุบันจาก video → วาดลง temp canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = videoEl.videoWidth;
+    tempCanvas.height = videoEl.videoHeight;
+    const ctx = tempCanvas.getContext("2d");
+    ctx?.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
 
-      // อ่านภาพจาก canvas ไม่ใช่ video
-      const src = cv.imread(tempCanvas);
+    // อ่านภาพจาก canvas ไม่ใช่ video
+    const src = cv.imread(tempCanvas);
 
-      imgData = cropByCorners(src, cardCorners); // 🔥 ใช้ cropByCorners ที่คืน string
-      src.delete();
-    } else {
-      console.log("⚠️ fallback: crop center");
-      imgData = cropCenterFromVideo(videoEl, {
-        maxRatio: 0.85,
-        aspectW: 8.8,
-        aspectH: 5.6,
-      });
-    }
+    imgData = cropByCorners(src, cardCorners);
+    src.delete();
+  } else {
+    console.log("⚠️ fallback: crop center");
+    imgData = cropCenterFromVideo(videoEl, {
+      maxRatio: 0.85,
+      aspectW: 8.8,
+      aspectH: 5.6,
+    });
+  }
 
-    if (!imgData) imgData = webcamRef.current?.getScreenshot() ?? null;
-    if (!imgData) {
-      console.warn("❌ no image data captured");
-      return;
-    }
-    // console.log("📸 Image captured but not routed. length=", imgData.length);
-    console.log("📸 captured image length=", imgData.length);
+  if (!imgData) imgData = webcamRef.current?.getScreenshot() ?? null;
+  if (!imgData) {
+    console.warn("❌ no image data captured");
+    return;
+  }
 
-    onCapture(imgData);
+  console.log("📸 captured image length=", imgData.length);
+
+  // ✅ บันทึกลง sessionStorage ด้วย key ที่ถูกต้อง
+  try {
     sessionStorage.setItem("capturedIdCardImage", imgData);
-    sessionStorage.setItem("imageSource", "camera");
+    console.log("💾 Saved to sessionStorage with key: capturedIdCardImage");
+  } catch (e) {
+    console.error("❌ Failed to save to sessionStorage:", e);
+  }
 
-    console.log("➡️ navigating to /preview-id-card");
-    router.push("/preview-id-card");
-  }, [readyToShoot, onCapture, router, cardCorners]);
+  // ✅ ส่งให้ hook ผ่าน onCapture (ถ้ามี)
+  onCapture?.(imgData);
+
+  console.log("➡️ navigating to /preview-id-card");
+  router.push("/preview-id-card");
+}, [readyToShoot, onCapture, router, cardCorners]);
 
   // ✅ ออโต้ช็อตทำงานเฉพาะก่อนเข้าโหมด AC2 เท่านั้น
   useEffect(() => {
@@ -431,21 +423,7 @@ export default function ScanIDCardSection({
         style={{ top: "max(env(safe-area-inset-top, 0px), 1rem)" }}
       >
         {/* Icon Back */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-6 h-6"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15.75 19.5L8.25 12l7.5-7.5"
-          />
-        </svg>
+        <ChevronLeft />
         <span className="sr-only">Back</span>
       </Link>
 
@@ -484,6 +462,25 @@ export default function ScanIDCardSection({
           />
         )}
       </div>
+
+      {/* Overlay มุมที่ detect ได้ */}
+      {cardCorners && (
+        <svg
+          className="absolute inset-0 z-30 pointer-events-none"
+          width="100%"
+          height="100%"
+        >
+          <polygon
+            points={cardCorners.map((p) => `${p.x},${p.y}`).join(" ")}
+            fill="none"
+            stroke="lime"
+            strokeWidth="3"
+          />
+          {cardCorners.map((p, idx) => (
+            <circle key={idx} cx={p.x} cy={p.y} r="6" fill="red" />
+          ))}
+        </svg>
+      )}
     </div>
   );
 }

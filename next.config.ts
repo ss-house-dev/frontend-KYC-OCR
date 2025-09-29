@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
         source: "/submit/:path*",
         destination: "http://141.11.156.52:3208/submit/:path*",
       },
+            {
+        source: "/storage/:path*",
+        destination: "http://141.11.156.52:3208/storage/:path*",
+      },
     ];
   },
 };

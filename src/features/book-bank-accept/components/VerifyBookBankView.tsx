@@ -233,12 +233,9 @@ export default function VerifyBookBankView({
 
               <span className="text-[13px] text-gray-600">
                 You’re allowed to upload{" "}
-                <a
-                  href="https://www.facebook.com/wyp.ch23/about"
-                  className="text-[#007AFF] hover:underline focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 rounded-sm"
-                >
+                <p className="text-[#007AFF] hover:underline focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 rounded-sm">
                   E-book bank
-                </a>
+                </p>
               </span>
             </div>
           </div>

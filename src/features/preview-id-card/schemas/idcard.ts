@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const thaiNamePattern = /^[\u0E00-\u0E7F\s]+$/;
+const thaiNamePattern = /^(?!.*[\u0E50-\u0E59])[\u0E00-\u0E7F\s]+$/;
 const engNamePattern = /^[A-Za-z\s]+$/;
 
 export const idCardFormSchema = z.object({
@@ -60,15 +60,15 @@ export const idCardFormSchema = z.object({
 
   birthDateThai: z
     .string()
-    .min(1, "Unable to extract data. Kindly rescan your document."),
+    .min(1, "This field is needed."),
 
   issueDateThai: z
     .string()
-    .min(1, "Unable to extract data. Kindly rescan your document."),
+    .min(1, "This field is needed."),
 
   expiryDateThai: z
     .string()
-    .min(1, "Unable to extract data. Kindly rescan your document."),
+    .min(1, "This field is needed."),
 
   address: z
     .string()

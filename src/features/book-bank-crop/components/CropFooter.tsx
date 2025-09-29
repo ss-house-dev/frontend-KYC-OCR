@@ -16,7 +16,7 @@ export default function CropFooter({
         className="flex-1 border-[#2152b6]/40 text-[#2152b6]"
         onClick={onRetake}
       >
-        Retake
+        Retry
       </Button>
       <Button className="flex-1 bg-[#2152b6]" onClick={onConfirm}>
         Confirm
