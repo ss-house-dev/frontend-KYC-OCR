@@ -9,8 +9,6 @@ import {
   calculateSimilarity,
   loadFormFromCookie,
 } from "@/lib/utils/index";
-import { loadIdCardDataWithPriority } from "@/lib/loadIdCardDataWithPriority";
-import { loadImageFromCookie } from "@/lib/imageStorage";
 import FormIdCard from "../components/FormIdCard";
 import AlertPopUp from "@/components/AlertPopUp";
 import { idCardFormSchema, IdCardFormData } from "./../schemas/idcard";
@@ -140,33 +138,10 @@ export default function VerifyIdentityScreen() {
     },
   });
 
-
   // ใช้ OCR / cookie ตอนเข้ามาครั้งแรก
   useEffect(() => {
     if (status !== "loading") {
-      console.log(
-        "[VerifyIdentityScreen] Starting OCR or loading from cookie..."
-      );
-
-      const existingData = loadIdCardDataWithPriority();
-      if (existingData) {
-        console.log("[VerifyIdentityScreen] Found existing data, skipping OCR");
-        form.reset(existingData);
-        setOriginalData({
-          firstNameThai: existingData.firstNameThai ?? "",
-          lastNameThai: existingData.lastNameThai ?? "",
-          firstNameEng: existingData.firstNameEng ?? "",
-          lastNameEng: existingData.lastNameEng ?? "",
-        });
-      } else {
-        console.log("[VerifyIdentityScreen] No existing data, starting OCR");
-        ocr.startFromSession();
-      }
-
-      console.log("[VerifyIdentityScreen] Cookie data on mount:", {
-        edited: loadFormFromCookie<OcrCookieData>(COOKIE_KEYS.FORM_EDITED),
-        ocr: loadFormFromCookie<OcrCookieData>(COOKIE_KEYS.OCR_RESPONSE),
-      });
+      ocr.startFromSession();
     }
   }, [status]);
 
@@ -221,10 +196,9 @@ export default function VerifyIdentityScreen() {
     }
 
     try {
-      const captured = loadImageFromCookie();
-      if (!captured) throw new Error("Missing captured ID card image file");
+      if (!ocr.imageSrc) throw new Error("Missing captured ID card image file");
 
-      const files = base64StringToFile(captured, "idcard.jpg");
+      const files = base64StringToFile(ocr.imageSrc, "idcard.jpg");
 
       await submit({
         files,
@@ -260,7 +234,7 @@ export default function VerifyIdentityScreen() {
         errors={errors}
         watch={watch}
         canSubmit={canSubmit}
-        capturedImage={loadImageFromCookie()}
+        capturedImage={ocr?.imageSrc ?? null}
         isValid={isValid}
         isLoading={ocr.isUploading}
         isSubmitting={isSubmitting}

@@ -33,6 +33,7 @@ type UseBookBankOcrArgs<TForm extends FieldValues> = {
   onError?: (err: unknown) => void;
 };
 
+const COOKIE_KEY = "bookbank_ocr_response";
 const COOKIE_IMAGE_KEY = "bookbank_uploaded_objectName";
 
 export function useBookBankOcr<TForm extends FieldValues>({
@@ -50,8 +51,6 @@ export function useBookBankOcr<TForm extends FieldValues>({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [ocrStarted, setOcrStarted] = useState(false);
-
-  const COOKIE_KEY = "bookbank_ocr_response";
 
   const mutation = useMutation({
     mutationKey: ["uploadBookBankOcr", kycRequestId],
@@ -149,67 +148,71 @@ export function useBookBankOcr<TForm extends FieldValues>({
     },
   });
 
-const startFromSession = useCallback(async () => {
-  if (ocrStarted) {
-    console.log("[BookBank OCR] ❌ Already started, skip duplicate call");
-    return;
-  }
-  setOcrStarted(true);
-
-  if (!kycRequestId) {
-    router.replace(redirects.noSession || "/user-login");
-    return;
-  }
-
-  // โหลด OCR cookie
-  const cookieData = loadFormFromCookie<OcrResponse>(COOKIE_KEY);
-  const hasOcrCookie = cookieData?.accountNumber && cookieData?.branchName;
-  if (hasOcrCookie) {
-    console.log("[BookBank OCR] ✅ Using OCR cookie data:", cookieData);
-    const resetValues = buildResetValues(cookieData);
-    reset(resetValues as any);
-    onSetOriginal?.({
-      accountNameThai: cookieData.accountNameThai || "",
-      accountNameEng: cookieData.accountNameEng || "",
-    });
-  }
-
-  // โหลดรูปจาก objectName cookie
-  const savedImage = loadFormFromCookie<{ objectName: string }>(COOKIE_IMAGE_KEY);
-  if (savedImage?.objectName) {
-    try {
-      const blob = await getFileFromStorage(savedImage.objectName);
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-      setImageSrc(dataUrl);
-      console.log("[BookBank OCR] Loaded image from cookie:", savedImage.objectName);
-    } catch (e) {
-      console.error("[BookBank OCR] Failed to load image from cookie:", e);
-    }
-  }
-
-  // ถ้าไม่มี OCR cookie → run OCR จาก sessionStorage
-  if (!hasOcrCookie) {
-    const dataUrl = sessionStorage.getItem(sessionImageKey);
-    if (!dataUrl) {
-      router.replace(redirects.noImage || "/book-bank-accept");
+  const startFromSession = useCallback(async () => {
+    if (ocrStarted) {
+      console.log("[BookBank OCR] ❌ Already started, skip duplicate call");
       return;
     }
-    setImageSrc(dataUrl);
+    setOcrStarted(true);
 
-    try {
-      const file = base64StringToFile(dataUrl, "bookbank_from_session.jpg");
-      mutation.mutate(file);
-    } catch (e) {
-      console.error("[BookBank OCR] Failed to create file:", e);
-      onError?.(e);
+    if (!kycRequestId) {
+      router.replace(redirects.noSession || "/user-login");
+      return;
     }
-  }
-}, [kycRequestId, sessionImageKey, router, redirects, mutation, ocrStarted]);
 
+    // โหลด OCR cookie
+    const cookieData = loadFormFromCookie<OcrResponse>(COOKIE_KEY);
+    const hasOcrCookie = cookieData?.accountNumber && cookieData?.branchName;
+    if (hasOcrCookie) {
+      console.log("[BookBank OCR] ✅ Using OCR cookie data:", cookieData);
+      const resetValues = buildResetValues(cookieData);
+      reset(resetValues as any);
+      onSetOriginal?.({
+        accountNameThai: cookieData.accountNameThai || "",
+        accountNameEng: cookieData.accountNameEng || "",
+      });
+    }
+
+    // โหลดรูปจาก objectName cookie
+    const savedImage = loadFormFromCookie<{ objectName: string }>(
+      COOKIE_IMAGE_KEY
+    );
+    if (savedImage?.objectName) {
+      try {
+        const blob = await getFileFromStorage(savedImage.objectName);
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        setImageSrc(dataUrl);
+        console.log(
+          "[BookBank OCR] Loaded image from cookie:",
+          savedImage.objectName
+        );
+      } catch (e) {
+        console.error("[BookBank OCR] Failed to load image from cookie:", e);
+      }
+    }
+
+    // ถ้าไม่มี OCR cookie → run OCR จาก sessionStorage
+    if (!hasOcrCookie) {
+      const dataUrl = sessionStorage.getItem(sessionImageKey);
+      if (!dataUrl) {
+        router.replace(redirects.noImage || "/book-bank-accept");
+        return;
+      }
+      setImageSrc(dataUrl);
+
+      try {
+        const file = base64StringToFile(dataUrl, "bookbank_from_session.jpg");
+        mutation.mutate(file);
+      } catch (e) {
+        console.error("[BookBank OCR] Failed to create file:", e);
+        onError?.(e);
+      }
+    }
+  }, [kycRequestId, sessionImageKey, router, redirects, mutation, ocrStarted]);
 
   const clearOcrCookie = useCallback(() => {
     console.log("[BookBank OCR] Clearing cookie");

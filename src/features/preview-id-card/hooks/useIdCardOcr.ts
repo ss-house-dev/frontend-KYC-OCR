@@ -11,8 +11,11 @@ import {
   loadFormFromCookie,
   clearFormCookie,
 } from "@/lib/utils/index";
-import { loadIdCardDataWithPriority } from "@/lib/loadIdCardDataWithPriority";
-import { hasStoredImage, loadImageFromCookie } from "@/lib/imageStorage";
+import {
+  imageStorage,
+  getFileFromStorage,
+  type StorageResponse,
+} from "@/services/imagestorageService";
 
 type OriginalNames = {
   firstNameThai: string;
@@ -32,6 +35,9 @@ type UseIdCardOcrArgs<TForm extends FieldValues> = {
   onError?: (err: unknown) => void;
 };
 
+const COOKIE_KEY = "idcard_ocr_response";
+const COOKIE_IMAGE_KEY = "idcard_uploaded_objectName";
+
 export function useIdCardOcr<TForm extends FieldValues>({
   kycRequestId,
   form,
@@ -45,83 +51,83 @@ export function useIdCardOcr<TForm extends FieldValues>({
   const router = useRouter();
   const { reset, trigger, setError } = form;
   const [loadingProgress, setLoadingProgress] = useState(0);
-
-  const COOKIE_KEY = "idcard_ocr_response"; // เปลี่ยน key ใหม่เพื่อไม่ conflict กับ usePersistedForm
-
-  // ✅ ใช้ shared function สำหรับ priority
-  const loadDataWithPriority = loadIdCardDataWithPriority;
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [ocrStarted, setOcrStarted] = useState(false);
 
   const mutation = useMutation({
     mutationKey: ["uploadIdCardOcr", kycRequestId],
-    mutationFn: (file: File) => {
-      if (!kycRequestId)
-        throw new Error("Missing kycRequestId. Please sign in first.");
+    mutationFn: async (file: File) => {
+      if (!kycRequestId) throw new Error("Missing kycRequestId");
 
-      // ✅ log ข้อมูลที่ส่งไป OCR
-      console.log("[OCR] Uploading file:", {
-        name: file.name,
-        size: file.size,
-        type: file.type,
+      // OCR
+      const ocrResult = await uploadIdCardOcr(
+        file,
         kycRequestId,
-      });
+        setLoadingProgress
+      );
 
-      return uploadIdCardOcr(file, kycRequestId, setLoadingProgress);
+      // Storage
+      const storageResult: StorageResponse = await imageStorage(
+        file,
+        setLoadingProgress
+      );
+      console.log("[IDCard Uploaded] Uploaded to storage:", storageResult);
+
+      return { ocrResult, storageResult };
     },
-    onSuccess: async (d: OcrResponse) => {
-      // ✅ log ข้อมูลที่ OCR ส่งกลับมา
-      console.log("[OCR] Raw response data:", d);
-      console.log("[OCR] Response data keys:", Object.keys(d));
-      console.log("[OCR] Response data values:", Object.values(d));
-
-      // ✅ ตรวจสอบว่า response มีข้อมูลจริงหรือไม่
-      const hasData = d && typeof d === 'object' && Object.keys(d).length > 0;
-      const hasValidIdNumber = d?.idNumber && typeof d.idNumber === 'string' && d.idNumber.trim().length > 0;
-      
-      console.log("[OCR] Has data:", hasData);
-      console.log("[OCR] Has valid ID number:", hasValidIdNumber, d?.idNumber);
-
-      if (!hasData || !hasValidIdNumber) {
-        console.error("[OCR] Empty, invalid response data, or missing ID number");
-        onError?.(new Error("Invalid OCR response or missing ID number"));
+    onSuccess: async ({ ocrResult, storageResult }) => {
+      const d = ocrResult;
+      if (!d?.idNumber) {
+        onError?.(new Error("Invalid OCR response"));
         return;
       }
 
-      // ✅ สร้าง plain object โดยระบุ fields ที่ต้องการชัดเจน
-      const ocrDataToSave = {
+      // ✅ เก็บเฉพาะข้อมูลที่จำเป็นลง cookie (ไม่เก็บ markdown)
+      const cookieData = {
         idNumber: d.idNumber,
-        idNumberFormatted: d.idNumberFormatted || "",
-        firstNameThai: d.firstNameThai || "",
-        lastNameThai: d.lastNameThai || "",
-        firstNameEng: d.firstNameEng || "",
-        lastNameEng: d.lastNameEng || "",
-        birthDateThai: d.birthDateThai || "",
-        issueDateThai: d.issueDateThai || "",
-        expiryDateThai: d.expiryDateThai || "",
-        address: d.address || "",
-        titleThai: d.titleThai || "",
-        // laserId: d.laserId || "",
-        errors: d.errors || [],
+        idNumberFormatted: d.idNumberFormatted,
+        titleThai: d.titleThai,
+        firstNameThai: d.firstNameThai,
+        lastNameThai: d.lastNameThai,
+        firstNameEng: d.firstNameEng,
+        lastNameEng: d.lastNameEng,
+        birthDateThai: d.birthDateThai,
+        issueDateThai: d.issueDateThai,
+        expiryDateThai: d.expiryDateThai,
+        address: d.address,
+        laserId: d.laserId || "", 
+        errors: d.errors,
       };
 
-      console.log("[OCR] Prepared data to save:", ocrDataToSave);
-
-      // ✅ เก็บลง cookie เฉพาะเมื่อมีข้อมูล idNumber
       try {
-        saveFormToCookie(COOKIE_KEY, ocrDataToSave);
-        console.log("[OCR] Cookie saved successfully");
-        
-        // ✅ ทดสอบอ่าน cookie กลับมาทันที
-        const testRead = loadFormFromCookie<typeof ocrDataToSave>(COOKIE_KEY);
-        console.log("[OCR] Test read cookie:", testRead);
-        
-        if (!testRead || !testRead.idNumber) {
-          console.error("[OCR] Cookie save/read failed!");
-        }
-      } catch (error) {
-        console.error("[OCR] Cookie save error:", error);
+        saveFormToCookie(COOKIE_KEY, cookieData);
+        console.log("[IDCard OCR] Saved OCR response to cookie (without markdown):", cookieData);
+      } catch (e) {
+        console.error("[IDCard OCR] Failed to save cookie:", e);
       }
 
-      // ✅ set original data
+      // โหลดรูปจาก storage แล้ว setImageSrc
+      try {
+        const blob = await getFileFromStorage(storageResult.objectName);
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        setImageSrc(dataUrl);
+
+        saveFormToCookie(COOKIE_IMAGE_KEY, {
+          objectName: storageResult.objectName,
+        });
+        console.log(
+          "[IDCard OCR] Saved objectName to cookie:",
+          storageResult.objectName
+        );
+      } catch (e) {
+        console.error("[IDCard OCR] Failed to load image from storage:", e);
+      }
+
+      // set original
       onSetOriginal?.({
         firstNameThai: d.firstNameThai || "",
         lastNameThai: d.lastNameThai || "",
@@ -129,16 +135,12 @@ export function useIdCardOcr<TForm extends FieldValues>({
         lastNameEng: d.lastNameEng || "",
       });
 
-      // ✅ reset form
-      const resetValues = buildResetValues(d);
-      console.log("[OCR] Reset values:", resetValues);
-      reset(resetValues as any);
+      // reset form
+      reset(buildResetValues(d) as any);
 
-      // ✅ trigger validation และ set errors
+      // trigger validation + API errors
       setTimeout(async () => {
-        if (requiredFields.length) {
-          for (const f of requiredFields) await trigger(f);
-        }
+        for (const f of requiredFields) await trigger(f);
         (d.errors || []).forEach((err) => {
           setError(err.field as Path<TForm>, {
             type: "manual",
@@ -148,105 +150,114 @@ export function useIdCardOcr<TForm extends FieldValues>({
       }, 100);
     },
     onError: (err) => {
-      console.error("OCR upload failed:", err);
+      console.error("[IDCard OCR] upload failed:", err);
       onError?.(err);
     },
   });
 
-  const startFromSession = useCallback(() => {
-    console.log("[useIdCardOcr] startFromSession called");
-    
+  const startFromSession = useCallback(async () => {
+    if (ocrStarted) {
+      console.log("[IDCard OCR] ❌ Already started, skip duplicate call");
+      return;
+    }
+    setOcrStarted(true);
+
     if (!kycRequestId) {
-      console.log("[useIdCardOcr] No kycRequestId, redirecting to login");
       router.replace(redirects.noSession || "/user-login");
       return;
     }
 
-    // ✅ ลองอ่าน cookie พร้อม delay เล็กน้อยเพื่อให้ DOM stabilize
-    setTimeout(() => {
-      console.log("[useIdCardOcr] Attempting to load cookie...");
+    // 1) โหลด OCR cookie
+    const cookieData = loadFormFromCookie<OcrResponse>(COOKIE_KEY);
+    const hasOcrCookie = !!cookieData?.idNumber;
+    
+    if (hasOcrCookie) {
+      console.log("[IDCard OCR] ✅ Using OCR cookie data:", cookieData);
       
-      // ✅ ใช้ priority function แทนการอ่าน OCR cookie โดยตรง
-      const cookieData = loadDataWithPriority();
-      console.log("[useIdCardOcr] Loaded cookie data:", cookieData);
-      console.log("[useIdCardOcr] All cookie keys:", Object.keys(cookieData || {}));
-      console.log("[useIdCardOcr] idNumber value:", cookieData?.idNumber, "length:", cookieData?.idNumber?.length);
-
-      // เงื่อนไขการใช้ cookie - ปรับให้เข้มงวดขึ้น
-      const hasCookie = !!(cookieData && typeof cookieData === 'object');
-      const hasIdNumber = !!(cookieData?.idNumber && 
-        typeof cookieData.idNumber === 'string' && 
-        cookieData.idNumber.trim().length > 0);
+      // รวม laserId จาก cookie ที่แก้ไขแล้ว (ถ้ามี)
+      const editedData = loadFormFromCookie<Partial<TForm>>("idcard_form_edited");
+      const resetData = buildResetValues(cookieData) as any;
       
-      console.log("[useIdCardOcr] Cookie evaluation:", {
-        hasCookie,
-        hasIdNumber,
-        idNumber: cookieData?.idNumber,
-        cookieDataType: typeof cookieData,
-        idNumberType: typeof cookieData?.idNumber,
+      // ถ้ามี laserId จาก edited cookie ให้ใช้แทน
+      if (editedData?.laserId) {
+        resetData.laserId = editedData.laserId;
+        console.log("[IDCard OCR] Using laserId from edited cookie:", editedData.laserId);
+      }
+      
+      reset(resetData);
+      onSetOriginal?.({
+        firstNameThai: cookieData.firstNameThai || "",
+        lastNameThai: cookieData.lastNameThai || "",
+        firstNameEng: cookieData.firstNameEng || "",
+        lastNameEng: cookieData.lastNameEng || "",
       });
+    }
 
-      if (hasCookie && hasIdNumber) {
-        console.log("[useIdCardOcr] ✅ Using valid cookie data for form reset");
-        
-        const resetValues = buildResetValues(cookieData);
-        console.log("[useIdCardOcr] Reset values from cookie:", resetValues);
-        
-        reset(resetValues as any);
-        onSetOriginal?.({
-          firstNameThai: cookieData.firstNameThai || "",
-          lastNameThai: cookieData.lastNameThai || "",
-          firstNameEng: cookieData.firstNameEng || "",
-          lastNameEng: cookieData.lastNameEng || "",
-        });
-        return;
-      }
-
-      // ❌ ถ้าไม่มี cookie หรือ idNumber ว่าง → OCR ใหม่
-      console.log("[useIdCardOcr] ❌ No valid cookie data, proceeding with OCR");
-
-      // ✅ ตรวจสอบรูปจาก imageStorage ใหม่
-      const hasImage = hasStoredImage();
-      console.log("[useIdCardOcr] Has stored image:", hasImage);
-      
-      if (!hasImage) {
-        console.log("[useIdCardOcr] No stored image, redirecting to home");
-        router.replace(redirects.noImage || "/");
-        return;
-      }
-      
-      // ✅ โหลดรูปจาก storage
-      const imageSrc = loadImageFromCookie();
-      if (!imageSrc) {
-        console.log("[useIdCardOcr] Failed to load image, redirecting");
-        router.replace(redirects.noImage || "/");
-        return;
-      }
-      
+    // 2) โหลดรูปจาก objectName cookie (ถ้ามี OCR cookie)
+    const savedImage = loadFormFromCookie<{ objectName: string }>(
+      COOKIE_IMAGE_KEY
+    );
+    if (hasOcrCookie && savedImage?.objectName) {
       try {
-        console.log("[useIdCardOcr] Creating file from stored image and starting OCR");
-        const file = base64StringToFile(imageSrc, "idcard_from_session.jpg");
+        const blob = await getFileFromStorage(savedImage.objectName);
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        setImageSrc(dataUrl);
+        console.log(
+          "[IDCard OCR] ✅ Loaded image from cookie:",
+          savedImage.objectName
+        );
+        return; 
+      } catch (e) {
+        console.error("[IDCard OCR] ⚠️ Failed to load image from cookie, will retry OCR:", e);
+        clearFormCookie(COOKIE_IMAGE_KEY);
+      }
+    }
+
+    // 3) ถ้าไม่มี OCR cookie หรือโหลดรูปไม่ได้ → OCR ใหม่จาก sessionStorage
+    if (!hasOcrCookie) {
+      console.log("[IDCard OCR] 🔍 Checking sessionStorage for key:", sessionImageKey);
+      const dataUrl = sessionStorage.getItem(sessionImageKey);
+      
+      if (!dataUrl) {
+        console.log("[IDCard OCR] ❌ No sessionStorage image, redirecting...");
+        console.log("[IDCard OCR] 📋 Available sessionStorage keys:", Object.keys(sessionStorage));
+        router.replace(redirects.noImage || "/");
+        return;
+      }
+      
+      console.log("[IDCard OCR] 🔄 Starting new OCR from sessionStorage, image length:", dataUrl.length);
+      setImageSrc(dataUrl);
+
+      try {
+        const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
         mutation.mutate(file);
       } catch (e) {
-        console.error("[useIdCardOcr] Error creating file:", e);
+        console.error("[IDCard OCR] Failed to create file:", e);
         onError?.(e);
       }
-    }, 100); 
+    }
   }, [
     kycRequestId,
     sessionImageKey,
     router,
-    redirects.noImage,
-    redirects.noSession,
+    redirects,
     mutation,
+    ocrStarted,
     reset,
-    onSetOriginal,
     buildResetValues,
+    onSetOriginal,
   ]);
 
   const clearOcrCookie = useCallback(() => {
-    console.log("[useIdCardOcr] Clearing OCR cookie");
+    console.log("[IDCard OCR] 🧹 Clearing all cookies and reset state");
     clearFormCookie(COOKIE_KEY);
+    clearFormCookie(COOKIE_IMAGE_KEY);
+    setOcrStarted(false);
+    setImageSrc(null);
   }, []);
 
   return {
@@ -254,6 +265,7 @@ export function useIdCardOcr<TForm extends FieldValues>({
     startFromSession,
     isUploading: mutation.isPending,
     loadingProgress,
+    imageSrc,
     clearOcrCookie,
   };
 }

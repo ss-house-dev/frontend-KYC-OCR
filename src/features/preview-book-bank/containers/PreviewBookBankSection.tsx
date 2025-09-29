@@ -78,7 +78,7 @@ export default function BookBankPage() {
       setErrorAlert({
         isOpen: true,
         title: "Book Bank not found",
-        message: err instanceof Error ? err.message : "Upload failed",
+        message: "Unable to detect book bank, please retake photo",
         imageSrc: "/popup/error-ocr-bookbank.png",
         redirectTo: "/book-bank-accept",
       });

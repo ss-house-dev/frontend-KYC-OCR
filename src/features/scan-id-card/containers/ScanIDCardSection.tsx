@@ -315,61 +315,68 @@ export default function ScanIDCardSection({
   }, []);
 
   // ฟังก์ชันถ่ายภาพ + ครอปกลาง + fallback เป็น getScreenshot()
-  const shoot = useCallback(() => {
-    console.log(
-      "🚀 shoot() called. readyToShoot=",
-      readyToShoot,
-      "corners=",
-      cardCorners
-    );
+const shoot = useCallback(() => {
+  console.log(
+    "🚀 shoot() called. readyToShoot=",
+    readyToShoot,
+    "corners=",
+    cardCorners
+  );
 
-    const videoEl = webcamRef.current?.video as HTMLVideoElement | null;
-    if (!videoEl) {
-      console.warn("❌ no video element");
-      return;
-    }
+  const videoEl = webcamRef.current?.video as HTMLVideoElement | null;
+  if (!videoEl) {
+    console.warn("❌ no video element");
+    return;
+  }
 
-    let imgData: string | null = null;
+  let imgData: string | null = null;
 
-    if (readyToShoot && cardCorners) {
-      console.log("✅ cropping by corners...");
+  if (readyToShoot && cardCorners) {
+    console.log("✅ cropping by corners...");
 
-      // เอา frame ปัจจุบันจาก video → วาดลง temp canvas
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = videoEl.videoWidth;
-      tempCanvas.height = videoEl.videoHeight;
-      const ctx = tempCanvas.getContext("2d");
-      ctx?.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
+    // เอา frame ปัจจุบันจาก video → วาดลง temp canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = videoEl.videoWidth;
+    tempCanvas.height = videoEl.videoHeight;
+    const ctx = tempCanvas.getContext("2d");
+    ctx?.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
 
-      // อ่านภาพจาก canvas ไม่ใช่ video
-      const src = cv.imread(tempCanvas);
+    // อ่านภาพจาก canvas ไม่ใช่ video
+    const src = cv.imread(tempCanvas);
 
-      imgData = cropByCorners(src, cardCorners);
-      src.delete();
-    } else {
-      console.log("⚠️ fallback: crop center");
-      imgData = cropCenterFromVideo(videoEl, {
-        maxRatio: 0.85,
-        aspectW: 8.8,
-        aspectH: 5.6,
-      });
-    }
+    imgData = cropByCorners(src, cardCorners);
+    src.delete();
+  } else {
+    console.log("⚠️ fallback: crop center");
+    imgData = cropCenterFromVideo(videoEl, {
+      maxRatio: 0.85,
+      aspectW: 8.8,
+      aspectH: 5.6,
+    });
+  }
 
-    if (!imgData) imgData = webcamRef.current?.getScreenshot() ?? null;
-    if (!imgData) {
-      console.warn("❌ no image data captured");
-      return;
-    }
+  if (!imgData) imgData = webcamRef.current?.getScreenshot() ?? null;
+  if (!imgData) {
+    console.warn("❌ no image data captured");
+    return;
+  }
 
-    console.log("📸 captured image length=", imgData.length);
+  console.log("📸 captured image length=", imgData.length);
 
-    // ✅ บันทึกรูปด้วย cookie system ใหม่
-    onCapture(imgData);
-    saveImageToCookie(imgData);
+  // ✅ บันทึกลง sessionStorage ด้วย key ที่ถูกต้อง
+  try {
+    sessionStorage.setItem("capturedIdCardImage", imgData);
+    console.log("💾 Saved to sessionStorage with key: capturedIdCardImage");
+  } catch (e) {
+    console.error("❌ Failed to save to sessionStorage:", e);
+  }
 
-    console.log("➡️ navigating to /preview-id-card");
-    router.push("/preview-id-card");
-  }, [readyToShoot, onCapture, router, cardCorners]);
+  // ✅ ส่งให้ hook ผ่าน onCapture (ถ้ามี)
+  onCapture?.(imgData);
+
+  console.log("➡️ navigating to /preview-id-card");
+  router.push("/preview-id-card");
+}, [readyToShoot, onCapture, router, cardCorners]);
 
   // ✅ ออโต้ช็อตทำงานเฉพาะก่อนเข้าโหมด AC2 เท่านั้น
   useEffect(() => {

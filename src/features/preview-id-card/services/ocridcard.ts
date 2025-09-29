@@ -12,6 +12,7 @@ export type OcrResponse = {
   titleThai?: string;
   firstNameEng?: string;
   lastNameEng?: string;
+  laserId?: string;
   errors: { field: string; message: string }[];
 };
 
