@@ -7,15 +7,15 @@ import {
   Path,
   UseFormHandleSubmit,
   SubmitHandler,
-  SubmitErrorHandler,
 } from "react-hook-form";
 import FormField from "@/features/preview-id-card/components/FormField";
 import FormSelect from "@/features/preview-id-card/components/FormSelect";
-import ProgressLoading from "../../../components/ProgressLoading";
+import FullScreenLoader from "@/components/FullScreenLoader";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FormLaserId from "./FormLaserId";
+import { saveFormToCookie } from "@/lib/utils/index";
 
 const IconInfo = () => (
   <svg
@@ -37,15 +37,18 @@ const IconInfo = () => (
 interface FormIdCardProps<TFieldValues extends FieldValues> {
   handleSubmit: UseFormHandleSubmit<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
-  watch?: UseFormWatch<TFieldValues>;
+  watch: UseFormWatch<TFieldValues>;
   canSubmit: boolean;
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;
   capturedImage: string | null;
   isValid: boolean;
   isLoading: boolean;
-  loadingProgress: number;
+  isSubmitting?: boolean;
 }
+
+// ใช้ cookie key สำหรับข้อมูลที่แก้ไข 
+const EDITED_DATA_COOKIE_KEY = "idcard_form_edited";
 
 const FormIdCard = <TFieldValues extends FieldValues>({
   handleSubmit,
@@ -56,42 +59,97 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   errors,
   capturedImage,
   isLoading,
-  loadingProgress,
+  isSubmitting,
 }: FormIdCardProps<TFieldValues>) => {
   const [laserCharCount, setLaserCharCount] = useState(0);
+  const initialDataRef = useRef<any>(null);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+
+  // บันทึกข้อมูลเริ่มต้น (จาก OCR) เพื่อเปรียบเทียบ
+  const allValues = watch();
+  useEffect(() => {
+    if (allValues && !initialDataRef.current && !isFormInitialized) {
+      // บันทึกข้อมูลเริ่มต้นครั้งแรก (จาก OCR หรือ cookie)
+      const hasIdNumber =
+        allValues.idNumber && String(allValues.idNumber).trim();
+      if (hasIdNumber) {
+        console.log("[FormIdCard] Recording initial data:", allValues);
+        initialDataRef.current = JSON.parse(JSON.stringify(allValues));
+        setIsFormInitialized(true);
+      }
+    }
+  }, [allValues, isFormInitialized]);
+
+  // บันทึกลง cookie เมื่อ user แก้ไขข้อมูล (ไม่ใช่ข้อมูลเริ่มต้น)
+  useEffect(() => {
+    if (
+      allValues &&
+      initialDataRef.current &&
+      isFormInitialized &&
+      !isLoading
+    ) {
+      // เปรียบเทียบกับข้อมูลเริ่มต้น
+      const hasChanges =
+        JSON.stringify(allValues) !== JSON.stringify(initialDataRef.current);
+
+      if (hasChanges) {
+        console.log(
+          "[FormIdCard] Detected user changes, saving to edited cookie"
+        );
+        console.log("[FormIdCard] Initial data:", initialDataRef.current);
+        console.log("[FormIdCard] Current data:", allValues);
+
+        // เฉพาะเมื่อ user แก้ไขข้อมูลเท่านั้น
+        saveFormToCookie(EDITED_DATA_COOKIE_KEY, allValues);
+      } else {
+        console.log("[FormIdCard] No changes detected, skipping cookie save");
+      }
+    }
+  }, [allValues, isFormInitialized, isLoading]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-      <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
-        <IconInfo />
-        <p className="text-sm font-medium">
-          Your data will be used only for identity verification and handled
-          securely.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="p-4 bg-muted space-y-4">
+      <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
+        <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
+          <IconInfo />
+          <p className="text-sm font-medium">
+            Your data will be used only for identity verification and handled
+            securely.
+          </p>
+        </div>
 
-      {isLoading ? (
-        <ProgressLoading progress={loadingProgress} />
-      ) : (
-        capturedImage && (
-          <img
-            src={capturedImage}
-            alt="Thai National ID Card"
-            className="rounded-xl w-full mb-5 border-2 border-dashed border-[#1849D6] p-1"
-          />
-        )
-      )}
+        <div className="rounded-xl w-full mb-5 p-1 border-2 border-dashed border-[#1849D6] overflow-hidden">
+          <div className="relative w-full aspect-[8.8/5.6] flex items-center justify-center">
+            {isLoading ? (
+              <>
+                <FullScreenLoader />
+                <p className="font-medium z-10">
+                  Image loading...
+                </p>
+              </>
+            ) : (
+              capturedImage && (
+                <img
+                  src={capturedImage}
+                  alt="Thai National ID Card"
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              )
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
         <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-4 space-y-4">
           <Controller
-            name={"idNumber" as Path<TFieldValues>}
+            name={"idNumberFormatted" as Path<TFieldValues>}
             control={control}
             render={({ field }) => (
               <FormField
-                fieldName={"idNumber" as Path<TFieldValues>}
+                fieldName={"idNumberFormatted" as Path<TFieldValues>}
                 label="ID Number"
-                placeholder="Enter 13-digit Citizen ID number"
+                placeholder="Enter your ID Number"
                 type="text"
                 control={control}
                 value={field.value}
@@ -108,8 +166,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"issueDateThai" as Path<TFieldValues>}
-                label="Date of Issue"
-                placeholder="DD-MM-YY"
+                label="Date of Issue (DD/MM/YYYY)"
+                placeholder="Enter your date of issue"
                 type="text"
                 disabled
                 value={field.value}
@@ -126,8 +184,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"expiryDateThai" as Path<TFieldValues>}
-                label="Date of Expiry"
-                placeholder="DD-MM-YY"
+                label="Date of Expiry (DD/MM/YYYY)"
+                placeholder="Enter your date of expiry"
                 type="text"
                 disabled
                 value={field.value}
@@ -144,9 +202,9 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormLaserId
                 fieldName={"laserId" as Path<TFieldValues>}
-                label="Laser ID"
+                label="Laser ID (Back of your ID Card)"
                 control={control}
-                placeholder="Enter Laser ID number"
+                placeholder="Enter your Laser ID"
                 type="text"
                 value={field.value}
                 pattern="[A-Za-z]{2}\d-\d{7}-\d{2}"
@@ -166,7 +224,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormSelect
                 fieldName={"titleThai" as Path<TFieldValues>}
-                label="Name Title"
+                label="Select your name title"
                 control={control}
                 errors={errors}
                 validationRules={{
@@ -183,7 +241,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"firstNameThai" as Path<TFieldValues>}
                 label="First name (TH)"
-                placeholder="Enter your First name"
+                placeholder="Enter your first name"
                 type="text"
                 value={field.value}
                 control={control}
@@ -200,7 +258,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"lastNameThai" as Path<TFieldValues>}
                 label="Last name (TH)"
-                placeholder="Enter your Last name"
+                placeholder="Enter your last name"
                 type="text"
                 control={control}
                 value={field.value}
@@ -217,7 +275,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"firstNameEng" as Path<TFieldValues>}
                 label="First name (ENG)"
-                placeholder="Enter your First name"
+                placeholder="Enter your first name"
                 type="text"
                 value={field.value}
                 control={control}
@@ -234,7 +292,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
               <FormField
                 fieldName={"lastNameEng" as Path<TFieldValues>}
                 label="Last name (ENG)"
-                placeholder="Enter your Last name"
+                placeholder="Enter your last name"
                 type="text"
                 control={control}
                 value={field.value}
@@ -250,8 +308,8 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             render={({ field }) => (
               <FormField
                 fieldName={"birthDateThai" as Path<TFieldValues>}
-                label="Date of Birth"
-                placeholder="DD-MM-YY"
+                label="Date of Birth (DD/MM/YYYY)"
+                placeholder="Enter your date of date of birth"
                 type="text"
                 disabled
                 value={field.value}
@@ -277,7 +335,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
                 <>
                   <Textarea
                     id="address"
-                    placeholder="Enter your Address"
+                    placeholder="Enter your address"
                     maxLength={200}
                     className={`h-24 resize-y mt-1 mb-1 bg-muted ${
                       hasError
@@ -315,7 +373,7 @@ const FormIdCard = <TFieldValues extends FieldValues>({
             canSubmit ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
-          Confirm
+          {isSubmitting ? "Confirm" : "Confirm"}
         </button>
       </div>
     </form>

@@ -47,7 +47,7 @@ export default function UserLoginContainer() {
     try {
       const res = await signIn("credentials", {
         email,
-        companyId: "68ba8e8bb9d343d98dd97a99",
+        companyId: "68d21d91cef5adbdd95fc076",
         callbackUrl,
         redirect: false,
       });
@@ -73,7 +73,7 @@ export default function UserLoginContainer() {
       error={error}
       errors={errors}
       handleSubmit={handleSubmit}
-      register={register} 
+      register={register}
       onSubmit={onSubmit}
     />
   );

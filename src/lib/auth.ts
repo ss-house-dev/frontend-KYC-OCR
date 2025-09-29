@@ -14,7 +14,7 @@ const CredentialsSchema = z.object({
 });
 
 type KycCreateResponse = {
-  id?: string; 
+  id?: string;
 };
 
 export const authOptions: NextAuthOptions = {
@@ -30,19 +30,36 @@ export const authOptions: NextAuthOptions = {
       async authorize(rawCredentials): Promise<AppUser | null> {
         const parsed = CredentialsSchema.safeParse(rawCredentials ?? {});
         if (!parsed.success) {
-          console.warn("[authorize] invalid credentials", parsed.error.flatten());
+          console.warn(
+            "[authorize] invalid credentials",
+            parsed.error.flatten()
+          );
           return null;
         }
         const { email, companyId } = parsed.data;
 
-        const base = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+        const base =
+          process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
         if (!base) {
           console.error("[authorize] Missing BACKEND_URL env");
           throw new Error("BACKEND_URL is not configured");
         }
         const finalCompanyId = companyId ?? process.env.BACKEND_COMPANY_ID;
+
+        // ✅ เพิ่ม log ตรงนี้เพื่อตรวจสอบค่าที่ได้จริง
+        console.log(
+          "[authorize] email:",
+          email,
+          "companyId (from client):",
+          companyId,
+          "finalCompanyId (after fallback):",
+          finalCompanyId
+        );
+
         if (!finalCompanyId) {
-          console.error("[authorize] missing companyId (pass via signIn or BACKEND_COMPANY_ID env)");
+          console.error(
+            "[authorize] missing companyId (pass via signIn or BACKEND_COMPANY_ID env)"
+          );
           return null;
         }
 
@@ -61,10 +78,11 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const data: KycCreateResponse = await res.json().catch(
-            () => ({} as KycCreateResponse)
-          );
-          const kycRequestId = typeof data.id === "string" ? data.id : undefined;
+          const data: KycCreateResponse = await res
+            .json()
+            .catch(() => ({}) as KycCreateResponse);
+          const kycRequestId =
+            typeof data.id === "string" ? data.id : undefined;
           const user: AppUser = { id: email, email, kycRequestId };
           return user;
         } catch (err) {
@@ -77,7 +95,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const u = user as AppUser; 
+        const u = user as AppUser;
         token.userId = u.id;
         token.email = u.email ?? token.email;
         if (u.kycRequestId) token.kycRequestId = u.kycRequestId;
@@ -86,7 +104,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user && token.userId) {
-        session.user.id = token.userId; 
+        session.user.id = token.userId;
       }
       if (typeof token.kycRequestId === "string") {
         session.kycRequestId = token.kycRequestId;

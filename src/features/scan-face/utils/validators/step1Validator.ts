@@ -50,7 +50,7 @@ export class Step1Validator {
     if (sizeMin >= CONFIG.FACE_SIZE.NEAR_THRESHOLD) {
       return {
         isValid: false,
-        message: `Move your face away.`,
+        message: `Move your face back.`,
         color: "red",
       };
     }
@@ -118,7 +118,7 @@ export class Step1Validator {
     if (!primaryFace.bbox) {
       return {
         isValid: false,
-        message: "No face detected",
+        message: "No face found.",
         color: "red",
         canProceed: false,
       };

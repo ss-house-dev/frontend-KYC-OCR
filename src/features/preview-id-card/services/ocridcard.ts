@@ -2,6 +2,7 @@ import axios from "axios";
 
 export type OcrResponse = {
   idNumber?: string;
+  idNumberFormatted?: string;
   firstNameThai?: string;
   lastNameThai?: string;
   birthDateThai?: string;
@@ -11,6 +12,7 @@ export type OcrResponse = {
   titleThai?: string;
   firstNameEng?: string;
   lastNameEng?: string;
+  laserId?: string;
   errors: { field: string; message: string }[];
 };
 

@@ -1,10 +1,16 @@
+// next.config.ts หรือ next.config.js
 import type { NextConfig } from "next";
+import dotenv from "dotenv";
+
+// โหลดไฟล์ .env (ค่า default = .env, .env.local, .env.production)
+dotenv.config();
+
+// ✅ log ทันทีตอน build
+console.log("🔍 NEXT_PUBLIC_COMPANY_ID =", process.env.NEXT_PUBLIC_COMPANY_ID);
 
 /** @type {import('next').NextConfig} */
-
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
-  // output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
 
@@ -38,6 +44,10 @@ const nextConfig: NextConfig = {
       {
         source: "/submit/:path*",
         destination: "http://141.11.156.52:3208/submit/:path*",
+      },
+            {
+        source: "/storage/:path*",
+        destination: "http://141.11.156.52:3208/storage/:path*",
       },
     ];
   },

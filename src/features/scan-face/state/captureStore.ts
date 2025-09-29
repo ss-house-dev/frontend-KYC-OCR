@@ -16,7 +16,7 @@ export const captureStore = {
     _state.movements = { yaw: [], pitch: [], blink: [], mouth: [] };
   },
   setStep1Sample(dataUrl: string) { _state.step1Sample = dataUrl; },
-  push(group: MovementGroup, dataUrl: string, limit = 10) {
+  push(group: MovementGroup, dataUrl: string, limit = 2) {
     const arr = _state.movements[group];
     if (arr.length < limit) arr.push(dataUrl);
   },

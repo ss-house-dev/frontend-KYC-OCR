@@ -4,10 +4,11 @@ import { AxiosError } from "axios";
 import { IdcardSubmit } from "@/features/preview-id-card/services/api-idcard"; 
 
 type SubmitPayload = {
-  file: File;
+  files: File;
   kycRequestId: string;
   fields: Partial<{
     idNumber: string;
+    idNumberFormatted: string;
     titleNameThai: string;
     titleNameEng?: string;
     firstNameThai: string;
@@ -27,11 +28,12 @@ export function useIdcardSubmit() {
 
   const mutation = useMutation({
     mutationKey: ["IdcardSubmit"],
-    mutationFn: async ({ file, kycRequestId, fields }: SubmitPayload) => {
+    mutationFn: async ({ files, kycRequestId, fields }: SubmitPayload) => {
       const servicePayload = {
-        file,
+        files,
         kycRequestId,
         idNumber: fields.idNumber || "",
+        idNumberFormatted: fields.idNumberFormatted || "",
         titleNameThai: fields.titleNameThai || "",
         titleNameEng: fields.titleNameEng,
         firstNameThai: fields.firstNameThai || "",
@@ -45,10 +47,10 @@ export function useIdcardSubmit() {
         onProgress: (pct: number) => setProgress(pct),
       };
 
-      const { file: _, onProgress: __, ...debugPayload } = servicePayload;
+      const { files: _, onProgress: __, ...debugPayload } = servicePayload;
       console.log("Service payload:", {
         ...debugPayload,
-        file: `File(${file.name}, ${file.type}, ${file.size})`,
+        file: `File(${files.name}, ${files.type}, ${files.size})`,
       });
 
       await IdcardSubmit(servicePayload);

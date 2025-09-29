@@ -1,22 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Path, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { base64StringToFile, calculateSimilarity } from "@/lib/utils/index";
 import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
-import { usePersistedForm } from "@/lib/client/usePersistedForm";
 import { bookbankFormSchema, BookBankFormData } from "./../schemas/bookbank";
 import { useBookBankSubmit } from "../hooks/useBookBankSubmit";
-import { uploadBookBankOcr, OcrResponse } from "../services";
 import FormBookBank from "../components/FormBookBank";
 import AlertPopUp from "@/components/AlertPopUp";
+import { useBookBankOcr } from "../hooks/useBookBankOcr";
 
 const defaultFormValues: BookBankFormData = {
   bank: "",
-  branchNameThai: "",
+  branchName: "",
   accountNameThai: "",
   accountNameEng: "",
   accountNumber: "",
@@ -29,17 +27,23 @@ const bankOptions = [
 ];
 
 export default function BookBankPage() {
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const router = useRouter();
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [pendingData, setPendingData] = useState<BookBankFormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { submit } = useBookBankSubmit();
   const [originalData, setOriginalData] = useState<{
     accountNameThai: string;
     accountNameEng: string;
   }>({ accountNameThai: "", accountNameEng: "" });
+
+  // state สำหรับ error alert
+  const [errorAlert, setErrorAlert] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+    imageSrc?: string;
+    redirectTo?: string;
+  }>({ isOpen: false, message: "" });
 
   const { data: session, status } = useSession();
   const kycRequestId = session?.kycRequestId;
@@ -53,116 +57,56 @@ export default function BookBankPage() {
   const {
     handleSubmit,
     watch,
-    reset,
     control,
-    setError,
-    trigger,
     formState: { errors, isValid },
   } = form;
 
-  usePersistedForm<BookBankFormData>(form, "book-bank:form", 30);
-
-  const ocrMutation = useMutation({
-    mutationKey: ["uploadBookBankOcr", kycRequestId],
-    mutationFn: (file: File) => {
-      if (!kycRequestId)
-        throw new Error("Missing kycRequestId. Please sign in first.");
-      return uploadBookBankOcr(file, kycRequestId, setLoadingProgress);
-    },
-    onSuccess: (ocrData: OcrResponse) => {
-      console.log("OCR Success, resetting form with:", ocrData);
-
-      // เก็บข้อมูลเดิมจาก OCR
-      setOriginalData({
-        accountNameThai: ocrData.accountNameThai || "",
-        accountNameEng: ocrData.accountNameEng || "",
-      });
-
-      reset({
-        bank: "",
-        branchNameThai: ocrData.branchNameThai ?? "",
-        accountNameThai: ocrData.accountNameThai ?? "",
-        accountNameEng: ocrData.accountNameEng ?? "",
-        accountNumber: ocrData.accountNumber ?? "",
-      });
-
-      setTimeout(async () => {
-        // ตรวจสอบและ set error สำหรับ field ที่ required แต่ไม่มีค่า
-        const requiredFields = [
-          { field: "branchNameThai", value: ocrData.branchNameThai },
-          { field: "accountNameThai", value: ocrData.accountNameThai },
-          { field: "accountNameEng", value: ocrData.accountNameEng },
-          { field: "accountNumber", value: ocrData.accountNumber },
-        ];
-
-        for (const { field, value } of requiredFields) {
-          if (!value || value.trim() === "") {
-            await trigger(field as Path<BookBankFormData>);
-          }
-        }
-
-        // set API errors into form
-        (ocrData.errors || []).forEach((err) => {
-          setError(err.field as Path<BookBankFormData>, {
-            type: "manual",
-            message: err.message,
-          });
-        });
-      }, 100);
-    },
+  const ocr = useBookBankOcr<BookBankFormData>({
+    kycRequestId,
+    form,
+    onSetOriginal: setOriginalData,
+    buildResetValues: (d) => ({
+      bank: "",
+      branchName: d.branchName ?? "",
+      accountNameThai: d.accountNameThai ?? "",
+      accountNameEng: d.accountNameEng ?? "",
+      accountNumber: d.accountNumber ?? "",
+    }),
+    requiredFields: ["bank", "branchName", "accountNumber"],
     onError: (err) => {
-      console.error("OCR upload failed:", err);
-      alert("ไม่สามารถอ่านข้อมูลจากบัตรได้ โปรดลองอีกครั้ง");
+      console.error(err);
+      setErrorAlert({
+        isOpen: true,
+        title: "Book Bank not found",
+        message: "Unable to detect book bank, please retake photo",
+        imageSrc: "/popup/error-ocr-bookbank.png",
+        redirectTo: "/book-bank-accept",
+      });
     },
   });
 
+  // เรียก OCR / ใช้ cookie
   useEffect(() => {
-    const processImageOnMount = async () => {
-      const dataUrl = sessionStorage.getItem("croppedBookBankImage");
-
-      if (!dataUrl) {
-        router.replace("/book-bank-accept");
-        return;
-      }
-      setPreviewImage(dataUrl);
-
-      try {
-        const file = base64StringToFile(dataUrl, "bookbank_from_session.jpg");
-        ocrMutation.mutate(file);
-      } catch (e) {
-        console.error("Failed to process image from sessionStorage:", e);
-        alert("รูปแบบรูปภาพใน Session ไม่ถูกต้อง");
-        router.replace("/book-bank-accept");
-      }
-    };
-
     if (status !== "loading") {
-      processImageOnMount();
+      ocr.startFromSession();
     }
   }, [status]);
 
   const watchedValues = watch();
   const canSubmit = React.useMemo(() => {
-    if (isSubmitting) return false;
-
-    // เช็คว่าทุก field มีค่า
-    const requiredFields = [
+    const required: (keyof BookBankFormData)[] = [
       "bank",
-      "branchNameThai",
+      "branchName",
       "accountNameThai",
       "accountNameEng",
       "accountNumber",
     ];
-    const allFieldsFilled = requiredFields.every((field) => {
-      const value = watchedValues[field as keyof BookBankFormData];
-      return value && value.toString().trim() !== "";
+    const allFilled = required.every((f) => {
+      const v = watchedValues[f];
+      return v && v.toString().trim() !== "";
     });
-
-    // เช็คว่าไม่มี error
-    const noErrors = Object.keys(errors).length === 0;
-
-    return allFieldsFilled && noErrors && isValid;
-  }, [watchedValues, errors, isValid, isSubmitting]);
+    return allFilled && isValid;
+  }, [watchedValues, isValid]);
 
   const onSubmit = async (data: BookBankFormData) => {
     setIsSubmitting(true);
@@ -187,7 +131,6 @@ export default function BookBankPage() {
     }
 
     if (mismatches.length > 0) {
-      setPendingData(data);
       setShowDialog(true);
       return;
     }
@@ -199,19 +142,19 @@ export default function BookBankPage() {
           : null;
       if (!captured) throw new Error("Missing captured BookBank image file");
 
-      const file = base64StringToFile(captured, "bookbank.jpg");
+      const files = base64StringToFile(captured, "bookbank.jpg");
 
       const bankName =
         bankOptions.find((b) => b.value === data.bank)?.label ?? data.bank;
 
       await submit({
-        file,
+        files,
         kycRequestId: kycRequestId!,
         bankName,
         accountNo: data.accountNumber,
         accountNameThai: data.accountNameThai,
         accountNameEng: data.accountNameEng ?? "",
-        branchName: data.branchNameThai,
+        branchName: data.branchName,
       });
 
       router.push("/verification-complete");
@@ -222,30 +165,38 @@ export default function BookBankPage() {
     }
   };
 
-  const handleRetry = () => {
-    setShowDialog(false);
-    setPendingData(null);
-    setIsSubmitting(false);
-  };
-
   return (
     <>
       <FormBookBank
         onSubmit={handleSubmit(onSubmit)}
+        watch={watch}
         control={control}
         errors={errors}
-        capturedImage={previewImage}
+        capturedImage={ocr.imageSrc}
         canSubmit={canSubmit}
-        isLoading={ocrMutation.isPending}
-        loadingProgress={loadingProgress}
+        isLoading={ocr.isUploading}
         isSubmitting={isSubmitting}
       />
 
+      {/* Alert: case similarity ไม่ตรง */}
       <AlertPopUp
         isOpen={showDialog}
         title="Edited Name Doesn't Match"
         message="Your edited name is very different from the extracted name. Do you want to continue with the edited name?"
-        onRetry={handleRetry}
+        onRetry={() => {
+          setShowDialog(false);
+        }}
+        imageSrc="/popup/error-editname.png"
+      />
+
+      {/* Alert: case OCR error */}
+      <AlertPopUp
+        isOpen={errorAlert.isOpen}
+        title={errorAlert.title}
+        message={errorAlert.message}
+        onRetry={() => setErrorAlert({ ...errorAlert, isOpen: false })}
+        imageSrc={errorAlert.imageSrc}
+        redirectTo={errorAlert.redirectTo}
       />
     </>
   );
