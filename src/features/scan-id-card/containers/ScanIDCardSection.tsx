@@ -1,5 +1,3 @@
-//Scan ID Card เช็ค 4 มุม
-
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -9,7 +7,6 @@ import { CaptureButton } from "@/features/scan-id-card/components/CaptureButton"
 import { FrameSVG } from "@/features/scan-id-card/components/FrameSVG";
 import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask";
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
-import { saveImageToCookie } from "@/lib/imageStorage";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 

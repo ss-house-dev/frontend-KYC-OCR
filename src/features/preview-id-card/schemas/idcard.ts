@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const thaiNamePattern = /^(?!.*[\u0E50-\u0E59])[\u0E00-\u0E7F\s]+$/;
 const engNamePattern = /^[A-Za-z\s]+$/;
+const thaiDateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
 
 export const idCardFormSchema = z.object({
   idNumber: z
@@ -60,15 +61,18 @@ export const idCardFormSchema = z.object({
 
   birthDateThai: z
     .string()
-    .min(1, "This field is needed."),
+    .min(1, "This field is needed.")
+    .regex(thaiDateRegex, "Date must be in DD/MM/YYYY format"),
 
   issueDateThai: z
     .string()
-    .min(1, "This field is needed."),
+    .min(1, "This field is needed.")
+    .regex(thaiDateRegex, "Date must be in DD/MM/YYYY format"),
 
   expiryDateThai: z
     .string()
-    .min(1, "This field is needed."),
+    .min(1, "This field is needed.")
+    .regex(thaiDateRegex, "Date must be in DD/MM/YYYY format"),
 
   address: z
     .string()

@@ -70,9 +70,9 @@ const FormSelect = <TFieldValues extends FieldValues>({
               >
                 <SelectTrigger
                   className={cn(
-                    hasError ? "border-red-500 focus:border-red-500" : "",
-                    "text-gray-900 font-medium",
-                    "data-[placeholder]:text-muted-foreground bg-muted data-[placeholder]:font-normal"
+                    hasError ? "border-red-500 focus:border-red-500 " : "",
+                    "text-black text-sm font-normal",
+                    "data-[placeholder]:text-[#888888] bg-white text-sm font-normal"
                   )}
                 >
                   <SelectValue placeholder="Select your name title" />
@@ -92,7 +92,7 @@ const FormSelect = <TFieldValues extends FieldValues>({
               {/* แสดงข้อความ error */}
               <div className="text-xs text-muted-foreground min-h-[1rem]">
                 {(fieldError || fieldState.error) && (
-                  <span className="text-destructive text-sm">
+                  <span className="text-destructive text-xs">
                     {
                       (fieldError?.message ||
                         fieldState.error?.message) as string
