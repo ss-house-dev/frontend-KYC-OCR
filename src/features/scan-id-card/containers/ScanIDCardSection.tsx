@@ -1,3 +1,5 @@
+//Scan ID Card เช็ค 4 มุม
+
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -157,101 +159,102 @@ export default function ScanIDCardSection({
 
   // วิเคราะห์ภาพ หา card ในเฟรม + เช็ค brightness/sharpness
   const analyse = useCallback(() => {
-    const cam = webcamRef.current;
-    const cvs = canvasRef.current;
-    if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4) return;
+    
+  const cam = webcamRef.current;
+  const cvs = canvasRef.current;
+  if (!cvReady || !cam || !cvs || !cam.video || cam.video.readyState !== 4) return;
 
-    const ctx = cvs.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
+  const ctx = cvs.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return;
 
-    cvs.width = cam.video.videoWidth;
-    cvs.height = cam.video.videoHeight;
-    ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
+  cvs.width = cam.video.videoWidth;
+  cvs.height = cam.video.videoHeight;
+  ctx.drawImage(cam.video, 0, 0, cvs.width, cvs.height);
 
-    let src: CVMat | undefined,
-      gray: CVMat | undefined,
-      laplacian: CVMat | undefined,
-      meanMat: CVMat | undefined,
-      stdDev: CVMat | undefined,
-      edges: CVMat | undefined,
-      contours: CVMatVector | undefined,
-      hierarchy: CVMat | undefined;
+  let src: CVMat | undefined,
+    gray: CVMat | undefined,
+    laplacian: CVMat | undefined,
+    meanMat: CVMat | undefined,
+    stdDev: CVMat | undefined,
+    edges: CVMat | undefined,
+    contours: CVMatVector | undefined,
+    hierarchy: CVMat | undefined;
 
-    try {
-      src = cv.imread(cvs);
-      gray = new cv.Mat();
-      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+  try {
+    src = cv.imread(cvs);
+    gray = new cv.Mat();
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-      const mean = cv.mean(gray)[0];
-      if (mean < 60) {
-        setReadyToShoot(false);
-        onStatusChange("Image is too dark. Please try again.", "red");
-        return;
-      }
-      if (mean > 200) {
-        setReadyToShoot(false);
-        onStatusChange("Image is too bright. Please try again.", "red");
-        return;
-      }
+    const mean = cv.mean(gray)[0];
+    if (mean < 60) {
+      setReadyToShoot(false);
+      onStatusChange("Image is too dark. Please try again.", "red");
+      return;
+    }
+    if (mean > 200) {
+      setReadyToShoot(false);
+      onStatusChange("Image is too bright. Please try again.", "red");
+      return;
+    }
 
-      laplacian = new cv.Mat();
-      cv.Laplacian(gray, laplacian, cv.CV_64F);
+    laplacian = new cv.Mat();
+    cv.Laplacian(gray, laplacian, cv.CV_64F);
 
-      meanMat = new cv.Mat(1, 1, cv.CV_64F);
-      stdDev = new cv.Mat(1, 1, cv.CV_64F);
-      cv.meanStdDev(laplacian, meanMat, stdDev);
-      const sigma = stdDev.data64F?.[0] ?? 0;
-      const sharpness = sigma ** 2;
+    meanMat = new cv.Mat(1, 1, cv.CV_64F);
+    stdDev = new cv.Mat(1, 1, cv.CV_64F);
+    cv.meanStdDev(laplacian, meanMat, stdDev);
+    const sigma = stdDev.data64F?.[0] ?? 0;
+    const sharpness = sigma ** 2;
 
-      if (sharpness < 80) {
-        setReadyToShoot(false);
-        onStatusChange("Image is too blurry. Please try again.", "red");
-        return;
-      }
+    if (sharpness < 80) {
+      setReadyToShoot(false);
+      onStatusChange("Image is too blurry. Please try again.", "red");
+      return;
+    }
 
-      edges = new cv.Mat();
-      cv.Canny(gray, edges, 50, 150);
-      contours = new cv.MatVector();
-      hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    edges = new cv.Mat();
+    cv.Canny(gray, edges, 50, 150);
+    contours = new cv.MatVector();
+    hierarchy = new cv.Mat();
+    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
-      const W = cam.video.videoWidth;
-      const H = cam.video.videoHeight;
+    const W = cam.video.videoWidth;
+    const H = cam.video.videoHeight;
 
-      let bestCandidate: { pts: { x: number; y: number }[]; score: number; rect: any } | null = null;
+    let bestCandidate: { pts: { x: number; y: number }[]; score: number; rect: any } | null = null;
 
-      for (let i = 0; i < contours.size(); i++) {
-        const c = contours.get(i);
-        const peri = cv.arcLength(c, true);
-        const approx = new cv.Mat();
-        cv.approxPolyDP(c, approx, 0.01 * peri, true); // ใช้ 0.01 เพื่อความละเอียดขึ้น
+    for (let i = 0; i < contours.size(); i++) {
+      const c = contours.get(i);
+      const peri = cv.arcLength(c, true);
+      const approx = new cv.Mat();
+      cv.approxPolyDP(c, approx, 0.01 * peri, true); // ใช้ 0.01 เพื่อความละเอียดขึ้น
 
-        if (approx.rows === 4) {
-          const rect = cv.boundingRect(approx);
-          const ratio = rect.width / rect.height;
-          const area = cv.contourArea(c);
+      if (approx.rows === 4) {
+        const rect = cv.boundingRect(approx);
+        const ratio = rect.width / rect.height;
+        const area = cv.contourArea(c);
 
-          if (
-            ratio > 1.5 && ratio < 1.65 &&             // อัตราส่วนบัตร
-            area > W * H * 0.15 && area < W * H * 0.45 // พื้นที่สมเหตุสมผล
-          ) {
-            const pts: { x: number; y: number }[] = [];
-            for (let j = 0; j < 4; j++) {
-              pts.push({ x: approx.intPtr(j, 0)[0], y: approx.intPtr(j, 0)[1] });
-            }
+        if (
+          ratio > 1.5 && ratio < 1.65 &&             // อัตราส่วนบัตร
+          area > W * H * 0.15 && area < W * H * 0.45 // พื้นที่สมเหตุสมผล
+        ) {
+          const pts: { x: number; y: number }[] = [];
+          for (let j = 0; j < 4; j++) {
+            pts.push({ x: approx.intPtr(j, 0)[0], y: approx.intPtr(j, 0)[1] });
+          }
 
-            // คะแนน: ใกล้ center ดีกว่า
-            const cx = rect.x + rect.width / 2;
-            const cy = rect.y + rect.height / 2;
-            const score = Math.hypot(cx - W / 2, cy - H / 2);
+          // คะแนน: ใกล้ center ดีกว่า
+          const cx = rect.x + rect.width / 2;
+          const cy = rect.y + rect.height / 2;
+          const score = Math.hypot(cx - W / 2, cy - H / 2);
 
-            if (!bestCandidate || score < bestCandidate.score) {
-              bestCandidate = { pts, score, rect };
-            }
+          if (!bestCandidate || score < bestCandidate.score) {
+            bestCandidate = { pts, score, rect };
           }
         }
-        approx.delete();
       }
+      approx.delete();
+    }
 
       if (bestCandidate) {
         // เช็คว่าบัตรอยู่ในกรอบกลาง
@@ -268,16 +271,16 @@ export default function ScanIDCardSection({
         if (overlapRatio > 0.9) {
           setReadyToShoot(true);
           setCardCorners(bestCandidate.pts);
-          onStatusChange("Card aligned correctly", "green");
+          onStatusChange("Image is ready to capture.", "green");
         } else {
           setReadyToShoot(false);
           setCardCorners(bestCandidate.pts);
-          onStatusChange("Align the card inside the frame", "red");
+          onStatusChange("Please align your ID card in the frame.", "red");
         }
       } else {
         setReadyToShoot(false);
         setCardCorners(null);
-        onStatusChange("Place and align your ID card in the frame.", "red");
+        onStatusChange("Please align your ID card in the frame.", "red");
       }
     } catch (e) {
       console.error(e);
@@ -294,6 +297,8 @@ export default function ScanIDCardSection({
       hierarchy?.delete();
     }
   }, [cvReady, onStatusChange]);
+
+
 
   // วิเคราะห์ซ้ำทุก ~700ms
   useEffect(() => {

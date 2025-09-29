@@ -47,7 +47,7 @@ export default function UserLoginContainer() {
     try {
       const res = await signIn("credentials", {
         email,
-        companyId: process.env.NEXT_PUBLIC_COMPANY_ID,
+        companyId: "68d21d91cef5adbdd95fc076",
         callbackUrl,
         redirect: false,
       });
@@ -73,7 +73,7 @@ export default function UserLoginContainer() {
       error={error}
       errors={errors}
       handleSubmit={handleSubmit}
-      register={register} 
+      register={register}
       onSubmit={onSubmit}
     />
   );

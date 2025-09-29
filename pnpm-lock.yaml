@@ -62,6 +62,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      dotenv:
+        specifier: ^17.2.2
+        version: 17.2.2
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.1.0)
