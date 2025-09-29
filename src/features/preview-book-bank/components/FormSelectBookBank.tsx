@@ -36,7 +36,7 @@ const FormSelectBookBank = <TFieldValues extends FieldValues>({
   ];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 mb-5">
       <Label htmlFor={fieldName}>
         {label}
         <span className="text-red-500 ml-[1px]">*</span>
@@ -64,7 +64,7 @@ const FormSelectBookBank = <TFieldValues extends FieldValues>({
                     <span className="font-medium">{selectedBank.label}</span>
                   </div>
                 ) : (
-                  <span className="text-gray-500">Select your bank</span>
+                  <span className="text-[#888888] text-sm">Select your bank</span>
                 )}
               </SelectTrigger>
               <SelectContent>

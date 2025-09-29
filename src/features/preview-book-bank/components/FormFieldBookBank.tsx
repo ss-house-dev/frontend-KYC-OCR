@@ -10,6 +10,7 @@ import {
 } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface FormFieldBookBankProps<TFieldValues extends FieldValues>
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -50,11 +51,13 @@ const FormFieldBookBank = <TFieldValues extends FieldValues>({
             id={fieldName}
             {...field}
             {...rest}
-            className={`${
-              hasError || fieldState.error
-                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                : ""
-            }`}
+              className={cn(
+                "w-full h-12 rounded-[8px] justify-between font-normal",
+                "text-sm text-[#212121] border-[#D1D1D1]",
+                hasError || fieldState.error
+                  ? "border-[#D1D1D1] hover:bg-white text-left"
+                  : "",
+              )}
           />
           <div className="text-xs text-muted-foreground min-h-[1rem]">
             <span className="text-destructive text-sm">
