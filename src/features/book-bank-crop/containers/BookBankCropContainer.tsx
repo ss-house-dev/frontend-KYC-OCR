@@ -9,6 +9,7 @@ import CropHeader from "../components/CropHeader";
 import CropGuideDialog from "../components/CropGuideDialog";
 import CropFooter from "../components/CropFooter";
 import { useToast } from "@/components/ui/use-toast";
+import { clearFormCookie } from "@/lib/utils/index";
 
 function getItemSafe(key: string) {
   try {
@@ -56,6 +57,10 @@ const BookBankCropContainer = () => {
 
   const onRetake = useCallback(() => {
     setItemSafe("croppedBookBankImage", "");
+
+    // เคลียร์ cookie ที่เกี่ยวข้อง เช่น capturedBookBankImage
+    clearFormCookie("capturedBookBankImage");
+    clearFormCookie("croppedBookBankImage");
     router.back();
   }, [router]);
 

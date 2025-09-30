@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import Providers from "./providers";
 import ResumeGate from "./ResumeGate";
 import RouteTracker from "./RouteTracker";
+import ClientWrapper from "./ClientWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +39,7 @@ export default function RootLayout({
       >
         <Providers>
           <Suspense fallback={null}>
-            {children}
+            <ClientWrapper>{children}</ClientWrapper>
             <RouteTracker ttlMin={30} />
             <ResumeGate ttlMin={30} enabled />
           </Suspense>
