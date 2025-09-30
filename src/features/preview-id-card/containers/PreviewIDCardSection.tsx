@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 import {
   base64StringToFile,
   calculateSimilarity,
-  loadFormFromCookie,
 } from "@/lib/utils/index";
 import FormIdCard from "../components/FormIdCard";
 import AlertPopUp from "@/components/AlertPopUp";
@@ -16,28 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useIdCardOcr } from "@/features/preview-id-card/hooks/useIdCardOcr";
 import { useCanSubmit } from "../hooks/useCanSubmit";
 import { useIdcardSubmit } from "../hooks/useIdcardSubmit";
-
-// Cookie Keys Constants
-const COOKIE_KEYS = {
-  OCR_RESPONSE: "idcard_ocr_response",
-  FORM_EDITED: "idcard_form_edited",
-} as const;
-
-// Interface สำหรับ OCR cookie data
-interface OcrCookieData {
-  idNumber?: string;
-  idNumberFormatted?: string;
-  firstNameThai?: string;
-  lastNameThai?: string;
-  firstNameEng?: string;
-  lastNameEng?: string;
-  birthDateThai?: string;
-  issueDateThai?: string;
-  expiryDateThai?: string;
-  address?: string;
-  titleThai?: string;
-  laserId?: string;
-}
 
 const defaultFormValues: IdCardFormData = {
   idNumber: "",

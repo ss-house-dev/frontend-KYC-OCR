@@ -13,6 +13,8 @@ import FormSelectBookBank from "./FormSelectBookBank";
 import FormFieldBookBank from "./FormFieldBookBank";
 import FullScreenLoader from "@/components/FullScreenLoader";
 import { saveFormToCookie } from "@/lib/utils/index";
+import Image from "next/image";
+import { X } from "lucide-react";
 
 const IconInfo = () => (
   <svg
@@ -57,7 +59,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
 }: FormBookBankProps<TFieldValues>) => {
   const initialDataRef = useRef<any>(null);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
-
+  const [showAlert, setShowAlert] = useState(true);
   // อ่านค่าจาก form
   const allValues = watch();
 
@@ -95,39 +97,56 @@ const FormBookBank = <TFieldValues extends FieldValues>({
   }, [allValues, isFormInitialized, isLoading]);
 
   return (
-    <form onSubmit={onSubmit} className="p-6 max-w-md mx-auto">
+    <form onSubmit={onSubmit} className="pt-3 bg-[#E7E7E7] space-y-3">
       {/* Info Box */}
-      <div className="flex items-center space-x-2.5 rounded-lg bg-[#246AEC] text-white p-7 mb-5">
-        <IconInfo />
-        <p className="text-sm font-medium">
-          Your bank account information will be used only for transaction
-          verification and handled securely.
-        </p>
-      </div>
-
-      {/* Preview Image */}
-      <div className="rounded-xl w-full mb-5 p-1 border-2 border-dashed border-[#1849D6] overflow-hidden">
-        <div className="relative w-full aspect-[8.8/5.6] flex items-center justify-center">
-          {isLoading ? (
-            <>
-              <FullScreenLoader />
-              <p className="font-medium z-10">Image loading...</p>
-            </>
-          ) : (
-            capturedImage && (
-              <img
-                src={capturedImage}
-                alt="Book Bank"
-                className="w-full h-full object-contain rounded-xl"
+      <div className="bg-white p-4 space-y-4">
+        {showAlert && (
+          <div className="flex items-start justify-between rounded-lg bg-[#F5F8FF] text-white p-4 mb-5 relative">
+            <div className="flex items-center space-x-2.5">
+              <Image
+                src="/icon/shield-check.svg"
+                width={20}
+                height={20}
+                alt="Picture of the author"
               />
-            )
-          )}
+              <p className="text-sm font-medium text-[#4A4A4A]">
+                Your bank account information will be used only for transaction
+                verification and handled securely.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAlert(false)}
+              className="ml-2 text-[#4A4A4A] hover:text-gray-200 transition"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* Preview Image */}
+        <div className="rounded-xl w-full p-1 border-2 border-dashed border-[#1849D6] overflow-hidden">
+          <div className="relative w-full aspect-[8.8/5.6] flex items-center justify-center">
+            {isLoading ? (
+              <>
+                <FullScreenLoader />
+                <p className="font-medium z-10">Image loading...</p>
+              </>
+            ) : (
+              capturedImage && (
+                <img
+                  src={capturedImage}
+                  alt="Book Bank"
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              )
+            )}
+          </div>
         </div>
       </div>
 
       {/* Form Fields */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="space-y-6">
+      <div className="bg-white p-6">
+        <div className="space-y-1">
           <FormSelectBookBank
             fieldName={"bank" as Path<TFieldValues>}
             label="Bank"
@@ -137,7 +156,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           <FormFieldBookBank
             fieldName={"branchName" as Path<TFieldValues>}
             label="Branch (TH)"
-            placeholder="Enter Branch"
+            placeholder="Enter your branch"
             type="text"
             control={control}
             errors={errors}
@@ -146,7 +165,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           <FormFieldBookBank
             fieldName={"accountNameThai" as Path<TFieldValues>}
             label="Account Name (TH)"
-            placeholder="Enter Name"
+            placeholder="Enter your account name"
             type="text"
             control={control}
             errors={errors}
@@ -155,7 +174,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           <FormFieldBookBank
             fieldName={"accountNameEng" as Path<TFieldValues>}
             label="Account Name (ENG)"
-            placeholder="Enter Name"
+            placeholder="Enter your account name"
             type="text"
             control={control}
             errors={errors}
@@ -164,7 +183,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           <FormFieldBookBank
             fieldName={"accountNumber" as Path<TFieldValues>}
             label="Account No."
-            placeholder="Enter Account no."
+            placeholder="Enter account no."
             type="text"
             control={control}
             errors={errors}
@@ -174,11 +193,11 @@ const FormBookBank = <TFieldValues extends FieldValues>({
       </div>
 
       {/* Confirm Button */}
-      <div className="mt-6">
+      <div className="bg-white p-4 mt-6">
         <button
           type="submit"
           disabled={!canSubmit}
-          className={`w-full h-12 rounded-xl text-white font-semibold text-base transition-colors ${
+          className={`w-full h-12 rounded-[8px] text-white font-semibold text-base transition-colors ${
             canSubmit && !isSubmitting
               ? "bg-[#2152b6] hover:bg-[#1a4299]"
               : "bg-gray-400"

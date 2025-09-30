@@ -27,9 +27,8 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex h-auto w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-base",
+        "flex h-12 w-full items-center justify-between rounded-[8px] border border-[#D1D1D1] bg-white px-4 py-3 text-base",
         "placeholder:text-gray-500",
-        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring",
         "disabled:cursor-not-allowed disabled:opacity-50",
         // ทำให้ลูกศรหมุนเมื่อเปิด
         "data-[state=open]:[&>svg]:rotate-180 transition-transform",

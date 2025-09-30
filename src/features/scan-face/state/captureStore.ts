@@ -15,10 +15,25 @@ export const captureStore = {
     _state.step1Sample = null;
     _state.movements = { yaw: [], pitch: [], blink: [], mouth: [] };
   },
-  setStep1Sample(dataUrl: string) { _state.step1Sample = dataUrl; },
+  setStep1Sample(dataUrl: string) {
+    _state.step1Sample = dataUrl;
+  },
   push(group: MovementGroup, dataUrl: string, limit = 2) {
     const arr = _state.movements[group];
     if (arr.length < limit) arr.push(dataUrl);
   },
-  get() { return _state; },
+  get() {
+    return _state;
+  },
+  totalCount() {
+    const movementCount = Object.values(_state.movements).reduce(
+      (sum, arr) => sum + arr.length,
+      0
+    );
+    return (_state.step1Sample ? 1 : 0) + movementCount;
+  },
+  isComplete(required = 5) {
+    return this.totalCount() >= required;
+  },
 };
+

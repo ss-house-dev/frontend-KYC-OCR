@@ -1,5 +1,5 @@
-// hooks/useFaceMesh.ts
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import type { LM, FaceScanState, DetectionResult } from "../configs/type";
 import { CONFIG } from "../configs/constant";
 import {
@@ -18,12 +18,11 @@ import {
   groupOfPhase,
 } from "../utils/movements";
 import { captureStore } from "../state/captureStore";
-
-// ✅ นำเข้า tracker และ type
 import {
   HeadMotionTracker,
   type HeadPhase,
 } from "../utils/motion/HeadMotionTracker";
+import { FaceSubmit } from "../services/api-face";
 
 /* ===== Android detect ===== */
 const isAndroid =
@@ -190,7 +189,7 @@ export function useFaceMesh(
   /* ===== แคปภาพ ===== */
   const lastCapAtRef = useRef<Partial<Record<MovementGroup, number>>>({});
   const CAP_INTERVAL_MS = isAndroid ? 800 : 400;
-  const CAP_LIMIT_PER_GROUP = isAndroid ? 8 : 10;
+  const CAP_LIMIT_PER_GROUP = 3;
 
   /* ===== FPS EMA + auto degrade ===== */
   const fpsEmaRef = useRef<number>(0);
@@ -522,6 +521,59 @@ export function useFaceMesh(
       videoRef,
     ]
   );
+
+const { data: session, status } = useSession();
+const kycRequestId = session?.kycRequestId;
+
+useEffect(() => {
+  async function sendIfReady() {
+    const state = captureStore.get();
+    const allMovements = Object.values(state.movements).flat(); 
+    
+    if (!kycRequestId || allMovements.length < 5 || !state.step1Sample) {
+      console.log("⏸️ Waiting for all files...");
+      return;
+    }
+
+    // แปลง URL → File
+    async function urlToFile(url: string, filename: string): Promise<File> {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new File([blob], filename, { type: blob.type });
+    }
+
+    const files = await Promise.all(
+      allMovements.map((url, i) => urlToFile(url, `movement_${i}.jpg`))
+    );
+    const file = await urlToFile(state.step1Sample, "step1Sample.jpg");
+
+    console.log("✅ Ready to submit", files.length, "files + 1 sample file");
+
+    try {
+      const res = await FaceSubmit({
+        files,
+        file,
+        kycRequestId,
+        onProgress: (pct) => console.log("Upload progress:", pct, "%"),
+      });
+      console.log("✅ Face files submitted:", res);
+    } catch (err) {
+      console.error("❌ Upload error:", err);
+    }
+  }
+
+  sendIfReady();
+}, [done, kycRequestId]);
+
+
+useEffect(() => {
+  console.log("=== SESSION DEBUG ===");
+  console.log("Session status:", status);
+  console.log("Session data:", session);
+  console.log("kycRequestId:", kycRequestId);
+  console.log("==================");
+}, [session, kycRequestId, status]);
+
 
   // ปิด session ปลอดภัย/idempotent
   const stopCurrentSession = useCallback(async () => {

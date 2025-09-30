@@ -11,6 +11,7 @@ import {
 } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface FormFieldProps<TFieldValues extends FieldValues>
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -74,6 +75,13 @@ const FormField = <TFieldValues extends FieldValues>({
               {...rest}
               id={fieldName}
               value={val}
+              className={cn(
+                "w-full h-12 rounded-[8px] justify-between font-normal",
+                "text-sm text-[#212121] border-[#D1D1D1]",
+                hasError || fieldState.error
+                  ? "border-[#D1D1D1] hover:bg-white text-left"
+                  : "",
+              )}
               onChange={(e) => {
                 let raw = e.target.value
                   .toUpperCase()
@@ -90,9 +98,9 @@ const FormField = <TFieldValues extends FieldValues>({
                   }
                 }
                 const fixed = chars.join("");
-                const part1 = fixed.slice(0, 3); 
-                const part2 = fixed.slice(3, 10); 
-                const part3 = fixed.slice(10, 12); 
+                const part1 = fixed.slice(0, 3);
+                const part2 = fixed.slice(3, 10);
+                const part3 = fixed.slice(10, 12);
                 const formatted =
                   part1 +
                   (part2 ? "-" + part2 : "") +
