@@ -9,7 +9,7 @@ export default function ClientWrapper({
 }) {
   useClearCookieOnBack(
     ["idcard_ocr_response", "idcard_uploaded_objectName", "idcard_form_edited"],
-    "/preview-id-card"
+    ["/preview-id-card", "/scan-id-card"]
   );
 
   useClearCookieOnBack(
