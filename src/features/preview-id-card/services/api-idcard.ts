@@ -15,6 +15,7 @@ type IdcardSubmitArgs = {
   dateOfIssue: string;
   dateOfExpiry: string;
   address: string;
+  laserId: string;
   onProgress?: (pct: number) => void;
 };
 

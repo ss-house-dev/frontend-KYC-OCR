@@ -43,6 +43,7 @@ export function useIdcardSubmit() {
         dateOfBirth: fields.dateOfBirth || "",
         dateOfIssue: fields.dateOfIssue || "",
         dateOfExpiry: fields.dateOfExpiry || "",
+        laserId: fields.laserId || "",
         address: fields.address || "",
         onProgress: (pct: number) => setProgress(pct),
       };

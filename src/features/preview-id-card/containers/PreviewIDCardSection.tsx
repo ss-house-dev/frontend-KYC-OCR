@@ -89,6 +89,7 @@ export default function VerifyIdentityScreen() {
       expiryDateThai: d.expiryDateThai ?? "",
       address: d.address ?? "",
       titleThai: d.titleThai ?? "",
+      laserId: d.laserId ?? "", 
     }),
     requiredFields: [
       "idNumber",
@@ -102,6 +103,7 @@ export default function VerifyIdentityScreen() {
       "issueDateThai",
       "expiryDateThai",
       "address",
+      "laserId", 
     ],
     onError: (err) => {
       console.error(err);
