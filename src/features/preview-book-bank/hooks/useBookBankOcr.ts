@@ -81,9 +81,6 @@ export function useBookBankOcr<TForm extends FieldValues>({
       const errors: string[] = [];
       if (!d.branchName?.trim()) errors.push("Missing branchName");
       if (!d.accountNumber?.trim()) errors.push("Missing accountNumber");
-      if (!d.accountNameThai?.trim() && !d.accountNameEng?.trim()) {
-        errors.push("Both accountNameThai and accountNameEng are missing");
-      }
 
       if (errors.length > 0) {
         console.error("[BookBank OCR] Validation failed:", errors);
