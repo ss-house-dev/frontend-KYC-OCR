@@ -39,260 +39,135 @@ export default function VerifyBookBankView({
   onStartScan,
 }: VerifyBookBankViewProps) {
   return (
-    <div className="flex flex-col h-screen bg-white font-inter">
-      <div className="mx-auto w-full max-w-[480px] flex min-h-screen flex-col">
-        <main className=" flex flex-col p-6 pt-8 pb-[96px] [padding-bottom:calc(96px+env(safe-area-inset-bottom))]">
-          <div className="w-full mb-6">
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-[18px]  text-gray-600 whitespace-nowrap">
-                Step 1 of 3
-              </span>
-              <span className="text-[18px]  text-gray-600 whitespace-nowrap">
-                Add Book Bank
-              </span>
-            </div>
+    <div className="min-h-screen flex flex-col bg-white font-inter">
+      <main className="flex-1 px-5 pt-8 max-w-md w-full mx-auto">
+        <div className="w-full mb-1 flex items-baseline justify-between text-[#4B5563] font-normal">
+          <span className="text-lg">Step 3 of 3</span>
+          <span className="text-lg">Add Book Bank</span>
+        </div>
 
-            <div className="mt-2 flex items-center gap-6">
-              <div className="h-1.5 w-[120px] rounded-full bg-blue-600" />
-              <div className="h-1.5 w-[120px] rounded-full bg-blue-600" />
-              <div className="h-1.5 w-[120px] rounded-full bg-blue-600" />
-            </div>
-          </div>
+        <div className="grid grid-cols-3 gap-2 mb-6 max-w-md">
+          <div className="h-1 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1E40AF]" />
+          <div className="h-1 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1E40AF]" />
+          <div className="h-1 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1E40AF]" />
+        </div>
 
-          <div className=" flex flex-col items-center text-center">
-            <h2
-              className="font-bold m-0 inline whitespace-nowrap"
-              style={{ color: "#0F2D73", fontSize: "20px", lineHeight: "20px" }}
-            >
-              Please have your Book Bank ready.
-            </h2>
-            <p className="text-gray-500 mt-1 text-sm">
-              Make sure your Book Bank is clearly visible.
-            </p>
-          </div>
-          <div className="w-40 h-40 mx-auto my-4">
+        <div className="text-center">
+          <h2 className="font-semibold text-[#0F2D73] text-[18px]">
+            Please have your Book Bank ready.
+          </h2>
+          <p className="text-gray-500 text-sm mt-1">
+            Make sure your face is clearly visible.
+          </p>
+        </div>
+
+        <ul className="mt-0 divide-y divide-gray-200">
+          <li className="flex gap-4 py-4">
             <Image
-              src="\book-bank-accept\book-bank-sample.svg"
-              alt="ID Card Illustration"
-              width={160}
-              height={160}
-              className="w-full h-full object-contain"
+              src="/book-bank-accept/book-bank-fully.svg"
+              alt="Hold phone"
+              width={76}
+              height={76}
+              className="rounded-md object-contain"
+              priority
             />
-          </div>
-          <div className="grid grid-cols-3 gap-3 my-4 mt-0">
-            <div className="flex items-center justify-center">
-              <Image
-                src="\book-bank-accept\book-bank-sample-correct.svg"
-                alt="Correct Example"
-                width={100}
-                height={75}
-                className="object-contain"
+            <p className="text-[14px] leading-5 text-gray-700">
+              The bankbook must be clearly visible with all information fully
+              captured.
+            </p>
+          </li>
+          <li className="flex gap-4 py-4">
+            <Image
+              src="/book-bank-accept/book-bank-prepared-area.svg"
+              alt="Face clear"
+              width={76}
+              height={76}
+              className="rounded-md object-contain"
+            />
+            <p className="text-[14px] leading-5 text-gray-700">
+              You're allowed to upload E-book bank
+            </p>
+          </li>
+          <li className="flex gap-4 py-4">
+            <Image
+              src="/book-bank-accept/book-bank-prepared-area.svg"
+              alt="Lighting"
+              width={76}
+              height={76}
+              className="rounded-md object-contain"
+            />
+            <p className="text-[14px] leading-5 text-gray-700">
+              Please make sure your camera is steady to avoid blurry images.
+            </p>
+          </li>
+          <li className="flex gap-4 py-4 pb-0">
+            <Image
+              src="/book-bank-accept/book-bank-unobscured.svg"
+              alt="No background people"
+              width={76}
+              height={76}
+              className="rounded-md object-contain"
+            />
+            <p className="text-sm leading-5 text-[#4B5563]">
+              Ensure your book bank is unobscured
+            </p>
+          </li>
+        </ul>
+      </main>
+
+      {/* Footer ไม่ลอย: เอา fixed ออก และจัดความกว้างให้เท่ากับ main */}
+      <footer className="w-full  border-gray-200">
+        <div className="max-w-md w-full mx-auto p-5 pt-0 pb-6 mt-20">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <div className="relative mt-0.5 flex-shrink-0">
+              <input
+                id="consent-checkbox"
+                type="checkbox"
+                checked={isChecked}
+                onChange={(e) => onCheckboxChange(e.target.checked)}
+                className="peer sr-only"
               />
-            </div>
-            <div className="flex items-center justify-center">
-              <Image
-                src="\book-bank-accept\book-bank-sample-blurry.svg"
-                alt="Blurry Example"
-                width={100}
-                height={75}
-                className="object-contain"
+              <span
+                aria-hidden="true"
+                className="block h-5 w-5 rounded-[6px] border transition-colors
+                           border-[#D1D5DB] bg-white
+                           peer-focus-visible:ring-2 peer-focus-visible:ring-[#1849D6]/40
+                           peer-checked:border-[#1849D6] peer-checked:bg-[#1849D6]"
               />
+              <svg
+                className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity
+                           peer-checked:opacity-100"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
             </div>
-            <div className="flex items-center justify-center">
-              <Image
-                src="\book-bank-accept\book-bank-sample-glare.svg"
-                alt="Glare Example"
-                width={100}
-                height={75}
-                className="object-contain"
-              />
-            </div>
-          </div>
 
-          <div className="space-y-3 text-left">
-            <div className="flex ">
-              <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="11"
-                    fill="#fff"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="12"
-                    y="17"
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="#9ca3af"
-                    fontWeight="bold"
-                  >
-                    !
-                  </text>
-                </svg>
-              </span>
-              <span className="text-gray-600" style={{ fontSize: "13px" }}>
-                Place your Book Bank within the camera frame.
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="11"
-                    fill="#fff"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="12"
-                    y="17"
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="#9ca3af"
-                    fontWeight="bold"
-                  >
-                    !
-                  </text>
-                </svg>
-              </span>
-              <span className="text-gray-600" style={{ fontSize: "13px" }}>
-                Please make sure your camera is steady to avoid blurry images.
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full ">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="11"
-                    fill="#fff"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="12"
-                    y="17"
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="#9ca3af"
-                    fontWeight="bold"
-                  >
-                    !
-                  </text>
-                </svg>
-              </span>
-              <span className="text-gray-600" style={{ fontSize: "13px" }}>
-                Please make sure you are in a well-lit area for optimal results.
-              </span>
-            </div>
-            <div className="flex items-center">
-              <span className="flex items-center justify-center w-5 h-5 mr-3 flex-shrink-0 rounded-full">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="11"
-                    fill="#fff"
-                    stroke="#9ca3af"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x="12"
-                    y="17"
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="#9ca3af"
-                    fontWeight="bold"
-                  >
-                    !
-                  </text>
-                </svg>
-              </span>
+            <span className="text-sm text-black font-normal">
+              I consent to Kyra KYC processing my personal and biometric data
+              for identity verification, AML compliance, and as per its privacy
+              policy.
+            </span>
+          </label>
 
-              <span className="text-[13px] text-gray-600">
-                You’re allowed to upload{" "}
-                <p className="text-[#007AFF] hover:underline focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 rounded-sm">
-                  E-book bank
-                </p>
-              </span>
-            </div>
-          </div>
-        </main>
-
-        <footer className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur  border-gray-200">
-          <div className="mx-auto w-full max-w-[480px] p-6 pt-0 pb-[calc(16px+env(safe-area-inset-bottom))]">
-            <label className="flex cursor-pointer items-start gap-3">
-              <div className="relative mt-0.5 flex-shrink-0">
-                <input
-                  id="consent-checkbox"
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={(e) => onCheckboxChange(e.target.checked)}
-                  className="peer sr-only"
-                />
-                <span
-                  aria-hidden="true"
-                  className="block h-5 w-5 rounded-[6px] border transition-colors
-                             border-[#D1D5DB] bg-white
-                             peer-focus-visible:ring-2 peer-focus-visible:ring-[#1849D6]/40
-                             peer-checked:border-[#1849D6] peer-checked:bg-[#1849D6]"
-                />
-                <svg
-                  className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity
-                             peer-checked:opacity-100"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-
-              <span className="text-sm text-black" style={{ fontSize: "14px" }}>
-                I consent to Kyra KYC processing my personal and biometric data
-                for identity verification, AML compliance, and as per its
-                privacy policy.
-              </span>
-            </label>
-
-            <div className="mt-4"></div>
-            <button
-              onClick={onStartScan}
-              disabled={!isChecked}
-              className={`w-full rounded-lg py-3 text-base text-white transition-colors duration-300 ${
-                isChecked ? "bg-[#2152b6]" : "cursor-not-allowed bg-gray-400"
-              }`}
-            >
-              Get Started
-            </button>
-          </div>
-        </footer>
-      </div>
+          <div className="mt-4" />
+          <button
+            onClick={onStartScan}
+            disabled={!isChecked}
+            className={`w-full rounded-lg py-3 text-base text-white transition-colors duration-300 ${
+              isChecked ? "bg-[#2152b6]" : "cursor-not-allowed bg-gray-400"
+            }`}
+          >
+            Get Started
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

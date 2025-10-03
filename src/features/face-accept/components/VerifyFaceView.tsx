@@ -17,17 +17,17 @@ export default function VerifyFaceView() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-inter gap-[86px]">
-      <main className="flex-1 px-5 pt-8 max-w-md w-full mx-auto pb-[96px] [padding-bottom:calc(96px+env(safe-area-inset-bottom))]">
-        <div className="w-full mb-6 flex items-baseline justify-between text-gray-600">
-          <span className="text-[18px]">Step 2 of 3</span>
-          <span className="text-[18px]">Face Verification</span>
+    <div className="min-h-screen flex flex-col bg-white font-inter">
+      <main className="flex-1 px-5 pt-8 max-w-md w-full mx-auto">
+        <div className="w-full mb-1 flex items-baseline justify-between text-[#4B5563] font-normal">
+          <span className="text-lg">Step 2 of 3</span>
+          <span className="text-lg">Face Verification</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-6 max-w-md">
-          <div className="h-1.5 rounded-full bg-blue-600" />
-          <div className="h-1.5 rounded-full bg-blue-600" />
-          <div className="h-1.5 rounded-full bg-gray-300" />
+          <div className="h-1 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1E40AF]" />
+          <div className="h-1 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1E40AF]" />
+          <div className="h-1 rounded-full bg-[#E5E7EB]" />
         </div>
 
         <div className="text-center">
@@ -40,7 +40,7 @@ export default function VerifyFaceView() {
         </div>
 
         <ul className="mt-0 divide-y divide-gray-200">
-          <li className="flex gap-4 p-4">
+          <li className="flex gap-4 py-4">
             <Image
               src="/face-accept/hold-your-phone.png"
               alt="Hold phone"
@@ -54,7 +54,7 @@ export default function VerifyFaceView() {
               clear view of your face.
             </p>
           </li>
-          <li className="flex gap-4 p-4">
+          <li className="flex gap-4 py-4">
             <Image
               src="/face-accept/face-clear.png"
               alt="Face clear"
@@ -67,7 +67,7 @@ export default function VerifyFaceView() {
               face.
             </p>
           </li>
-          <li className="flex gap-4 p-4">
+          <li className="flex gap-4 py-4">
             <Image
               src="/face-accept/against-the-light.png"
               alt="Lighting"
@@ -80,7 +80,7 @@ export default function VerifyFaceView() {
               light.
             </p>
           </li>
-          <li className="flex gap-4 p-4">
+          <li className="flex gap-4 py-4 pb-0">
             <Image
               src="/face-accept/no-one-background.png"
               alt="No background people"
@@ -88,16 +88,17 @@ export default function VerifyFaceView() {
               height={76}
               className="rounded-md object-contain"
             />
-            <p className="text-[14px] leading-5 text-gray-700">
-              Ensure no one is in the background during the scan.
+            <p className="text-sm leading-5 text-[#4B5563]">
+              Ensure no one is in the background while scanning.
             </p>
           </li>
         </ul>
       </main>
 
-      <footer className="fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur  border-gray-200">
-        <div className="max-w-md w-full mx-auto p-6 pt-0 pb-[calc(16px+env(safe-area-inset-bottom))]">
-          <label className="flex items-start gap-3 cursor-pointer">
+      {/* Footer ไม่ลอย: เอา fixed ออก และจัดความกว้างให้เท่ากับ main */}
+      <footer className="w-full  border-gray-200">
+        <div className="max-w-md w-full mx-auto p-5 pt-0 pb-6 mt-20">
+          <label className="group flex items-start gap-3 cursor-pointer">
             <div className="relative mt-0.5 flex-shrink-0">
               <input
                 id="consent-checkbox"
@@ -109,13 +110,13 @@ export default function VerifyFaceView() {
               <span
                 aria-hidden="true"
                 className="block h-5 w-5 rounded-[6px] border transition-colors
-                           border-[#D1D5DB] bg-white
-                           peer-focus-visible:ring-2 peer-focus-visible:ring-[#1849D6]/40
-                           peer-checked:border-[#1849D6] peer-checked:bg-[#1849D6]"
+                      border-[#D1D5DB] bg-white
+                      peer-focus-visible:ring-2 peer-focus-visible:ring-[#1849D6]/40
+                      peer-checked:border-[#1849D6] peer-checked:bg-[#1849D6]"
               />
               <svg
                 className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity
-                           peer-checked:opacity-100"
+                      peer-checked:opacity-100"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="white"
@@ -128,10 +129,13 @@ export default function VerifyFaceView() {
               </svg>
             </div>
 
-            <span className="text-sm text-black" style={{ fontSize: "14px" }}>
+            <span className="text-sm text-black font-normal">
               I consent to Kyra KYC processing my personal and biometric data
-              for identity verification, AML compliance, and as per its privacy
-              policy.
+              for identity verification,{" "}
+              <span className="transition-colors group-has-[input:checked]:text-[#3A89F7]">
+                PDPA
+              </span>{" "}
+              compliance, and as per its privacy policy.
             </span>
           </label>
 
