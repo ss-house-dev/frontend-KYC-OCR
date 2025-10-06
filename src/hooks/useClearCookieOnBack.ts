@@ -36,8 +36,25 @@ export function useClearCookieOnBack(keys: string[], paths: string | string[]) {
 
     const onPageHide = (ev: PageTransitionEvent) => {
       const target = window.location.pathname || "/";
-      console.log("[Back] pagehide -> target:", target, "persisted:", ev.persisted);
-      if (shouldClearFor(target)) clearAll("pagehide");
+      // ตรวจว่าเป็นการ reload ไหม
+      const nav = performance.getEntriesByType("navigation")[0] as
+        | PerformanceNavigationTiming
+        | undefined;
+      const isReload = nav?.type === "reload";
+
+      console.log(
+        "[Back] pagehide -> target:",
+        target,
+        "persisted:",
+        ev.persisted,
+        "isReload:",
+        isReload
+      );
+
+      // ถ้าไม่อยากล้างตอน refresh ให้ข้ามเมื่อ isReload === true
+      if (!isReload && shouldClearFor(target)) {
+        clearAll("pagehide");
+      }
     };
 
     const onPageShow = (ev: PageTransitionEvent) => {
@@ -53,7 +70,12 @@ export function useClearCookieOnBack(keys: string[], paths: string | string[]) {
     window.addEventListener("pagehide", onPageHide);
     window.addEventListener("pageshow", onPageShow);
 
-    console.log("[Hook] useClearCookieOnBack mounted with keys:", keyList, "paths:", pathList);
+    console.log(
+      "[Hook] useClearCookieOnBack mounted with keys:",
+      keyList,
+      "paths:",
+      pathList
+    );
 
     return () => {
       window.removeEventListener("popstate", onPopState);
@@ -67,8 +89,8 @@ export function useClearCookieOnBack(keys: string[], paths: string | string[]) {
 function removeCookieAllScopes(name: string) {
   // หมายเหตุ: ถ้า cookie เป็น HttpOnly จะลบจากฝั่ง client ไม่ได้ ต้องให้ server ลบ
   try {
-    Cookies.remove(name);                 // path ปัจจุบัน
-    Cookies.remove(name, { path: "/" });  // root
+    Cookies.remove(name); // path ปัจจุบัน
+    Cookies.remove(name, { path: "/" }); // root
 
     // ลองทุกระดับ path
     const p = window.location.pathname || "/";
@@ -76,7 +98,10 @@ function removeCookieAllScopes(name: string) {
     while (true) {
       Cookies.remove(name, { path: cur });
       const idx = cur.lastIndexOf("/");
-      if (idx <= 0) { Cookies.remove(name, { path: "/" }); break; }
+      if (idx <= 0) {
+        Cookies.remove(name, { path: "/" });
+        break;
+      }
       cur = cur.slice(0, idx);
     }
 
