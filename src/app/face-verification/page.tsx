@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -14,9 +14,13 @@ export default function FaceVerificationPage() {
   const { data: session } = useSession();
 
   const kycRequestId = session?.kycRequestId;
-  const { submit, loading, progress, error } = useSubmitFaceWithIdCard(
+  const { submit, loading, error } = useSubmitFaceWithIdCard(
     kycRequestId || ""
   );
+
+    useEffect(() => {
+    if (error) console.error("❌ Face submit error:", error);
+  }, [error]);
 
   const handleConfirm = async () => {
     if (!kycRequestId) {
@@ -46,7 +50,7 @@ export default function FaceVerificationPage() {
 
         {/* Content */}
         <main className="flex-1 px-5 pt-5">
-          <div className="rounded-[20px] bg-white shadow-[0px_8px_24px_rgba(0,0,0,0.08)] p-6">
+          <div className="rounded-[16px] bg-white shadow-[0px_8px_24px_rgba(0,0,0,0.08)] p-6">
             <p className="text-center text-[#00C48C] font-semibold mb-1">
               Scaning success
             </p>
@@ -69,11 +73,11 @@ export default function FaceVerificationPage() {
               </div>
             )}
 
-            {error && (
+            {/* {error && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">{error}</p>
               </div>
-            )}
+            )} */}
 
             {loading && <FullScreenLoader />}
           </div>
@@ -84,7 +88,7 @@ export default function FaceVerificationPage() {
           <button
             onClick={handleConfirm}
             disabled={loading || !kycRequestId}
-            className="w-full h-12 rounded-[8px] text-white font-semibold text-base bg-[#2152b6] transition disabled:bg-gray-400 "
+            className="w-full h-12 rounded-[8px] text-white font-semibold text-base bg-[#2152b6] transition disabled:bg-[#888888] "
           >
             Confirm
           </button>
