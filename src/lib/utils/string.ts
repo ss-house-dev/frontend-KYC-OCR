@@ -19,18 +19,26 @@ export function calculateSimilarity(str1: string, str2: string): number {
   return ((longer.length - distance) / longer.length) * 100;
 }
 
-// ตัดวรรณยุกต์ไทย (ตัวเลือก เพิ่ม-ลบตามนโยบาย)
-// รวมช่วง \u0E31, \u0E34-\u0E3A, \u0E47-\u0E4E
-const THAI_MARKS = /[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g;
+function norm(raw?: string) {
+  let s = (raw ?? "");
 
-function norm(raw?: string, options?: { stripThaiMarks?: boolean }) {
-  let s = (raw ?? "").normalize("NFKC").trim();
-  if (!s) return "";
-  s = s.toLocaleLowerCase();               // ไม่แยกตัวพิมพ์
-  s = s.replace(/\s+/g, " ");              // ลดช่องว่างซ้ำ
-  if (options?.stripThaiMarks) {
-    s = s.replace(THAI_MARKS, "");         // เอาวรรณยุกต์/สระลอยออก
-  }
+  // 1) แปลงเป็นรูปแบบที่สอดคล้องกัน (จัดการสระ/วรรณยุกต์ที่แตกตัว)
+  //    NFKC จะรวมรูปที่เทียบเท่ากันทางการแสดงผล (เช่น ำ)
+  s = s.normalize("NFKC");
+
+  // 2) ตัดช่องว่างหัว–ท้าย + ลดช่องว่างซ้ำ
+  s = s.trim().replace(/\s+/g, " ");
+
+  // 3) แปลงเป็นตัวพิมพ์เล็ก (ไม่แยกเคส; ไม่กระทบอักษรไทย)
+  s = s.toLocaleLowerCase();
+
+  // 4) จัดรูปอีกครั้งเป็น NFC เพื่อให้ combining marks อยู่ลำดับคงที่
+  //    (ช่วยลด false mismatch จากลำดับคอมไบนด์ต่างกัน)
+  s = s.normalize("NFC");
+
+  // 5) ลบ zero-width characters ที่อาจปนมาจาก OCR/คัดลอก
+  s = s.replace(/[\u200B-\u200D\uFEFF]/g, "");
+
   return s;
 }
 
@@ -77,8 +85,7 @@ export function calculateSimilaritySafe(a: string, b: string): number {
 
 // ตัวช่วยรวม: normalize ก่อน + ส่งคืน 0–100 เสมอ
 export function scoreName(a?: string, b?: string) {
-  const A = norm(a, { stripThaiMarks: true });
-  const B = norm(b, { stripThaiMarks: true });
+  const A = norm(a);
+  const B = norm(b);
   return calculateSimilaritySafe(A, B);
 }
-

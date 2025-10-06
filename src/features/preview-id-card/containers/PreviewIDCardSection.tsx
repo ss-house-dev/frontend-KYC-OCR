@@ -149,30 +149,26 @@ export default function VerifyIdentityScreen() {
     const enFirst = scoreName(originalData.firstNameEng, data.firstNameEng);
     const enLast = scoreName(originalData.lastNameEng, data.lastNameEng);
 
-    // แนะนำให้วัดความยาวหลัง normalize เดียวกับ scoreName
-    const normLen = (s?: string) =>
-      (s ?? "")
-        .normalize("NFKC")
-        .trim()
-        .toLocaleLowerCase()
-        .replace(/\s+/g, " ").length;
+    // ความยาวหลัง normalize (กัน null/undefined)
+    const len = (s: string) => (s ?? "").trim().length;
 
     const thWeighted =
-      (thFirst * normLen(originalData.firstNameThai) +
-        thLast * normLen(originalData.lastNameThai)) /
-      (normLen(originalData.firstNameThai) +
-        normLen(originalData.lastNameThai) || 1);
+      (thFirst * len(originalData.firstNameThai) +
+        thLast * len(originalData.lastNameThai)) /
+      (len(originalData.firstNameThai) + len(originalData.lastNameThai) || 1);
 
     const enWeighted =
-      (enFirst * normLen(originalData.firstNameEng) +
-        enLast * normLen(originalData.lastNameEng)) /
-      (normLen(originalData.firstNameEng) + normLen(originalData.lastNameEng) ||
-        1);
+      (enFirst * len(originalData.firstNameEng) +
+        enLast * len(originalData.lastNameEng)) /
+      (len(originalData.firstNameEng) + len(originalData.lastNameEng) || 1);
 
+    const FIELD_MIN = 60; 
     const LANG_MIN = 60;
 
-    const thaiPass = thWeighted >= LANG_MIN;
-    const engPass = enWeighted >= LANG_MIN;
+    const thaiPass =
+      thFirst >= FIELD_MIN && thLast >= FIELD_MIN && thWeighted >= LANG_MIN;
+    const engPass =
+      enFirst >= FIELD_MIN && enLast >= FIELD_MIN && enWeighted >= LANG_MIN;
 
     if (!thaiPass || !engPass) {
       setShowDialog(true);
