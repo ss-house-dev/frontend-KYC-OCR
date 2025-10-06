@@ -94,7 +94,9 @@ export default function CameraDetectCard() {
   const [statusMsg, setStatusMsg] = useState(
     "Please align your ID card in the frame."
   );
-  const [frameColor, setFrameColor] = useState<"red" | "green">("red");
+  const [frameColor, setFrameColor] = useState<"red" | "green" | "white">(
+    "white"
+  );
   const [canCapture, setCanCapture] = useState(false);
 
   /** ปุ่ม manual จะโผล่หลัง 10 วิ */
@@ -378,8 +380,14 @@ export default function CameraDetectCard() {
       else if (maxAreaSeen < work.width * work.height * MIN_AREA_FRAC)
         msg = "Please align your ID card in the frame.";
 
-      if (meanGrayVal < 60) msg = "Image is too dark. Please try again.";
-      if (meanGrayVal > 200) msg = "Image is too bright. Please try again.";
+      if (meanGrayVal < 60) {
+        msg = "Image is too dark. Please try again.";
+        readyNow = false;
+      }
+      if (meanGrayVal > 200) {
+        msg = "Image is too bright. Please try again.";
+        readyNow = false;
+      }
 
       steadyCountRef.current = 0;
       lastQuadRef.current = null;
@@ -495,7 +503,23 @@ export default function CameraDetectCard() {
     // อัปเดต UI
     setStatusMsg(msg);
     setCanCapture(readyNow);
-    setFrameColor(readyNow ? "green" : "red");
+
+    let uiColor: "red" | "green" | "white";
+
+    if (msg === "Image is ready to capture.") {
+      uiColor = "green";
+    } else if (msg === "Please align your ID card in the frame.") {
+      uiColor = "white";
+    } else if (
+      msg === "Image is too dark. Please try again." ||
+      msg === "Image is too bright. Please try again."
+    ) {
+      uiColor = "red";
+    } else {
+      uiColor = "red"; 
+    }
+
+    setFrameColor(uiColor);
 
     // (6) Auto-capture พร้อมดีเลย์เล็กน้อย + คูลดาวน์
     const now = Date.now();
