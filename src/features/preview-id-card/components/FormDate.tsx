@@ -83,13 +83,13 @@ const FormDate = <TFieldValues extends FieldValues>({
                   variant="outline"
                   className={cn(
                     "w-full h-12 rounded-[8px] justify-between font-normal",
-                    "border-[#D1D1D1] hover:bg-white text-left text-sm", 
+                    "border-[#D1D1D1] hover:bg-white text-left text-sm",
                     hasError ? "border-[#E6353D]" : ""
                   )}
                 >
                   <span
                     className={cn(
-                      !selectedDate ? "text-[#888888]" : "text-[#212121]" 
+                      !selectedDate ? "text-[#888888]" : "text-[#212121]"
                     )}
                   >
                     {dateToThaiString(selectedDate) || placeholder || label}
@@ -110,10 +110,11 @@ const FormDate = <TFieldValues extends FieldValues>({
                     ...(maxDate ? [{ after: maxDate }] : []),
                   ]}
                   onSelect={(d) => {
-                    const picked = d && d > today ? today : d;
-                    field.onChange(dateToThaiString(picked ?? null));
+                    field.onChange(dateToThaiString(d ?? null));
                     setOpen(false);
                   }}
+                  fromYear={(minDate ?? new Date(1900, 0, 1)).getFullYear()}
+                  toYear={(maxDate ?? new Date(2100, 0, 1)).getFullYear()}
                 />
               </PopoverContent>
             </Popover>

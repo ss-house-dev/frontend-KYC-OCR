@@ -1,11 +1,10 @@
-// next.config.ts หรือ next.config.js
 import type { NextConfig } from "next";
 import dotenv from "dotenv";
 
 // โหลดไฟล์ .env (ค่า default = .env, .env.local, .env.production)
 dotenv.config();
 
-// ✅ log ทันทีตอน build
+// log ทันทีตอน build
 console.log("🔍 NEXT_PUBLIC_COMPANY_ID =", process.env.NEXT_PUBLIC_COMPANY_ID);
 
 /** @type {import('next').NextConfig} */

@@ -4,10 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import {
-  base64StringToFile,
-  calculateSimilarity,
-} from "@/lib/utils/index";
+import { base64StringToFile, scoreName } from "@/lib/utils/index";
 import FormIdCard from "../components/FormIdCard";
 import AlertPopUp from "@/components/AlertPopUp";
 import { idCardFormSchema, IdCardFormData } from "./../schemas/idcard";
@@ -89,7 +86,7 @@ export default function VerifyIdentityScreen() {
       expiryDateThai: d.expiryDateThai ?? "",
       address: d.address ?? "",
       titleThai: d.titleThai ?? "",
-      laserId: d.laserId ?? "", 
+      laserId: d.laserId ?? "",
     }),
     requiredFields: [
       "idNumber",
@@ -103,7 +100,7 @@ export default function VerifyIdentityScreen() {
       "issueDateThai",
       "expiryDateThai",
       "address",
-      "laserId", 
+      "laserId",
     ],
     onError: (err) => {
       console.error(err);
@@ -147,29 +144,37 @@ export default function VerifyIdentityScreen() {
     console.log("[VerifyIdentityScreen] Submitting form data:", data);
     console.log("[VerifyIdentityScreen] Original OCR data:", originalData);
 
-    const firstNameSimilarity = calculateSimilarity(
-      originalData.firstNameThai,
-      data.firstNameThai
-    );
-    const lastNameSimilarity = calculateSimilarity(
-      originalData.lastNameThai,
-      data.lastNameThai
-    );
-    const firstNameEngSimilarity = calculateSimilarity(
-      originalData.firstNameEng,
-      data.firstNameEng
-    );
-    const lastNameEngSimilarity = calculateSimilarity(
-      originalData.lastNameEng,
-      data.lastNameEng
-    );
+    const thFirst = scoreName(originalData.firstNameThai, data.firstNameThai);
+    const thLast = scoreName(originalData.lastNameThai, data.lastNameThai);
+    const enFirst = scoreName(originalData.firstNameEng, data.firstNameEng);
+    const enLast = scoreName(originalData.lastNameEng, data.lastNameEng);
 
-    const overallSimilarityThai =
-      (firstNameSimilarity + lastNameSimilarity) / 2;
-    const overallSimilarityEng =
-      (firstNameEngSimilarity + lastNameEngSimilarity) / 2;
+    // แนะนำให้วัดความยาวหลัง normalize เดียวกับ scoreName
+    const normLen = (s?: string) =>
+      (s ?? "")
+        .normalize("NFKC")
+        .trim()
+        .toLocaleLowerCase()
+        .replace(/\s+/g, " ").length;
 
-    if (overallSimilarityThai < 60 || overallSimilarityEng < 60) {
+    const thWeighted =
+      (thFirst * normLen(originalData.firstNameThai) +
+        thLast * normLen(originalData.lastNameThai)) /
+      (normLen(originalData.firstNameThai) +
+        normLen(originalData.lastNameThai) || 1);
+
+    const enWeighted =
+      (enFirst * normLen(originalData.firstNameEng) +
+        enLast * normLen(originalData.lastNameEng)) /
+      (normLen(originalData.firstNameEng) + normLen(originalData.lastNameEng) ||
+        1);
+
+    const LANG_MIN = 60;
+
+    const thaiPass = thWeighted >= LANG_MIN;
+    const engPass = enWeighted >= LANG_MIN;
+
+    if (!thaiPass || !engPass) {
       setShowDialog(true);
       return;
     }
