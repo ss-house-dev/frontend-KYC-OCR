@@ -31,10 +31,10 @@ const INSIDE_COVERAGE = 0.85;
 const GUIDE_SCALE = 0.42; // 🔧 ใช้ตอน fallback กำหนดสเกลกรอบกลางจอ (กรณีหา guide ไม่ได้)
 
 const FACE_BOX_FRAC = {
-  x: 0.08, // 8% จากซ้าย (ถ้าภาพคุณกลับด้าน ลองเปลี่ยนเป็น 0.62)
-  y: 0.16, // 16% จากบน
-  w: 0.36, // กว้าง ~36% ของการ์ด
-  h: 0.66, // สูง ~66% ของการ์ด
+  x: 1 - 0.216 - 0.08, // = 0.704  ชิดขวา
+  y: 1 - 0.396 - 0.16, // = 0.444  ชิดล่าง
+  w: 0.216,            // 40% smaller
+  h: 0.396,            // 40% smaller
 } as const;
 
 const CASCADE_FILE = "/haarcascade_frontalface_default.xml";
