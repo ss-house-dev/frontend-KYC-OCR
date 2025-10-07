@@ -8,7 +8,6 @@ import {
   DetectionProcessor,
   StepProcessor,
 } from "../utils/faceMesh";
-
 import { shouldCapture, captureToBlobURL } from "../utils/capture";
 import {
   MovementGroup,
@@ -24,14 +23,17 @@ import {
 } from "../utils/motion/HeadMotionTracker";
 import { FaceSubmit } from "../services/api-face";
 
-/* ===== Android detect ===== */
+/* ==========================
+ *        Platform flags
+ * ========================== */
 const isAndroid =
   typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 
-/* ===== Timeout ต่อขั้น ===== */
+/* ==========================
+ *     Step / Phase config
+ * ========================== */
 const STEP_TIMEOUT_MS = 30_000;
 
-/* ===== ลำดับเฟสมาตรฐานของเครื่อง ===== */
 const PHASE_ORDER: Phase[] = [
   "yaw_left",
   "yaw_right",
@@ -41,7 +43,9 @@ const PHASE_ORDER: Phase[] = [
   "mouth",
 ];
 
-/* ===== ค่าเริ่มต้นของ detection ===== */
+/* ==========================
+ *   Detection default value
+ * ========================== */
 const INITIAL_DET: DetectionResult = {
   landmarks: null,
   bbox: null,
@@ -56,6 +60,9 @@ export function useFaceMesh(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   canvasRef: React.RefObject<HTMLCanvasElement | null>
 ) {
+  /* --------------------------------------
+   *          UI / global state
+   * -------------------------------------- */
   const [state, _setState] = useState<FaceScanState>({
     step: 1,
     phase: "-",
@@ -63,7 +70,6 @@ export function useFaceMesh(
     isReady: false,
   });
 
-  /* ===== mount guard & safe setters ===== */
   const mountedRef = useRef(false);
   useEffect(() => {
     mountedRef.current = true;
@@ -80,7 +86,6 @@ export function useFaceMesh(
     []
   );
 
-  /* ===== throttle UI updates ===== */
   const lastUIAtRef = useRef(0);
   const UI_INTERVAL_MS = 150;
   function setUIThrottled(patch: Partial<FaceScanState>) {
@@ -101,38 +106,33 @@ export function useFaceMesh(
     failedRef.current = failed;
   }, [failed]);
 
-  const [detectionResult, __setDetectionResult] =
-    useState<DetectionResult>(INITIAL_DET);
-  const detectionResultRef = useRef<DetectionResult>(INITIAL_DET);
-  const lastDetUIRef = useRef(0);
-  function updateDetectionResultUI(det: DetectionResult) {
+  // ผลตรวจหลายใบหน้า (สำหรับ overlay/validator)
+  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>([]);
+  const lastDetListUIRef = useRef(0);
+  function setDetectionsThrottled(list: DetectionResult[]) {
     const now = performance.now();
-    const criticalChange =
-      (detectionResultRef.current.bbox == null && det.bbox != null) ||
-      (detectionResultRef.current.bbox != null && det.bbox == null);
-    if (now - lastDetUIRef.current > 200 || criticalChange) {
+    if (now - lastDetListUIRef.current > 150) {
       if (!mountedRef.current) return;
-      __setDetectionResult(det);
-      lastDetUIRef.current = now;
+      setDetectionResults(list);
+      lastDetListUIRef.current = now;
     }
-    detectionResultRef.current = det;
   }
 
-  // จบครบ 2 กลุ่ม -> ให้ container พาไปหน้า face-verification
   const [done, __setDone] = useState(false);
   const setDoneSafe = useCallback((v: boolean) => {
     if (!mountedRef.current) return;
     __setDone(v);
   }, []);
 
-  /* ===== session refs ===== */
+  /* --------------------------------------
+   *      Session / pipelines handles
+   * -------------------------------------- */
   const faceMeshRef = useRef<any | null>(null);
   const cameraRef = useRef<any | null>(null);
   const processingRef = useRef(false);
   const sessionIdRef = useRef(0);
   const closingRef = useRef(false);
 
-  /* ===== managers ===== */
   const managers = useRef<{
     state: FaceMeshState;
     ema: EMAManager;
@@ -162,7 +162,9 @@ export function useFaceMesh(
     initManagers();
   }, [initManagers]);
 
-  /* ===== การสุ่ม movement 2 กลุ่ม ===== */
+  /* --------------------------------------
+   *      Movement / Phase selections
+   * -------------------------------------- */
   const selectedGroupsRef = useRef<MovementGroup[] | null>(null);
   const allowedPhasesRef = useRef<Phase[]>([]);
   const completedGroupsRef = useRef<Set<MovementGroup>>(new Set());
@@ -182,37 +184,41 @@ export function useFaceMesh(
     _setCompletedGroups(v);
   }, []);
 
-  /* ===== ตัวจับเวลา/สถานะขั้น ===== */
+  /* --------------------------------------
+   *           Step timers/guards
+   * -------------------------------------- */
   const stepStartAtRef = useRef<number | null>(null);
   const prevStepRef = useRef<number>(0);
 
-  /* ===== แคปภาพ ===== */
+  /* --------------------------------------
+   *          Capture throttling
+   * -------------------------------------- */
   const lastCapAtRef = useRef<Partial<Record<MovementGroup, number>>>({});
   const CAP_INTERVAL_MS = isAndroid ? 800 : 400;
   const CAP_LIMIT_PER_GROUP = 3;
 
-  /* ===== FPS EMA + auto degrade ===== */
+  /* --------------------------------------
+   *          FPS / Performance knobs
+   * -------------------------------------- */
   const fpsEmaRef = useRef<number>(0);
   const lastFpsUIRef = useRef(0);
+  const frameGateMsRef = useRef<number>(isAndroid ? 45 : 28);
+  const lastProcessAtRef = useRef<number>(0);
+
   function ema(next: number, prev: number, alpha = 0.2) {
     return prev === 0 ? next : alpha * next + (1 - alpha) * prev;
   }
 
-  // ดีเลย์ตอนเปลี่ยนเฟส
   const phaseDelayTimerRef = useRef<number | null>(null);
   const isPhaseDelayActiveRef = useRef(false);
-
   function clearPhaseDelayTimer() {
     if (phaseDelayTimerRef.current != null) {
       clearTimeout(phaseDelayTimerRef.current);
       phaseDelayTimerRef.current = null;
     }
   }
-
   function schedulePhaseAdvance(nextPhase: Phase, delayMs = 0) {
-    // ถ้ามีดีเลย์ค้างอยู่ ไม่ต้องตั้งซ้ำ
     if (isPhaseDelayActiveRef.current) return;
-
     if (delayMs <= 0) {
       managers.current.state.subPhase = nextPhase;
       return;
@@ -226,29 +232,25 @@ export function useFaceMesh(
     }, delayMs);
   }
 
-  /** หาพิกัดปลายจมูก (px) โดยอิงการ mirror ให้ตรงกับที่ผู้ใช้เห็น */
+  /** หาพิกัดปลายจมูก (mirror ให้ตรงกับภาพที่ user เห็น) */
   function getNosePxFromDet(
     det: DetectionResult,
     canvasW: number,
     canvasH: number,
     mirrored: boolean
   ): { x: number; y: number } | null {
-    const noseIdx = 1; // Mediapipe FaceMesh nose tip
+    const noseIdx = 1;
     const lm = det.landmarks as LM[] | null;
     if (!lm || !lm[noseIdx]) return null;
     const nx = lm[noseIdx].x * canvasW;
     const ny = lm[noseIdx].y * canvasH;
-    return {
-      x: mirrored ? canvasW - nx : nx,
-      y: ny,
-    };
+    return { x: mirrored ? canvasW - nx : nx, y: ny };
   }
 
-  // ✅ Tracker (ย้ายมาใช้ใน pipeline หลัก)
+  // Tracker ทิศทางศีรษะ (ใช้เฉพาะ step2)
   const trackerRef = useRef<HeadMotionTracker | null>(null);
   const passCooldownRef = useRef(0);
   const PASS_COOLDOWN_MS = 800;
-
   useEffect(() => {
     trackerRef.current = new HeadMotionTracker({
       emaAlphaPos: 0.25,
@@ -257,7 +259,7 @@ export function useFaceMesh(
       targetExit: 0.04,
       minHoldMs: 450,
       dirTol: 0.02,
-      swapYawLR: false, // ตั้งตามที่ใช้อยู่
+      swapYawLR: false,
     });
     return () => {
       trackerRef.current = null;
@@ -271,29 +273,26 @@ export function useFaceMesh(
     const cur = managers.current.state.subPhase as Phase;
     const idx = allowed.indexOf(cur);
 
-    // ถ้ากำลังรอดีเลย์อยู่ ไม่ให้เปลี่ยนเฟสซ้ำ
     if (isPhaseDelayActiveRef.current) return;
 
-    // ถ้าปัจจุบันยังไม่อยู่ใน allowed ให้ไปตัวแรก
     if (idx === -1) {
       managers.current.state.subPhase = allowed[0];
       return;
     }
 
-    // ยังมีตัวถัดไป
     if (idx < allowed.length - 1) {
       const next = allowed[idx + 1];
-
-      // ✅ กำหนดเงื่อนไขดีเลย์: หลังผ่าน yaw_left ให้รอ 2 วิ ก่อนจะไป yaw_right
       if (cur === "yaw_left" && next === "yaw_right") {
-        schedulePhaseAdvance(next, 2000); // 2000 ms
+        schedulePhaseAdvance(next, 2000);
       } else {
         schedulePhaseAdvance(next, 0);
       }
     }
-    // ถ้าอยู่ตัวท้ายแล้ว ปล่อยให้ logic จบกลุ่มจัดการต่อไป
   }
 
+  /* --------------------------------------
+   *        Core per-frame processing
+   * -------------------------------------- */
   const processDetectionResults = useCallback(
     (results: any) => {
       if (!mountedRef.current) return;
@@ -304,18 +303,18 @@ export function useFaceMesh(
       const canvas = canvasRef.current;
       const video = videoRef.current;
 
-      // FPS
+      // === Calculate & show FPS (EMA) ===
       const fps = managers.current.detector.calculateFPS();
       if (fps !== null) {
         const now = performance.now();
         fpsEmaRef.current = ema(fps, fpsEmaRef.current);
-        (window as any).__fpsEma = fpsEmaRef.current;
 
         if (now - lastFpsUIRef.current > 500) {
           setUIThrottled({ fps: Math.round(fpsEmaRef.current) });
           lastFpsUIRef.current = now;
         }
 
+        // Adaptive knobs
         if (fpsEmaRef.current < 14) {
           faceMeshRef.current?.setOptions({
             refineLandmarks: false,
@@ -327,14 +326,23 @@ export function useFaceMesh(
         ) {
           faceMeshRef.current?.setOptions({ refineLandmarks: true });
         }
+
+        if (fpsEmaRef.current < 12) {
+          frameGateMsRef.current = 70;
+        } else if (fpsEmaRef.current < 18) {
+          frameGateMsRef.current = 55;
+        } else if (fpsEmaRef.current < 24) {
+          frameGateMsRef.current = 40;
+        } else {
+          frameGateMsRef.current = isAndroid ? 35 : 25;
+        }
       }
 
-      // === Normalize landmarks -> LM[][] ===
+      // === Landmarks normalize ===
       const faceLms: LM[][] = Array.isArray(results?.multiFaceLandmarks)
         ? (results.multiFaceLandmarks as LM[][])
         : [];
 
-      // === Detection (array) ===
       const dets: DetectionResult[] =
         faceLms.length > 0
           ? managers.current.detector.processLandmarks(faceLms, canvas)
@@ -344,21 +352,22 @@ export function useFaceMesh(
       if (dets.length === 0) {
         managers.current.ema.boxEma.reset();
       }
-      updateDetectionResultUI(firstDet);
 
-      // === Step process ===
+      // Overlay/Step1 ใช้ผลทั้งชุด
+      setDetectionsThrottled(dets);
+
+      // === Step processing ===
       const { currentStep } = managers.current.state;
       if (currentStep === 1) {
         managers.current.stepProcessor.processStep1(
-          [firstDet],
+          dets,
           canvas.width,
           canvas.height
         );
       } else if (currentStep === 2) {
-        // เดิมยังใช้ StepProcessor เพื่อ logic อื่น ๆ ของ Step2
         managers.current.stepProcessor.processStep2(firstDet);
 
-        // ✅ ใหม่: ใช้ HeadMotionTracker ตัดสิน pass และสั่งเปลี่ยนเฟส
+        // ใช้ HeadMotionTracker เพื่อตัดสิน pass/advance phase
         const subPhase = managers.current.state.subPhase as HeadPhase;
         if (subPhase && firstDet.landmarks) {
           const nose = getNosePxFromDet(
@@ -397,10 +406,11 @@ export function useFaceMesh(
         }
       }
 
-      // ==== เปลี่ยนขั้น / สุ่ม movement / เริ่มจับเวลา ====
+      // === เปลี่ยน step → เตรียมค่าต่าง ๆ ===
       const stepNow = managers.current.state.currentStep;
       if (prevStepRef.current !== stepNow) {
         prevStepRef.current = stepNow;
+
         if (stepNow === 1 || stepNow === 2) {
           stepStartAtRef.current = performance.now();
         } else {
@@ -432,7 +442,7 @@ export function useFaceMesh(
         }
       }
 
-      // Timeout ต่อขั้น
+      // === Step timeout ===
       if ((stepNow === 1 || stepNow === 2) && stepStartAtRef.current != null) {
         const elapsed = performance.now() - stepStartAtRef.current;
         if (elapsed >= STEP_TIMEOUT_MS) {
@@ -441,14 +451,14 @@ export function useFaceMesh(
         }
       }
 
-      // ===== Capture (ทั้งจอ) =====
+      // === Capture sample (ครั้งแรกของ step2) ===
       if (stepNow >= 2 && captureStore.get().step1Sample == null) {
         captureToBlobURL(video, { quality: 0.75 }).then((url) => {
           if (url) captureStore.setStep1Sample(url);
         });
       }
 
-      // Step2 → แคปเฉพาะกลุ่มที่ถูกสุ่ม
+      // === Capture ต่อกลุ่ม (เฉพาะ step2) ===
       if (stepNow === 2 && firstDet.bbox && selectedGroupsRef.current) {
         const phaseNow = managers.current.state.subPhase as Phase;
         const grp = groupOfPhase(phaseNow);
@@ -466,7 +476,7 @@ export function useFaceMesh(
         }
       }
 
-      // จำกัดเฟสให้อยู่ใน allowed
+      // === Guard: จำกัด phase เฉพาะ allowed ===
       if (stepNow === 2 && allowedPhasesRef.current.length > 0) {
         const phaseNow = managers.current.state.subPhase as Phase;
         if (!allowedPhasesRef.current.includes(phaseNow)) {
@@ -474,7 +484,7 @@ export function useFaceMesh(
         }
       }
 
-      // mark จบกลุ่มเมื่อเปลี่ยนเฟสจริง
+      // === เมื่อ “เปลี่ยนเฟสจริง” เช็คว่าจบกลุ่มหรือยัง ===
       if (stepNow === 2 && allowedPhasesRef.current.length > 0) {
         const cur = managers.current.state.subPhase as Phase;
         const prev = prevPhaseRef.current;
@@ -501,7 +511,6 @@ export function useFaceMesh(
         setDoneSafe(true);
       }
 
-      // อัปเดต UI step/phase แบบ throttle
       setUIThrottled({
         step: managers.current.state.currentStep,
         phase:
@@ -522,60 +531,49 @@ export function useFaceMesh(
     ]
   );
 
-const { data: session, status } = useSession();
-const kycRequestId = session?.kycRequestId;
+  /* --------------------------------------
+   *            Auto-submit on done
+   * -------------------------------------- */
+  const { data: session } = useSession();
+  const kycRequestId = session?.kycRequestId;
 
-useEffect(() => {
-  async function sendIfReady() {
-    const state = captureStore.get();
-    const allMovements = Object.values(state.movements).flat(); 
-    
-    if (!kycRequestId || allMovements.length < 5 || !state.step1Sample) {
-      console.log("⏸️ Waiting for all files...");
-      return;
+  useEffect(() => {
+    async function sendIfReady() {
+      const st = captureStore.get();
+      const allMovements = Object.values(st.movements).flat();
+
+      if (!kycRequestId || allMovements.length < 5 || !st.step1Sample) {
+        return;
+      }
+
+      async function urlToFile(url: string, filename: string): Promise<File> {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new File([blob], filename, { type: blob.type });
+      }
+
+      const files = await Promise.all(
+        allMovements.map((url, i) => urlToFile(url, `movement_${i}.jpg`))
+      );
+      const file = await urlToFile(st.step1Sample, "step1Sample.jpg");
+
+      try {
+        await FaceSubmit({
+          files,
+          file,
+          kycRequestId,
+          onProgress: () => {},
+        });
+      } catch (err) {
+        console.error("❌ Upload error:", err);
+      }
     }
+    sendIfReady();
+  }, [done, kycRequestId]);
 
-    // แปลง URL → File
-    async function urlToFile(url: string, filename: string): Promise<File> {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      return new File([blob], filename, { type: blob.type });
-    }
-
-    const files = await Promise.all(
-      allMovements.map((url, i) => urlToFile(url, `movement_${i}.jpg`))
-    );
-    const file = await urlToFile(state.step1Sample, "step1Sample.jpg");
-
-    console.log("✅ Ready to submit", files.length, "files + 1 sample file");
-
-    try {
-      const res = await FaceSubmit({
-        files,
-        file,
-        kycRequestId,
-        onProgress: (pct) => console.log("Upload progress:", pct, "%"),
-      });
-      console.log("✅ Face files submitted:", res);
-    } catch (err) {
-      console.error("❌ Upload error:", err);
-    }
-  }
-
-  sendIfReady();
-}, [done, kycRequestId]);
-
-
-useEffect(() => {
-  console.log("=== SESSION DEBUG ===");
-  console.log("Session status:", status);
-  console.log("Session data:", session);
-  console.log("kycRequestId:", kycRequestId);
-  console.log("==================");
-}, [session, kycRequestId, status]);
-
-
-  // ปิด session ปลอดภัย/idempotent
+  /* --------------------------------------
+   *        Stop / restart session
+   * -------------------------------------- */
   const stopCurrentSession = useCallback(async () => {
     if (closingRef.current) return;
     closingRef.current = true;
@@ -604,7 +602,9 @@ useEffect(() => {
     }
   }, []);
 
-  // Setup camera + FaceMesh
+  /* --------------------------------------
+   *      Camera + FaceMesh bootstrap
+   * -------------------------------------- */
   const setupCamera = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const mySessionId = ++sessionIdRef.current;
@@ -622,7 +622,7 @@ useEffect(() => {
       faceMeshRef.current = faceMesh;
 
       faceMesh.setOptions({
-        maxNumFaces: 1,
+        maxNumFaces: 2,
         refineLandmarks: false,
         selfieMode: CONFIG.CAMERA.MIRRORED_INPUT,
         minDetectionConfidence: 0.5,
@@ -635,11 +635,14 @@ useEffect(() => {
         processDetectionResults(res);
       });
 
-      const targetW = isAndroid ? 640 : 1280;
+      const targetW = isAndroid ? 480 : 1280;
       const targetH = Math.round((targetW * 9) / 16);
 
       const cam = new Camera(videoRef.current!, {
         onFrame: async () => {
+          const now = performance.now();
+          if (now - lastProcessAtRef.current < frameGateMsRef.current) return;
+
           if (sessionIdRef.current !== mySessionId) return;
           if (!mountedRef.current) return;
           if (failedRef.current) return;
@@ -653,6 +656,7 @@ useEffect(() => {
             if (!fm) return;
             await fm.send({ image: videoRef.current });
           } finally {
+            lastProcessAtRef.current = performance.now();
             processingRef.current = false;
           }
         },
@@ -662,7 +666,42 @@ useEffect(() => {
       cameraRef.current = cam;
 
       await cam.start();
+
+      // apply constraints (best-effort)
+      try {
+        const stream = (videoRef.current as HTMLVideoElement)
+          .srcObject as MediaStream;
+        const track = stream?.getVideoTracks?.()[0];
+        await track?.applyConstraints?.({
+          width: { ideal: targetW, max: targetW },
+          height: { ideal: targetH, max: targetH },
+          frameRate: { ideal: 24, max: 30 },
+          facingMode: "user",
+        });
+      } catch {}
+
       setStateSafe((prev) => ({ ...prev, isReady: true }));
+
+      // Android: auto-upscale ถ้า FPS ดี
+      if (isAndroid) {
+        setTimeout(async () => {
+          if (!mountedRef.current || sessionIdRef.current !== mySessionId)
+            return;
+          const fpsNow = fpsEmaRef.current;
+          if (fpsNow > 24) {
+            try {
+              const stream = (videoRef.current as HTMLVideoElement)
+                .srcObject as MediaStream;
+              const track = stream?.getVideoTracks?.()[0];
+              await track?.applyConstraints?.({
+                width: { ideal: 640, max: 640 },
+                height: { ideal: 360, max: 360 },
+                frameRate: { ideal: 24, max: 30 },
+              });
+            } catch {}
+          }
+        }, 2500);
+      }
 
       return () => {
         void stopCurrentSession();
@@ -671,15 +710,11 @@ useEffect(() => {
       console.error("Camera setup error:", error);
       throw error;
     }
-  }, [
-    processDetectionResults,
-    setStateSafe,
-    stopCurrentSession,
-    videoRef,
-    canvasRef,
-  ]);
+  }, [processDetectionResults, setStateSafe, stopCurrentSession, videoRef, canvasRef]);
 
-  // visibilitychange: หยุด/เริ่มกล้องจริง ๆ ลดงานพื้นหลัง
+  /* --------------------------------------
+   *      Visibility → หยุด/เริ่มกล้องจริง
+   * -------------------------------------- */
   useEffect(() => {
     function onVis() {
       try {
@@ -694,14 +729,15 @@ useEffect(() => {
     return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
 
-  // Try again → กลับไปเริ่มใหม่จาก Setup เสมอ
+  /* --------------------------------------
+   *         Public restart/reset APIs
+   * -------------------------------------- */
   const restartFromSetup = useCallback(async () => {
     await stopCurrentSession();
 
     initManagers();
     setFailed(false);
     setDoneSafe(false);
-    updateDetectionResultUI({ ...INITIAL_DET });
     setStateSafe(() => ({ step: 1, phase: "-", fps: 0, isReady: false }));
 
     selectedGroupsRef.current = null;
@@ -717,6 +753,10 @@ useEffect(() => {
     lastCapAtRef.current = {};
     captureStore.clear();
     clearPhaseDelayTimer();
+
+    fpsEmaRef.current = 0;
+    frameGateMsRef.current = isAndroid ? 45 : 28;
+    lastProcessAtRef.current = 0;
 
     try {
       await setupCamera();
@@ -741,9 +781,12 @@ useEffect(() => {
     passCooldownRef.current = 0;
   }, []);
 
+  /* --------------------------------------
+   *            Returned API
+   * -------------------------------------- */
   return {
     state,
-    detectionResult,
+    detectionResults,
     setupCamera,
     resetStep2,
 

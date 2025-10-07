@@ -20,7 +20,7 @@ export default function ScanFaceSection() {
 
   const {
     state,
-    detectionResult,
+    detectionResults,
     setupCamera,
     failed,
     restartFromSetup,
@@ -49,7 +49,7 @@ export default function ScanFaceSection() {
   useEffect(() => {
     const pattern = [100, 50, 100, 200];
 
-    if (!detectionResult?.bbox) {
+    if (!detectionResults || detectionResults.length === 0) {
       setFrameSrc("/scan-face/frame-face-red.svg");
       setStep1Valid(false);
       if ("vibrate" in navigator) navigator.vibrate(pattern);
@@ -57,7 +57,7 @@ export default function ScanFaceSection() {
     }
 
     const validation = Step1Validator.validateStep1(
-      [detectionResult],
+      detectionResults,
       CONFIG.DISPLAY.WIDTH,
       CONFIG.DISPLAY.HEIGHT
     );
@@ -72,7 +72,7 @@ export default function ScanFaceSection() {
     if (!validation.isValid && "vibrate" in navigator) {
       navigator.vibrate(pattern);
     }
-  }, [detectionResult]);
+  }, [detectionResults]);
 
   useEffect(() => {
     if (done) {
@@ -80,7 +80,7 @@ export default function ScanFaceSection() {
     }
   }, [done, router]);
 
-  const detectionResults = detectionResult ? [detectionResult] : [];
+  const detectionResult = detectionResults ? [detectionResults] : [];
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
@@ -101,7 +101,7 @@ export default function ScanFaceSection() {
         <VideoCanvas
           canvasRef={canvasRef}
           state={state}
-          detectionResults={detectionResults}
+          detectionResults={detectionResults} 
           videoElement={videoRef.current || undefined}
         />
 

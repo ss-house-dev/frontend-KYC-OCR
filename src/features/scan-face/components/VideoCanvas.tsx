@@ -1,4 +1,3 @@
-// components/VideoCanvas.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -16,7 +15,7 @@ import {
 
 const SHOW_OVERLAY = true; // true = วาดกรอบ, ข้อความ, landmarks
 
-/** 👻 ทำให้ overlay วาดจริงแต่โปร่งใส (ยังคงคำนวณ/เรียกฟังก์ชันวาดครบ) */
+/** ทำให้ overlay วาดจริงแต่โปร่งใส (ยังคงคำนวณ/เรียกฟังก์ชันวาดครบ) */
 const OVERLAY_VISUAL_ALPHA = 0; // 0 = มองไม่เห็น, 1 = ปกติ
 function withOverlayAlpha(ctx: CanvasRenderingContext2D, draw: () => void) {
   if (!SHOW_OVERLAY) return;
