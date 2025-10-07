@@ -1,5 +1,3 @@
-// utils/motion/HeadMotionTracker.ts
-//
 // ตรวจจับการหันศีรษะ (ซ้าย/ขวา/ขึ้น/ลง) ด้วย metric nose↔center + EMA + hysteresis + hold
 // รองรับ swapYawLR เพื่อสลับความหมายซ้าย/ขวาเมื่อจำเป็น
 
@@ -100,20 +98,24 @@ export class HeadMotionTracker {
       case "yaw_right": {
         axis = "x";
         raw = dxEma;
+
+        // ระยะ/สัดส่วนเพื่อใช้กับเกณฑ์เข้า/ออกเหมือนเดิม
         metricPx = Math.abs(dxEma);
         metricNorm = Math.min(1, Math.abs(dxEma) / halfW);
 
-        const wantLeft = phase === "yaw_left";
-        const swapped = this.cfg.swapYawLR ? !wantLeft : wantLeft;
+        // 1) สิ่งที่ "ต้องการ" เป็นเครื่องหมาย: left=-1, right=+1
+        //    ถ้าต้อง swapYawLR ก็กลับเครื่องหมาย
+        const baseSign = phase === "yaw_left" ? +1 : -1;
+        const desiredSign = (this.cfg.swapYawLR ? -1 : 1) * baseSign;
 
-        if (swapped) {
-          // ต้องการ "right" ถ้า phase=left และ "left" ถ้า phase=right
-          dirNeed = wantLeft ? "right" : "left";
-          dirNow = dxEma > tolX ? "right" : dxEma < -tolX ? "left" : "center";
-        } else {
-          dirNeed = wantLeft ? "left" : "right";
-          dirNow = dxEma < -tolX ? "left" : dxEma > tolX ? "right" : "center";
-        }
+        // 2) ตอนนี้อยู่ทิศไหน: ใช้ tolX เป็น dead-zone
+        const dirNowSign = Math.abs(dxEma) <= tolX ? 0 : dxEma > 0 ? +1 : -1;
+
+        // 3) map sign -> คำ
+        dirNeed = desiredSign < 0 ? "left" : "right";
+        dirNow =
+          dirNowSign === 0 ? "center" : dirNowSign < 0 ? "left" : "right";
+
         break;
       }
 
