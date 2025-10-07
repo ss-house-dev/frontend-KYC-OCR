@@ -9,12 +9,12 @@ interface AlertPopUpProps {
   message: string;
   onRetry: () => void;
   imageSrc?: string;
-  redirectTo?: string; 
+  redirectTo?: string;
 }
 
 const AlertPopUp: React.FC<AlertPopUpProps> = ({
   isOpen,
-  title ,
+  title,
   message,
   onRetry,
   imageSrc = "/scan-face/alert.png",
@@ -24,11 +24,12 @@ const AlertPopUp: React.FC<AlertPopUpProps> = ({
 
   if (!isOpen) return null;
 
-    const handleRetry = () => {
+  const handleRetry = () => {
+    onRetry?.(); // ปิด popup
     if (redirectTo) {
-      router.push(redirectTo); 
-    } else {
-      onRetry(); 
+      router.replace(
+        `${redirectTo}?t=${Date.now()}` 
+      );
     }
   };
 
