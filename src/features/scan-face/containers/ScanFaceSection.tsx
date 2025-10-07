@@ -1,10 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
-const FailModal = dynamic(() => import("../components/FailModal"), {
-  ssr: false,
-});
-
 import React, { useRef, useEffect, useState } from "react";
 import { useFaceMesh } from "../hooks/useFaceMesh";
 import { VideoCanvas } from "../components/VideoCanvas";
@@ -16,6 +11,7 @@ import { Step1Validator } from "../utils/validators/step1Validator";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import AlertPopUp from "@/components/AlertPopUp"; 
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -24,7 +20,7 @@ export default function ScanFaceSection() {
 
   const {
     state,
-    detectionResult,
+    detectionResults,
     setupCamera,
     failed,
     restartFromSetup,
@@ -53,17 +49,15 @@ export default function ScanFaceSection() {
   useEffect(() => {
     const pattern = [100, 50, 100, 200];
 
-    // ไม่มีหน้า → bbox เป็น null
-    if (!detectionResult?.bbox) {
+    if (!detectionResults || detectionResults.length === 0) {
       setFrameSrc("/scan-face/frame-face-red.svg");
       setStep1Valid(false);
       if ("vibrate" in navigator) navigator.vibrate(pattern);
       return;
     }
 
-    // ⬅️ Step1Validator ยังรับ array → ห่อเป็น [detectionResult]
     const validation = Step1Validator.validateStep1(
-      [detectionResult],
+      detectionResults,
       CONFIG.DISPLAY.WIDTH,
       CONFIG.DISPLAY.HEIGHT
     );
@@ -78,7 +72,7 @@ export default function ScanFaceSection() {
     if (!validation.isValid && "vibrate" in navigator) {
       navigator.vibrate(pattern);
     }
-  }, [detectionResult]);
+  }, [detectionResults]);
 
   useEffect(() => {
     if (done) {
@@ -86,7 +80,7 @@ export default function ScanFaceSection() {
     }
   }, [done, router]);
 
-  const detectionResults = detectionResult ? [detectionResult] : [];
+  const detectionResult = detectionResults ? [detectionResults] : [];
 
   return (
     <div className="relative w-full h-full min-h-screen bg-black">
@@ -98,7 +92,6 @@ export default function ScanFaceSection() {
              focus-visible:outline-offset-2 focus-visible:outline-[#2152b6]"
         style={{ top: "max(env(safe-area-inset-top, 0px), 1rem)" }}
       >
-        {/* Icon Back */}
         <ChevronLeft />
         <span className="sr-only">Back</span>
       </Link>
@@ -108,7 +101,7 @@ export default function ScanFaceSection() {
         <VideoCanvas
           canvasRef={canvasRef}
           state={state}
-          detectionResults={detectionResults}
+          detectionResults={detectionResults} 
           videoElement={videoRef.current || undefined}
         />
 
@@ -130,7 +123,13 @@ export default function ScanFaceSection() {
           visible={true}
         />
 
-        <FailModal open={failed} onRetry={restartFromSetup} />
+        <AlertPopUp
+          isOpen={failed}
+          title="Scan Failed"
+          message="Face scan is failed, please try again"
+          onRetry={restartFromSetup}
+          imageSrc="/popup/error-scan-face.png"
+        />
       </div>
     </div>
   );
