@@ -30,6 +30,13 @@ const STEADY_TOL_PX = 12;
 const INSIDE_COVERAGE = 0.85;
 const GUIDE_SCALE = 0.42; // 🔧 ใช้ตอน fallback กำหนดสเกลกรอบกลางจอ (กรณีหา guide ไม่ได้)
 
+const FACE_BOX_FRAC = {
+  x: 0.08, // 8% จากซ้าย (ถ้าภาพคุณกลับด้าน ลองเปลี่ยนเป็น 0.62)
+  y: 0.16, // 16% จากบน
+  w: 0.36, // กว้าง ~36% ของการ์ด
+  h: 0.66, // สูง ~66% ของการ์ด
+} as const;
+
 const CASCADE_FILE = "/haarcascade_frontalface_default.xml";
 const CAPTURE_COOLDOWN_MS = 1200;
 
@@ -516,7 +523,7 @@ export default function CameraDetectCard() {
     ) {
       uiColor = "red";
     } else {
-      uiColor = "red"; 
+      uiColor = "red";
     }
 
     setFrameColor(uiColor);
@@ -550,33 +557,95 @@ export default function CameraDetectCard() {
     full.height = videoEl.videoHeight;
     full.getContext("2d")!.drawImage(videoEl, 0, 0, full.width, full.height);
 
-    // ===== NEW: ครอป "ใบหน้า" ถ้ามี =====
+    // ===== A) DETECTED FACE: ครอปจากผลตรวจจับ (เดิม) =====
+    let faceCropped = false;
     if (faceRectRef.current) {
       const face = faceRectRef.current;
 
-      // เผื่อขอบเล็กน้อย (15%) ให้ได้บริบทหัว/ไหล่สวยขึ้น
+      // ขยาย margin รอบหน้าเล็กน้อย
       const m = Math.round(Math.max(face.w, face.h) * 0.15);
-      const sx = Math.max(0, face.x - m);
-      const sy = Math.max(0, face.y - m);
-      const sw = Math.min(full.width - sx, face.w + m * 2);
-      const sh = Math.min(full.height - sy, face.h + m * 2);
+      const sx = face.x - m;
+      const sy = face.y - m;
+      const sw = face.w + m * 2;
+      const sh = face.h + m * 2;
 
-      if (sw > 4 && sh > 4) {
+      const bounded = clampRectToBounds(
+        sx,
+        sy,
+        sw,
+        sh,
+        full.width,
+        full.height
+      );
+      if (bounded.w > 4 && bounded.h > 4) {
         const faceCv = document.createElement("canvas");
-        faceCv.width = sw;
-        faceCv.height = sh;
-        faceCv.getContext("2d")!.drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
+        faceCv.width = bounded.w;
+        faceCv.height = bounded.h;
+        faceCv
+          .getContext("2d")!
+          .drawImage(
+            full,
+            bounded.x,
+            bounded.y,
+            bounded.w,
+            bounded.h,
+            0,
+            0,
+            bounded.w,
+            bounded.h
+          );
         const faceData = faceCv.toDataURL("image/jpeg", 0.92);
         sessionStorage.setItem("capturedFaceImage", faceData);
-        sessionStorage.setItem(
-          "capturedFaceRect",
-          JSON.stringify(faceRectRef.current)
-        );
+        sessionStorage.setItem("capturedFaceRect", JSON.stringify(bounded));
+        faceCropped = true;
       }
-    } else {
-      // ถ้าอยากรู้ว่าไม่มีหน้า ก็เก็บ flag ได้
-      sessionStorage.removeItem("capturedFaceImage");
-      sessionStorage.removeItem("capturedFaceRect");
+    }
+
+    // ===== B) FALLBACK: ไม่พบใบหน้า → ครอปจากสัดส่วนบน "การ์ด (guide)" =====
+    if (!faceCropped && guide) {
+      // คำนวณกล่องใบหน้าในพิกัดเต็มเฟรม โดยอิงจากกรอบการ์ด (guide)
+      const fx = Math.round(guide.x + guide.w * FACE_BOX_FRAC.x);
+      const fy = Math.round(guide.y + guide.h * FACE_BOX_FRAC.y);
+      const fw = Math.round(guide.w * FACE_BOX_FRAC.w);
+      const fh = Math.round(guide.h * FACE_BOX_FRAC.h);
+
+      // ขยาย margin อีกนิดเพื่อให้ครอบหัว-ไหล่
+      const margin = Math.round(Math.max(fw, fh) * 0.08);
+      const bounded = clampRectToBounds(
+        fx - margin,
+        fy - margin,
+        fw + margin * 2,
+        fh + margin * 2,
+        full.width,
+        full.height
+      );
+
+      if (bounded.w > 4 && bounded.h > 4) {
+        const faceCv = document.createElement("canvas");
+        faceCv.width = bounded.w;
+        faceCv.height = bounded.h;
+        faceCv
+          .getContext("2d")!
+          .drawImage(
+            full,
+            bounded.x,
+            bounded.y,
+            bounded.w,
+            bounded.h,
+            0,
+            0,
+            bounded.w,
+            bounded.h
+          );
+        const faceData = faceCv.toDataURL("image/jpeg", 0.92);
+        sessionStorage.setItem("capturedFaceImage", faceData);
+        sessionStorage.setItem("capturedFaceRect", JSON.stringify(bounded));
+        // (ไม่มี flag แยกก็ได้—downstream จะรู้เพียงว่าเรามีภาพหน้าแล้ว)
+      } else {
+        // กรณีผิดปกติจริงๆ ก็ล้างทิ้ง
+        sessionStorage.removeItem("capturedFaceImage");
+        sessionStorage.removeItem("capturedFaceRect");
+      }
     }
 
     // ===== เดิม: ครอป "บัตร" ด้วย guide =====
@@ -810,6 +879,26 @@ export default function CameraDetectCard() {
 
     captureAndRoute(v, g!);
   }, []);
+
+  function clampRectToBounds(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    maxW: number,
+    maxH: number
+  ) {
+    const sx = Math.max(0, Math.min(x, maxW - 1));
+    const sy = Math.max(0, Math.min(y, maxH - 1));
+    const ex = Math.max(sx + 1, Math.min(x + w, maxW));
+    const ey = Math.max(sy + 1, Math.min(y + h, maxH));
+    return {
+      x: Math.round(sx),
+      y: Math.round(sy),
+      w: Math.round(ex - sx),
+      h: Math.round(ey - sy),
+    };
+  }
 
   /** ============================== UI ============================== */
   return (

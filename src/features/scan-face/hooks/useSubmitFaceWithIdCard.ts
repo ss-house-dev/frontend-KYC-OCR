@@ -1,11 +1,22 @@
 import { useState, useCallback } from "react";
 import { captureStore } from "../state/captureStore";
-import { getFileFromStorage } from "@/services/imagestorageService";
-import { loadFormFromCookie } from "@/lib/utils/index";
 import { FaceSubmit } from "../services/api-face";
-import { cropFaceFromIdCard } from "@/lib/utils/index";
 
-const COOKIE_IMAGE_KEY = "idcard_uploaded_objectName";
+// 🔑 key ใน sessionStorage ที่ตั้งไว้ตอนสแกนบัตร
+const SESSION_FACE_KEY = "capturedFaceImage";
+
+function dataURLtoFile(dataUrl: string, filename: string): File {
+  // dataUrl format: "data:<mime>;base64,<data>"
+  const arr = dataUrl.split(",");
+  if (arr.length < 2) throw new Error("Invalid data URL");
+  const mimeMatch = arr[0].match(/data:(.*?);base64/);
+  const mime = mimeMatch?.[1] || "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
+}
 
 export function useSubmitFaceWithIdCard(kycRequestId: string) {
   const [loading, setLoading] = useState(false);
@@ -18,101 +29,56 @@ export function useSubmitFaceWithIdCard(kycRequestId: string) {
     setError(null);
 
     try {
-      // 1. ดึงข้อมูลจาก captureStore
+      // 1) ดึงข้อมูล movement จาก captureStore
       const state = captureStore.get();
       const allMovements = Object.values(state.movements).flat();
 
-      console.log("📦 Preparing submission:", {
-        movementCount: allMovements.length,
-        hasStep1Sample: !!state.step1Sample,
-        kycRequestId,
-      });
-
-      // ตรวจสอบข้อมูลพื้นฐาน
       if (allMovements.length < 5) {
         throw new Error(`Not enough movement images: ${allMovements.length}/5`);
-      }
-      if (!state.step1Sample) {
-        throw new Error("Missing step1Sample image");
       }
       if (!kycRequestId) {
         throw new Error("Missing kycRequestId");
       }
 
-      // 2. แปลง blob URLs เป็น Files (จาก face scan)
+      // 2) เอา face ที่ครอปแล้วจาก sessionStorage
+      const faceDataUrl = sessionStorage.getItem(SESSION_FACE_KEY);
+      if (!faceDataUrl) {
+        throw new Error(
+          "Missing capturedFaceImage. Please rescan your ID card and ensure face is captured."
+        );
+      }
+
+      // 3) แปลง movement blob URLs → Files
       const blobToFile = async (url: string, filename: string): Promise<File> => {
         const res = await fetch(url);
         const blob = await res.blob();
-        return new File([blob], filename, { type: blob.type });
+        return new File([blob], filename, { type: blob.type || "image/jpeg" });
       };
-
-      console.log("🔄 Converting movement images to files...");
       const movementFiles = await Promise.all(
         allMovements.map((url, i) => blobToFile(url, `movement_${i}.jpg`))
       );
-      console.log(`✅ Converted ${movementFiles.length} movement files`);
 
-      // 3. ดึงรูปบัตรประชาชนจาก storage
-      console.log("🔍 Loading ID card image from storage...");
-      const savedImage = loadFormFromCookie<{ objectName: string }>(COOKIE_IMAGE_KEY);
-      
-      if (!savedImage?.objectName) {
-        throw new Error("ID card image not found in cookie");
-      }
+      // 4) แปลง face dataURL → File (ไม่ครอปซ้ำ)
+      const croppedFaceFile = dataURLtoFile(faceDataUrl, "face-cropped.jpg");
 
-      const idCardBlob = await getFileFromStorage(savedImage.objectName);
-      console.log("✅ ID card image loaded:", {
-        size: idCardBlob.size,
-        type: idCardBlob.type,
-      });
-
-      // 4. แปลง Blob เป็น Data URL เพื่อ crop
-      const blobToDataUrl = (blob: Blob): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      };
-
-      const idCardDataUrl = await blobToDataUrl(idCardBlob);
-      console.log("🖼️ ID card converted to data URL");
-
-      // 5. Crop หน้าจากบัตรประชาชน
-      console.log("✂️ Cropping face from ID card...");
-      const croppedFaceFile = await cropFaceFromIdCard(idCardDataUrl);
-      console.log("✅ Face cropped:", {
-        name: croppedFaceFile.name,
-        size: croppedFaceFile.size,
-        type: croppedFaceFile.type,
-      });
-
-      // 6. ส่งข้อมูลทั้งหมดไป API
-      console.log("📤 Submitting to API...");
+      // 5) ส่งข้อมูลทั้งหมดไป API
       const response = await FaceSubmit({
-        files: movementFiles,       
-        file: croppedFaceFile,       
+        files: movementFiles,   // movement frames
+        file: croppedFaceFile,  // face ที่ครอปไว้แล้ว
         kycRequestId,
         onProgress: setProgress,
       });
 
-      console.log("✅ Submission successful:", response);
       return response;
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Unknown error";
-      console.error("❌ Submission failed:", errorMsg, err);
-      setError(errorMsg);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error("❌ Submission failed:", msg, err);
+      setError(msg);
       throw err;
     } finally {
       setLoading(false);
     }
   }, [kycRequestId]);
 
-  return {
-    submit,
-    loading,
-    progress,
-    error,
-  };
+  return { submit, loading, progress, error };
 }
