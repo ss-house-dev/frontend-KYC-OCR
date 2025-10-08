@@ -20,7 +20,7 @@ export function groupOfPhase(phase: Phase): MovementGroup {
 }
 
 export function randomTwoGroups(): MovementGroup[] {
-  const all: MovementGroup[] = ["yaw", "pitch", "blink", "mouth"];
+  const all: MovementGroup[] = ["yaw", "blink", "mouth"]; // เอาการสุ่ม "pitch" ออก
   for (let i = all.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [all[i], all[j]] = [all[j], all[i]];

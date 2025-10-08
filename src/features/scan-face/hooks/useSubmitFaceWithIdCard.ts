@@ -33,8 +33,8 @@ export function useSubmitFaceWithIdCard(kycRequestId: string) {
       const state = captureStore.get();
       const allMovements = Object.values(state.movements).flat();
 
-      if (allMovements.length < 5) {
-        throw new Error(`Not enough movement images: ${allMovements.length}/5`);
+      if (allMovements.length < 3) {
+        throw new Error(`Not enough movement images: ${allMovements.length}/4`);
       }
       if (!kycRequestId) {
         throw new Error("Missing kycRequestId");

@@ -7,7 +7,18 @@ import { useSession } from "next-auth/react";
 import { captureStore } from "@/features/scan-face/state/captureStore";
 import { useSubmitFaceWithIdCard } from "@/features/scan-face/hooks/useSubmitFaceWithIdCard";
 import FullScreenLoader from "@/components/FullScreenLoader";
-import { clearFaceSession } from "@/lib/utils/index";
+
+const FACE_SESSION_KEYS = [
+  "capturedFaceImage",
+  "croppedFaceImage",
+  "step1Sample",
+  "step2Sample",
+  "movements",
+  "faceMeta",
+  // ถ้า flow เคยอาศัยข้อมูลจากบัตร (กรณีร่วมกับ KYC)
+  "idcard_uploaded_objectName",
+  "idcard_ocr_response",
+];
 
 export default function FaceVerificationPage() {
   const data = captureStore.get();
@@ -32,7 +43,6 @@ export default function FaceVerificationPage() {
 
     try {
       await submit();
-      clearFaceSession();
       router.push("/book-bank-accept");
     } catch (err) {
       console.error("❌ ส่งข้อมูลล้มเหลว", err);

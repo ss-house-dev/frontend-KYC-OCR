@@ -24,6 +24,40 @@ import {
 import { FaceSubmit } from "../services/api-face";
 
 /* ==========================
+ *      LOGGING HELPERS
+ * ========================== */
+const DEBUG = true; // toggle all logs here
+
+function nowTs() {
+  const d = new Date();
+  return d.toISOString().split("T")[1]?.replace("Z", "") ?? "";
+}
+
+function log(...args: any[]) {
+  if (!DEBUG) return;
+  // eslint-disable-next-line no-console
+  console.log(`[useFaceMesh ${nowTs()}]`, ...args);
+}
+
+function info(...args: any[]) {
+  if (!DEBUG) return;
+  // eslint-disable-next-line no-console
+  console.info(`[useFaceMesh ${nowTs()}]`, ...args);
+}
+
+function warn(...args: any[]) {
+  if (!DEBUG) return;
+  // eslint-disable-next-line no-console
+  console.warn(`[useFaceMesh ${nowTs()}]`, ...args);
+}
+
+function error(...args: any[]) {
+  if (!DEBUG) return;
+  // eslint-disable-next-line no-console
+  console.error(`[useFaceMesh ${nowTs()}]`, ...args);
+}
+
+/* ==========================
  *        Platform flags
  * ========================== */
 const isAndroid =
@@ -60,6 +94,7 @@ export function useFaceMesh(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   canvasRef: React.RefObject<HTMLCanvasElement | null>
 ) {
+  info("mount useFaceMesh");
   /* --------------------------------------
    *          UI / global state
    * -------------------------------------- */
@@ -73,24 +108,31 @@ export function useFaceMesh(
   const mountedRef = useRef(false);
   useEffect(() => {
     mountedRef.current = true;
+    info("mounted=true");
     return () => {
       mountedRef.current = false;
+      info("unmount: mounted=false");
     };
   }, []);
 
   const setStateSafe = useCallback(
     (updater: React.SetStateAction<FaceScanState>) => {
       if (!mountedRef.current) return;
-      _setState(updater);
+      _setState((prev) => {
+        const next = typeof updater === "function" ? (updater as any)(prev) : updater;
+        if (DEBUG) log("setStateSafe", { prev, next });
+        return next;
+      });
     },
     []
   );
 
   const lastUIAtRef = useRef(0);
-  const UI_INTERVAL_MS = 300;
+  const UI_INTERVAL_MS = 150;
   function setUIThrottled(patch: Partial<FaceScanState>) {
     const now = performance.now();
     if (now - lastUIAtRef.current > UI_INTERVAL_MS) {
+      if (DEBUG) log("setUIThrottled", patch);
       setStateSafe((prev) => ({ ...prev, ...patch }));
       lastUIAtRef.current = now;
     }
@@ -100,6 +142,7 @@ export function useFaceMesh(
   const failedRef = useRef(false);
   const setFailed = useCallback((v: boolean) => {
     if (!mountedRef.current) return;
+    if (DEBUG) warn("setFailed", v);
     _setFailed(v);
   }, []);
   useEffect(() => {
@@ -107,14 +150,13 @@ export function useFaceMesh(
   }, [failed]);
 
   // ผลตรวจหลายใบหน้า (สำหรับ overlay/validator)
-  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>(
-    []
-  );
+  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>([]);
   const lastDetListUIRef = useRef(0);
   function setDetectionsThrottled(list: DetectionResult[]) {
     const now = performance.now();
     if (now - lastDetListUIRef.current > 150) {
       if (!mountedRef.current) return;
+      if (DEBUG) log("UI: detection list", list.length);
       setDetectionResults(list);
       lastDetListUIRef.current = now;
     }
@@ -123,6 +165,7 @@ export function useFaceMesh(
   const [done, __setDone] = useState(false);
   const setDoneSafe = useCallback((v: boolean) => {
     if (!mountedRef.current) return;
+    if (DEBUG) info("setDone", v);
     __setDone(v);
   }, []);
 
@@ -158,6 +201,7 @@ export function useFaceMesh(
       detector,
       stepProcessor,
     };
+    info("initManagers", { detector: !!detector, stepProcessor: !!stepProcessor });
   }, [setStateSafe]);
 
   useEffect(() => {
@@ -177,12 +221,14 @@ export function useFaceMesh(
   );
   const setSelectedGroupsSafe = useCallback((v: MovementGroup[] | null) => {
     if (!mountedRef.current) return;
+    if (DEBUG) info("selectedGroups", v);
     _setSelectedGroups(v);
   }, []);
 
   const [completedGroups, _setCompletedGroups] = useState<MovementGroup[]>([]);
   const setCompletedGroupsSafe = useCallback((v: MovementGroup[]) => {
     if (!mountedRef.current) return;
+    if (DEBUG) info("completedGroups", v);
     _setCompletedGroups(v);
   }, []);
 
@@ -217,20 +263,27 @@ export function useFaceMesh(
     if (phaseDelayTimerRef.current != null) {
       clearTimeout(phaseDelayTimerRef.current);
       phaseDelayTimerRef.current = null;
+      if (DEBUG) log("clearPhaseDelayTimer");
     }
   }
   function schedulePhaseAdvance(nextPhase: Phase, delayMs = 0) {
-    if (isPhaseDelayActiveRef.current) return;
+    if (isPhaseDelayActiveRef.current) {
+      if (DEBUG) log("schedulePhaseAdvance: skipped (already active)");
+      return;
+    }
     if (delayMs <= 0) {
       managers.current.state.subPhase = nextPhase;
+      if (DEBUG) info("phase →", nextPhase, "(no delay)");
       return;
     }
     isPhaseDelayActiveRef.current = true;
     clearPhaseDelayTimer();
+    if (DEBUG) info("phase (delayed)", { nextPhase, delayMs });
     phaseDelayTimerRef.current = window.setTimeout(() => {
       managers.current.state.subPhase = nextPhase;
       isPhaseDelayActiveRef.current = false;
       phaseDelayTimerRef.current = null;
+      if (DEBUG) info("phase (delay done) →", nextPhase);
     }, delayMs);
   }
 
@@ -263,8 +316,10 @@ export function useFaceMesh(
       dirTol: 0.02,
       swapYawLR: false,
     });
+    info("HeadMotionTracker: init");
     return () => {
       trackerRef.current = null;
+      info("HeadMotionTracker: disposed");
     };
   }, []);
 
@@ -279,11 +334,13 @@ export function useFaceMesh(
 
     if (idx === -1) {
       managers.current.state.subPhase = allowed[0];
+      info("phase reset to first allowed", allowed[0]);
       return;
     }
 
     if (idx < allowed.length - 1) {
       const next = allowed[idx + 1];
+      info("phase next →", next);
       if (cur === "yaw_left" && next === "yaw_right") {
         schedulePhaseAdvance(next, 2000);
       } else {
@@ -314,6 +371,7 @@ export function useFaceMesh(
         if (now - lastFpsUIRef.current > 500) {
           setUIThrottled({ fps: Math.round(fpsEmaRef.current) });
           lastFpsUIRef.current = now;
+          if (DEBUG) log("FPS EMA", fpsEmaRef.current.toFixed(2));
         }
 
         // Adaptive knobs
@@ -330,13 +388,13 @@ export function useFaceMesh(
         }
 
         if (fpsEmaRef.current < 12) {
-          frameGateMsRef.current = 85;
-        } else if (fpsEmaRef.current < 18) {
           frameGateMsRef.current = 70;
-        } else if (fpsEmaRef.current < 24) {
+        } else if (fpsEmaRef.current < 18) {
           frameGateMsRef.current = 55;
+        } else if (fpsEmaRef.current < 24) {
+          frameGateMsRef.current = 40;
         } else {
-          frameGateMsRef.current = 45;
+          frameGateMsRef.current = isAndroid ? 35 : 25;
         }
       }
 
@@ -396,11 +454,13 @@ export function useFaceMesh(
               });
 
               const now = performance.now();
+              if (DEBUG && out) log("tracker.update", { phase: subPhase, out });
               if (
                 out.pass &&
                 now - passCooldownRef.current > PASS_COOLDOWN_MS
               ) {
                 passCooldownRef.current = now;
+                info("phase PASS → next");
                 gotoNextAllowedPhase();
               }
             }
@@ -411,6 +471,7 @@ export function useFaceMesh(
       // === เปลี่ยน step → เตรียมค่าต่าง ๆ ===
       const stepNow = managers.current.state.currentStep;
       if (prevStepRef.current !== stepNow) {
+        info("STEP CHANGE", { from: prevStepRef.current, to: stepNow });
         prevStepRef.current = stepNow;
 
         if (stepNow === 1 || stepNow === 2) {
@@ -425,11 +486,13 @@ export function useFaceMesh(
           const groups = randomTwoGroups();
           selectedGroupsRef.current = groups;
           setSelectedGroupsSafe(groups);
+          info("randomTwoGroups →", groups);
 
           const allowed = PHASE_ORDER.filter((ph) =>
             groups.includes(groupOfPhase(ph))
           );
           allowedPhasesRef.current = allowed;
+          info("allowed phases →", allowed);
 
           completedGroupsRef.current.clear();
           setCompletedGroupsSafe([]);
@@ -437,6 +500,7 @@ export function useFaceMesh(
           if (allowed.length) {
             managers.current.state.subPhase = allowed[0];
             prevPhaseRef.current = allowed[0];
+            info("start subPhase →", allowed[0]);
           }
           lastCapAtRef.current = {};
         } else {
@@ -448,6 +512,7 @@ export function useFaceMesh(
       if ((stepNow === 1 || stepNow === 2) && stepStartAtRef.current != null) {
         const elapsed = performance.now() - stepStartAtRef.current;
         if (elapsed >= STEP_TIMEOUT_MS) {
+          warn("STEP TIMEOUT", { step: stepNow, elapsed });
           setFailed(true);
           return;
         }
@@ -455,6 +520,7 @@ export function useFaceMesh(
 
       // === Capture sample (ครั้งแรกของ step2) ===
       if (stepNow >= 2 && captureStore.get().step1Sample == null) {
+        info("capture: step1Sample");
         captureToBlobURL(video, { quality: 0.75 }).then((url) => {
           if (url) captureStore.setStep1Sample(url);
         });
@@ -470,6 +536,7 @@ export function useFaceMesh(
             lastCapAtRef.current[grp] = performance.now();
             const has = captureStore.get().movements[grp].length;
             if (has < CAP_LIMIT_PER_GROUP) {
+              info("capture: movement", { group: grp, count: has + 1 });
               captureToBlobURL(video, { quality: 0.75 }).then((url) => {
                 if (url) captureStore.push(grp, url, CAP_LIMIT_PER_GROUP);
               });
@@ -482,6 +549,7 @@ export function useFaceMesh(
       if (stepNow === 2 && allowedPhasesRef.current.length > 0) {
         const phaseNow = managers.current.state.subPhase as Phase;
         if (!allowedPhasesRef.current.includes(phaseNow)) {
+          warn("phase guard reset", { phaseNow, allowed: allowedPhasesRef.current });
           managers.current.state.subPhase = allowedPhasesRef.current[0];
         }
       }
@@ -492,6 +560,7 @@ export function useFaceMesh(
         const prev = prevPhaseRef.current;
 
         if (prev && prev !== cur) {
+          info("phase changed", { from: prev, to: cur });
           const prevGroup = groupOfPhase(prev);
           const phasesOfPrev = MOVEMENT_TO_PHASES[prevGroup];
           const isPrevLastOfGroup =
@@ -499,11 +568,13 @@ export function useFaceMesh(
           if (isPrevLastOfGroup) {
             completedGroupsRef.current.add(prevGroup);
             setCompletedGroupsSafe(Array.from(completedGroupsRef.current));
+            info("group completed", prevGroup);
           }
         }
         prevPhaseRef.current = cur;
 
         if (completedGroupsRef.current.size >= 2) {
+          info("ALL groups completed → step 3");
           managers.current.state.currentStep = 3;
           setDoneSafe(true);
         }
@@ -545,6 +616,12 @@ export function useFaceMesh(
       const allMovements = Object.values(st.movements).flat();
 
       if (!kycRequestId || allMovements.length < 3 || !st.step1Sample) {
+        if (DEBUG)
+          log("auto-submit: not ready", {
+            hasKyc: !!kycRequestId,
+            movements: allMovements.length,
+            hasSample: !!st.step1Sample,
+          });
         return;
       }
 
@@ -560,14 +637,16 @@ export function useFaceMesh(
       const file = await urlToFile(st.step1Sample, "step1Sample.jpg");
 
       try {
+        info("auto-submit: start", { files: files.length });
         await FaceSubmit({
           files,
           file,
           kycRequestId,
           onProgress: () => {},
         });
+        info("auto-submit: success");
       } catch (err) {
-        console.error("❌ Upload error:", err);
+        error("auto-submit: Upload error", err);
       }
     }
     sendIfReady();
@@ -581,11 +660,15 @@ export function useFaceMesh(
     closingRef.current = true;
 
     sessionIdRef.current += 1;
+    info("stopCurrentSession: start", { sessionId: sessionIdRef.current });
 
     try {
       try {
         cameraRef.current?.stop?.();
-      } catch {}
+        info("camera: stop requested");
+      } catch (e) {
+        warn("camera.stop error", e);
+      }
       cameraRef.current = null;
 
       const t0 = performance.now();
@@ -595,12 +678,16 @@ export function useFaceMesh(
     } finally {
       try {
         faceMeshRef.current?.close?.();
-      } catch {}
+        info("faceMesh: closed");
+      } catch (e) {
+        warn("faceMesh.close error", e);
+      }
       faceMeshRef.current = null;
 
       processingRef.current = false;
       clearPhaseDelayTimer();
       closingRef.current = false;
+      info("stopCurrentSession: done");
     }
   }, []);
 
@@ -610,6 +697,8 @@ export function useFaceMesh(
   const setupCamera = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const mySessionId = ++sessionIdRef.current;
+
+    info("setupCamera: start", { sessionId: mySessionId });
 
     try {
       const [{ FaceMesh }, { Camera }] = await Promise.all([
@@ -630,6 +719,7 @@ export function useFaceMesh(
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
       });
+      info("faceMesh: options set");
 
       faceMesh.onResults((res: any) => {
         if (sessionIdRef.current !== mySessionId) return;
@@ -637,8 +727,8 @@ export function useFaceMesh(
         processDetectionResults(res);
       });
 
-      const targetW = 640; // เดิม Android 480 / Desktop 1280
-      const targetH = 360;
+      const targetW = isAndroid ? 480 : 1280;
+      const targetH = Math.round((targetW * 9) / 16);
 
       const cam = new Camera(videoRef.current!, {
         onFrame: async () => {
@@ -668,6 +758,7 @@ export function useFaceMesh(
       cameraRef.current = cam;
 
       await cam.start();
+      info("camera: started", { targetW, targetH });
 
       // apply constraints (best-effort)
       try {
@@ -675,12 +766,15 @@ export function useFaceMesh(
           .srcObject as MediaStream;
         const track = stream?.getVideoTracks?.()[0];
         await track?.applyConstraints?.({
-          width: { exact: targetW },
-          height: { exact: targetH },
+          width: { ideal: targetW, max: targetW },
+          height: { ideal: targetH, max: targetH },
           frameRate: { ideal: 24, max: 30 },
           facingMode: "user",
         });
-      } catch {}
+        info("camera: constraints applied");
+      } catch (e) {
+        warn("camera constraints error", e);
+      }
 
       setStateSafe((prev) => ({ ...prev, isReady: true }));
 
@@ -690,35 +784,32 @@ export function useFaceMesh(
           if (!mountedRef.current || sessionIdRef.current !== mySessionId)
             return;
           const fpsNow = fpsEmaRef.current;
-          if (fpsNow > 26) {
+          if (fpsNow > 24) {
             try {
               const stream = (videoRef.current as HTMLVideoElement)
                 .srcObject as MediaStream;
               const track = stream?.getVideoTracks?.()[0];
               await track?.applyConstraints?.({
-                width: { exact: 800 }, // อัปทีละสเต็ปเล็ก ๆ
-                height: { exact: 450 },
+                width: { ideal: 640, max: 640 },
+                height: { ideal: 360, max: 360 },
                 frameRate: { ideal: 24, max: 30 },
               });
-            } catch {}
+              info("camera: auto-upscale applied");
+            } catch (e) {
+              warn("camera auto-upscale error", e);
+            }
           }
-        }, 3000);
+        }, 2500);
       }
 
       return () => {
         void stopCurrentSession();
       };
-    } catch (error) {
-      console.error("Camera setup error:", error);
-      throw error;
+    } catch (e) {
+      error("setupCamera error", e);
+      throw e;
     }
-  }, [
-    processDetectionResults,
-    setStateSafe,
-    stopCurrentSession,
-    videoRef,
-    canvasRef,
-  ]);
+  }, [processDetectionResults, setStateSafe, stopCurrentSession, videoRef, canvasRef]);
 
   /* --------------------------------------
    *      Visibility → หยุด/เริ่มกล้องจริง
@@ -727,11 +818,15 @@ export function useFaceMesh(
     function onVis() {
       try {
         if (document.hidden) {
+          info("visibilitychange: hidden → stop camera");
           cameraRef.current?.stop?.();
         } else {
+          info("visibilitychange: visible → start camera");
           cameraRef.current?.start?.();
         }
-      } catch {}
+      } catch (e) {
+        warn("visibilitychange handler error", e);
+      }
     }
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
@@ -741,6 +836,7 @@ export function useFaceMesh(
    *         Public restart/reset APIs
    * -------------------------------------- */
   const restartFromSetup = useCallback(async () => {
+    info("restartFromSetup: begin");
     await stopCurrentSession();
 
     initManagers();
@@ -763,13 +859,14 @@ export function useFaceMesh(
     clearPhaseDelayTimer();
 
     fpsEmaRef.current = 0;
-    frameGateMsRef.current = 60
+    frameGateMsRef.current = isAndroid ? 45 : 28;
     lastProcessAtRef.current = 0;
 
     try {
       await setupCamera();
+      info("restartFromSetup: done");
     } catch (e) {
-      console.error("Restart setup error:", e);
+      error("Restart setup error", e);
     }
   }, [
     stopCurrentSession,
@@ -783,6 +880,7 @@ export function useFaceMesh(
   ]);
 
   const resetStep2 = useCallback(() => {
+    info("resetStep2");
     managers.current.state.reset();
     managers.current.ema.reset();
     trackerRef.current?.reset();
