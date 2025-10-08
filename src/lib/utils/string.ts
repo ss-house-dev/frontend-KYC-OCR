@@ -37,7 +37,7 @@ export function calculateSimilaritySafe(a: string, b: string): number {
   const s2 = b ?? "";
 
   if (s1.length === 0 && s2.length === 0) return 100;
-  if (s1.length === 0 || s2.length === 0) return 0;
+  if (s1.length === 0 || s2.length === 0) return 100;
 
   const longer  = s1.length >= s2.length ? s1 : s2;
   const shorter = s1.length >= s2.length ? s2 : s1;

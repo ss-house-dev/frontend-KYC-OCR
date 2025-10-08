@@ -150,19 +150,28 @@ export default function VerifyIdentityScreen() {
     const enLast = scoreName(originalData.lastNameEng, data.lastNameEng);
 
     // ความยาวหลัง normalize (กัน null/undefined)
-    const len = (s: string) => (s ?? "").trim().length;
+    const len = (s?: string) => (s ?? "").trim().length;
+
+    const thLenSum =
+      len(originalData.firstNameThai) + len(originalData.lastNameThai);
+    const enLenSum =
+      len(originalData.firstNameEng) + len(originalData.lastNameEng);
 
     const thWeighted =
-      (thFirst * len(originalData.firstNameThai) +
-        thLast * len(originalData.lastNameThai)) /
-      (len(originalData.firstNameThai) + len(originalData.lastNameThai) || 1);
+      thLenSum === 0
+        ? 100
+        : (thFirst * len(originalData.firstNameThai) +
+            thLast * len(originalData.lastNameThai)) /
+          thLenSum;
 
     const enWeighted =
-      (enFirst * len(originalData.firstNameEng) +
-        enLast * len(originalData.lastNameEng)) /
-      (len(originalData.firstNameEng) + len(originalData.lastNameEng) || 1);
+      enLenSum === 0
+        ? 100
+        : (enFirst * len(originalData.firstNameEng) +
+            enLast * len(originalData.lastNameEng)) /
+          enLenSum;
 
-    const FIELD_MIN = 60; 
+    const FIELD_MIN = 60;
     const LANG_MIN = 60;
 
     const thaiPass =
