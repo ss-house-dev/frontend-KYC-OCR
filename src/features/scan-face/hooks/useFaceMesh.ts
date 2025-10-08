@@ -8,7 +8,6 @@ import {
   DetectionProcessor,
   StepProcessor,
 } from "../utils/faceMesh";
-import { shouldCapture, captureToBlobURL } from "../utils/capture";
 import {
   MovementGroup,
   Phase,
@@ -16,6 +15,7 @@ import {
   randomTwoGroups,
   groupOfPhase,
 } from "../utils/movements";
+import { shouldCapture, captureToBlobURL } from "../utils/capture";
 import { captureStore } from "../state/captureStore";
 import {
   HeadMotionTracker,
@@ -37,8 +37,8 @@ const STEP_TIMEOUT_MS = 30_000;
 const PHASE_ORDER: Phase[] = [
   "yaw_left",
   "yaw_right",
-  "pitch_up",
-  "pitch_down",
+  // "pitch_up",
+  // "pitch_down",
   "blink",
   "mouth",
 ];
@@ -195,7 +195,7 @@ export function useFaceMesh(
    * -------------------------------------- */
   const lastCapAtRef = useRef<Partial<Record<MovementGroup, number>>>({});
   const CAP_INTERVAL_MS = isAndroid ? 800 : 400;
-  const CAP_LIMIT_PER_GROUP = 3;
+  const CAP_LIMIT_PER_GROUP = 2;
 
   /* --------------------------------------
    *          FPS / Performance knobs
@@ -542,7 +542,7 @@ export function useFaceMesh(
       const st = captureStore.get();
       const allMovements = Object.values(st.movements).flat();
 
-      if (!kycRequestId || allMovements.length < 5 || !st.step1Sample) {
+      if (!kycRequestId || allMovements.length < 3 || !st.step1Sample) {
         return;
       }
 
