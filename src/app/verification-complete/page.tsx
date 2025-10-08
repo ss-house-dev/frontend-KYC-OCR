@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { clearFormCookie } from "@/lib/utils/index";
 
 // รวม key ที่ต้องลบทั้ง idcard + bookbank
@@ -23,7 +24,7 @@ const SESSION_KEYS_TO_CLEAR = [
 export default function FaceVerificationPage() {
   const router = useRouter();
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     console.log("[Confirm] Clearing all cookies and sessionStorage...");
 
     // ล้าง cookies
@@ -41,7 +42,7 @@ export default function FaceVerificationPage() {
     }
 
     // ไปหน้า login
-    router.push("/user-login");
+    await signOut({ callbackUrl: "/user-login" });
   };
 
   return (
