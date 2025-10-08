@@ -7,12 +7,17 @@ import { CaptureButton } from "@/features/scan-id-card/components/CaptureButton"
 import { BoxShadowMask } from "@/features/scan-id-card/components/BoxShadowMask";
 import { FrameSVG } from "@/features/scan-id-card/components/FrameSVG";
 import { ScanHeader } from "@/features/scan-id-card/components/ScanHeader";
+import {
+  drawQuad,
+  drawFaceBoxFromFrac,
+  type Pt,
+  type Rect,
+  type FracRect,
+} from "@/features/scan-id-card/utils/drawOverlay";
 
 declare const cv: any;
 
-type Pt = { x: number; y: number };
 type DetectedQuad = { pts: Pt[]; area: number; ratio: number };
-type Rect = { x: number; y: number; w: number; h: number };
 
 /** ==========================================================
  *  Tunables: ค่าปรับความเข้มงวดของการตรวจจับและพฤติกรรมโดยรวม
@@ -30,11 +35,22 @@ const STEADY_TOL_PX = 12;
 const INSIDE_COVERAGE = 0.85;
 const GUIDE_SCALE = 0.42; // 🔧 ใช้ตอน fallback กำหนดสเกลกรอบกลางจอ (กรณีหา guide ไม่ได้)
 
-const FACE_BOX_FRAC = {
-  x: 1 - 0.216 - 0.08, // = 0.704  ชิดขวา
-  y: 1 - 0.396 - 0.16, // = 0.444  ชิดล่าง
-  w: 0.216,            // 40% smaller
-  h: 0.396,            // 40% smaller
+// คงระยะชิดขวา/ล่างเดิม แล้วลดขนาดลง 15%
+const RIGHT_MARGIN = 0.05;
+const BOTTOM_MARGIN = 0.16;
+const SCALE = 0.85;           // ย่อ 15%
+
+const BASE_W = 0.216;
+const BASE_H = 0.396;
+
+const W = +(BASE_W * SCALE).toFixed(3); // 0.184
+const H = +(BASE_H * SCALE).toFixed(3); // 0.337
+
+export const FACE_BOX_FRAC = {
+  x: +(1 - W - RIGHT_MARGIN).toFixed(3), // 0.766  (คงชิดขวาเท่าเดิม)
+  y: +(1 - H - BOTTOM_MARGIN).toFixed(3),// 0.543  (คงชิดล่างเท่าเดิม)
+  w: W,                                   // 0.184
+  h: H,                                   // 0.337
 } as const;
 
 const CASCADE_FILE = "/haarcascade_frontalface_default.xml";
@@ -48,24 +64,6 @@ const CAPTURE_COOLDOWN_MS = 1200;
  * ========================================================== */
 const FRAME_PADDING_PCT = 0.0; // 🔧 p-[3%] ของกล่องกรอบ
 const FRAME_OVERSCAN_PCT = 0.01; // 🔧 ต้องเท่ากับ props ของ <FrameSVG overscanPct={0.05} />
-
-/** วาดเส้นสี่เหลี่ยมบน overlay (ไว้ debug/ไฮไลต์สี่เหลี่ยมที่ตรวจพบ) */
-function drawQuad(
-  ctx: CanvasRenderingContext2D,
-  pts: Pt[],
-  color: string,
-  width = 3
-) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, pts[0].y);
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-  ctx.closePath();
-  ctx.stroke();
-  ctx.restore();
-}
 
 export default function CameraDetectCard() {
   const router = useRouter();
@@ -376,6 +374,16 @@ export default function CameraDetectCard() {
     });
 
     guideRef.current = guide;
+
+    // วาดกรอบ FACE_BOX_FRAC (core + outer) ให้เห็นตำแหน่งคร่าว ๆ ของใบหน้า
+    drawFaceBoxFromFrac(octx, guide, FACE_BOX_FRAC, {
+      marginPct: 0.08, // ให้ตรงกับตอน fallback crop
+      coreColor: "rgba(255,255,255,0.95)",
+      coreWidth: 2,
+      outerColor: "rgba(0,200,255,0.9)", // เส้นขอบนอก (รวม margin)
+      outerWidth: 2,
+      dash: [6, 6], // เส้นประสำหรับ outer
+    });
 
     // (5) สร้างข้อความ/สถานะ สำหรับ UI และตัดสินใจ “พร้อมถ่าย” หรือยัง
     let msg = "Please align your ID card in the frame.";
