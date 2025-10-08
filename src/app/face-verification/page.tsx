@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { captureStore } from "@/features/scan-face/state/captureStore";
 import { useSubmitFaceWithIdCard } from "@/features/scan-face/hooks/useSubmitFaceWithIdCard";
 import FullScreenLoader from "@/components/FullScreenLoader";
+import { clearFaceSession } from "@/lib/utils/index";
 
 export default function FaceVerificationPage() {
   const data = captureStore.get();
@@ -31,6 +32,7 @@ export default function FaceVerificationPage() {
 
     try {
       await submit();
+      clearFaceSession();
       router.push("/book-bank-accept");
     } catch (err) {
       console.error("❌ ส่งข้อมูลล้มเหลว", err);
