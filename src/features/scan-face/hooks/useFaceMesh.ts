@@ -87,7 +87,7 @@ export function useFaceMesh(
   );
 
   const lastUIAtRef = useRef(0);
-  const UI_INTERVAL_MS = 150;
+  const UI_INTERVAL_MS = 300;
   function setUIThrottled(patch: Partial<FaceScanState>) {
     const now = performance.now();
     if (now - lastUIAtRef.current > UI_INTERVAL_MS) {
@@ -107,7 +107,9 @@ export function useFaceMesh(
   }, [failed]);
 
   // ผลตรวจหลายใบหน้า (สำหรับ overlay/validator)
-  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>([]);
+  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>(
+    []
+  );
   const lastDetListUIRef = useRef(0);
   function setDetectionsThrottled(list: DetectionResult[]) {
     const now = performance.now();
@@ -328,13 +330,13 @@ export function useFaceMesh(
         }
 
         if (fpsEmaRef.current < 12) {
-          frameGateMsRef.current = 70;
+          frameGateMsRef.current = 85;
         } else if (fpsEmaRef.current < 18) {
-          frameGateMsRef.current = 55;
+          frameGateMsRef.current = 70;
         } else if (fpsEmaRef.current < 24) {
-          frameGateMsRef.current = 40;
+          frameGateMsRef.current = 55;
         } else {
-          frameGateMsRef.current = isAndroid ? 35 : 25;
+          frameGateMsRef.current = 45;
         }
       }
 
@@ -635,8 +637,8 @@ export function useFaceMesh(
         processDetectionResults(res);
       });
 
-      const targetW = isAndroid ? 480 : 1280;
-      const targetH = Math.round((targetW * 9) / 16);
+      const targetW = 640; // เดิม Android 480 / Desktop 1280
+      const targetH = 360;
 
       const cam = new Camera(videoRef.current!, {
         onFrame: async () => {
@@ -673,8 +675,8 @@ export function useFaceMesh(
           .srcObject as MediaStream;
         const track = stream?.getVideoTracks?.()[0];
         await track?.applyConstraints?.({
-          width: { ideal: targetW, max: targetW },
-          height: { ideal: targetH, max: targetH },
+          width: { exact: targetW },
+          height: { exact: targetH },
           frameRate: { ideal: 24, max: 30 },
           facingMode: "user",
         });
@@ -688,19 +690,19 @@ export function useFaceMesh(
           if (!mountedRef.current || sessionIdRef.current !== mySessionId)
             return;
           const fpsNow = fpsEmaRef.current;
-          if (fpsNow > 24) {
+          if (fpsNow > 26) {
             try {
               const stream = (videoRef.current as HTMLVideoElement)
                 .srcObject as MediaStream;
               const track = stream?.getVideoTracks?.()[0];
               await track?.applyConstraints?.({
-                width: { ideal: 640, max: 640 },
-                height: { ideal: 360, max: 360 },
+                width: { exact: 800 }, // อัปทีละสเต็ปเล็ก ๆ
+                height: { exact: 450 },
                 frameRate: { ideal: 24, max: 30 },
               });
             } catch {}
           }
-        }, 2500);
+        }, 3000);
       }
 
       return () => {
@@ -710,7 +712,13 @@ export function useFaceMesh(
       console.error("Camera setup error:", error);
       throw error;
     }
-  }, [processDetectionResults, setStateSafe, stopCurrentSession, videoRef, canvasRef]);
+  }, [
+    processDetectionResults,
+    setStateSafe,
+    stopCurrentSession,
+    videoRef,
+    canvasRef,
+  ]);
 
   /* --------------------------------------
    *      Visibility → หยุด/เริ่มกล้องจริง
@@ -755,7 +763,7 @@ export function useFaceMesh(
     clearPhaseDelayTimer();
 
     fpsEmaRef.current = 0;
-    frameGateMsRef.current = isAndroid ? 45 : 28;
+    frameGateMsRef.current = 60
     lastProcessAtRef.current = 0;
 
     try {
