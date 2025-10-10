@@ -12,10 +12,10 @@ export function FrameSVG({
 
   const imageSrc =
     color === "green"
-      ? "/scan-idcard/frame-id-card-red.svg"
-      : color === "red"
       ? "/scan-idcard/frame-id-card-green.svg"
-      : "/scan-idcard/frame-id-card.svg"; 
+      : color === "red"
+      ? "/scan-idcard/frame-id-card-red.svg"
+      : "/scan-idcard/frame-id-card.svg";
 
   return (
     <div
