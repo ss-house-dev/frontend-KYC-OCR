@@ -21,6 +21,9 @@ import { addDays } from "date-fns";
 import { X } from "lucide-react";
 import Image from "next/image";
 
+const PROGRESS_COOKIE_KEY = "kyc_progress";
+const CURRENT_STEP = "preview-id-card";
+
 interface FormIdCardProps<TFieldValues extends FieldValues> {
   handleSubmit: UseFormHandleSubmit<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
@@ -36,6 +39,17 @@ interface FormIdCardProps<TFieldValues extends FieldValues> {
 
 // ใช้ cookie key สำหรับข้อมูลที่แก้ไข
 const EDITED_DATA_COOKIE_KEY = "idcard_form_edited";
+
+// ✅ helper: เซ็ตคุกกี้ kycStep อายุ 30 นาที
+function setKycStep30m(step: string) {
+  const encoded = encodeURIComponent(step);
+  const base = `kycStep=${encoded}; Max-Age=${30 * 60}; Path=/; SameSite=Lax`;
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    document.cookie = `${base}; Secure`;
+  } else {
+    document.cookie = base;
+  }
+}
 
 const FormIdCard = <TFieldValues extends FieldValues>({
   handleSubmit,
@@ -53,6 +67,17 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   const [isFormInitialized, setIsFormInitialized] = useState(false);
 
   const [showAlert, setShowAlert] = useState(true);
+
+  const handleConfirm: SubmitHandler<TFieldValues> = (data) => {
+    // ✅ เซ็ตคุกกี้ step สำหรับ middleware (อายุ 30 นาที)
+    setKycStep30m("/preview-id-card");
+
+    saveFormToCookie(PROGRESS_COOKIE_KEY, {
+      lastDoneStep: CURRENT_STEP,
+      doneAt: new Date().toISOString(),
+    });
+    return onSubmit(data);
+  };
 
   // บันทึกข้อมูลเริ่มต้น (จาก OCR) เพื่อเปรียบเทียบ
   const allValues = watch();
@@ -97,7 +122,10 @@ const FormIdCard = <TFieldValues extends FieldValues>({
   }, [allValues, isFormInitialized, isLoading]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="pt-3 bg-[#E7E7E7] space-y-3">
+    <form
+      onSubmit={handleSubmit(handleConfirm)}
+      className="pt-3 bg-[#E7E7E7] space-y-3"
+    >
       <div className="bg-white p-4 space-y-4">
         {showAlert && (
           <div className="flex items-start justify-between rounded-lg bg-[#F5F8FF] text-white p-4 mb-5 relative">

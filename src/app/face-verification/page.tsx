@@ -13,14 +13,22 @@ export default function FaceVerificationPage() {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const kycRequestId = session?.kycRequestId;
-  const { submit, loading, error } = useSubmitFaceWithIdCard(
-    kycRequestId || ""
-  );
+  const kycRequestId = (session as any)?.kycRequestId as string | undefined;
+  const { submit, loading, error } = useSubmitFaceWithIdCard(kycRequestId || "");
 
-    useEffect(() => {
+  useEffect(() => {
     if (error) console.error("❌ Face submit error:", error);
   }, [error]);
+
+  // ✅ helper: เขียนคุ้กกี้ kycStep เป็นสเต็ปล่าสุด (encode ไว้สำหรับ middleware)
+  const setKycStep = (step: string) => {
+    const encoded = encodeURIComponent(step);
+    // อายุ 7 วัน, ใช้ได้ทั้งแอป, Lax กัน CSRF พื้นฐาน
+    const base = `kycStep=${encoded}; Max-Age=${30 * 60}; Path=/; SameSite=Lax`;
+    // ใส่ Secure ถ้าอยู่บน https
+    const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+    document.cookie = isHttps ? `${base}; Secure` : base;
+  };
 
   const handleConfirm = async () => {
     if (!kycRequestId) {
@@ -31,10 +39,12 @@ export default function FaceVerificationPage() {
 
     try {
       await submit();
+      // ✅ บันทึกว่าเราจบถึงหน้า face-verification แล้ว
+      setKycStep("/face-verification");
       router.push("/book-bank-accept");
     } catch (err) {
       console.error("❌ ส่งข้อมูลล้มเหลว", err);
-      // แสดง error ให้ user เห็น
+      // TODO: แสดง error ให้ผู้ใช้ถ้าต้องการ
     }
   };
 

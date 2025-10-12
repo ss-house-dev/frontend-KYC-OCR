@@ -15,6 +15,7 @@ import FullScreenLoader from "@/components/FullScreenLoader";
 import { saveFormToCookie } from "@/lib/utils/index";
 import Image from "next/image";
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface FormBookBankProps<TFieldValues extends FieldValues> {
   onSubmit: ReturnType<UseFormHandleSubmit<TFieldValues>>;
@@ -30,6 +31,17 @@ interface FormBookBankProps<TFieldValues extends FieldValues> {
 // ใช้ cookie key ของ bookbank
 const EDITED_DATA_COOKIE_KEY = "bookbank_form_edited";
 
+// helper: เซ็ตคุกกี้ kycStep อายุ 30 นาที
+function setKycStep30m(step: string) {
+  const encoded = encodeURIComponent(step);
+  const base = `kycStep=${encoded}; Max-Age=${30 * 60}; Path=/; SameSite=Lax`;
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    document.cookie = `${base}; Secure`;
+  } else {
+    document.cookie = base;
+  }
+}
+
 const FormBookBank = <TFieldValues extends FieldValues>({
   onSubmit,
   watch,
@@ -43,6 +55,8 @@ const FormBookBank = <TFieldValues extends FieldValues>({
   const initialDataRef = useRef<any>(null);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   const [showAlert, setShowAlert] = useState(true);
+  const router = useRouter();
+
   // อ่านค่าจาก form
   const allValues = watch();
 
@@ -79,8 +93,19 @@ const FormBookBank = <TFieldValues extends FieldValues>({
     }
   }, [allValues, isFormInitialized, isLoading]);
 
+  // ✅ แก้ type: ใช้ FormEventHandler แล้วค่อยเรียก onSubmit ของ RHF
+  const handleConfirm: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+    // ให้ RHF จัดการ validate + submit ก่อน
+    await onSubmit(e as unknown as React.BaseSyntheticEvent);
+    // ตั้งคุกกี้บอกว่าเพิ่งผ่านหน้า book-bank-accept
+    setKycStep30m("/book-bank-accept");
+    // ไปหน้าถัดไปของ flow
+    router.push("/verification-complete");
+  };
+
   return (
-    <form onSubmit={onSubmit} className="pt-3 bg-[#E7E7E7] space-y-3">
+    <form onSubmit={handleConfirm} className="pt-3 bg-[#E7E7E7] space-y-3">
       {/* Info Box */}
       <div className="bg-white p-4 space-y-4">
         {showAlert && (
@@ -181,9 +206,7 @@ const FormBookBank = <TFieldValues extends FieldValues>({
           type="submit"
           disabled={!canSubmit}
           className={`w-full h-12 rounded-[8px] text-white font-semibold text-base transition-colors ${
-            canSubmit && !isSubmitting
-              ? "bg-[#2152b6]"
-              : "bg-gray-400"
+            canSubmit && !isSubmitting ? "bg-[#2152b6]" : "bg-gray-400"
           }`}
         >
           {isSubmitting ? "Confirm" : "Confirm"}

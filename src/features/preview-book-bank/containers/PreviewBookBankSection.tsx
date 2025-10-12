@@ -138,10 +138,11 @@ export default function BookBankPage() {
     try {
       const captured =
         typeof window !== "undefined"
-        ? sessionStorage.getItem("croppedBookBankImage") ??
-          sessionStorage.getItem("capturedBookBankImage")
-        : null;
-      if (!captured) throw new Error("Missing BookBank image (cropped/captured)");
+          ? (sessionStorage.getItem("croppedBookBankImage") ??
+            sessionStorage.getItem("capturedBookBankImage"))
+          : null;
+      if (!captured)
+        throw new Error("Missing BookBank image (cropped/captured)");
 
       const files = base64StringToFile(captured, "bookbank.jpg");
 
@@ -158,6 +159,20 @@ export default function BookBankPage() {
         branchName: data.branchName,
       });
 
+      const setKycStep30m = (step: string) => {
+        const encoded = encodeURIComponent(step);
+        const base = `kycStep=${encoded}; Max-Age=${30 * 60}; Path=/; SameSite=Lax`;
+        if (
+          typeof window !== "undefined" &&
+          window.location.protocol === "https:"
+        ) {
+          document.cookie = `${base}; Secure`;
+        } else {
+          document.cookie = base;
+        }
+      };
+
+      setKycStep30m("/book-bank-accept");
       router.push("/verification-complete");
     } catch (error) {
       console.error("Submit failed:", error);

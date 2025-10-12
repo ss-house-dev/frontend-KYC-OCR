@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { clearFormCookie } from "@/lib/utils/index";
 
-// รวม key ที่ต้องลบทั้ง idcard + bookbank
+// ✅ คุกกี้ฟอร์มที่ต้องลบ (idcard + bookbank)
 const COOKIE_KEYS_TO_CLEAR = [
   "idcard_ocr_response",
   "idcard_form_edited",
@@ -15,25 +15,51 @@ const COOKIE_KEYS_TO_CLEAR = [
   "book-bank:form",
 ];
 
+// ✅ คีย์ sessionStorage ที่ต้องลบ
 const SESSION_KEYS_TO_CLEAR = [
   "capturedIdCardImage",
   "croppedBookBankImage",
   "capturedBookBankImage",
 ];
 
-export default function FaceVerificationPage() {
+// ✅ คุกกี้ progress/step ของ flow ที่ต้องลบเพิ่ม
+const FLOW_PROGRESS_COOKIES = ["kycStep", "kyc_progress"];
+
+// helper เคลียร์คุกกี้ raw (กรณี util ไม่มี key นี้)
+const clearCookieRaw = (name: string) => {
+  // ลบแบบครอบจักรวาล: set ให้หมดอายุ + path=/
+  // ถ้าอยู่บน https จะติด Secure ด้วย
+  const isHttps =
+    typeof window !== "undefined" && window.location.protocol === "https:";
+  const base = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+  document.cookie = isHttps ? `${base}; Secure` : base;
+};
+
+export default function VerificationCompletePage() {
   const router = useRouter();
 
   const handleConfirm = async () => {
     console.log("[Confirm] Clearing all cookies and sessionStorage...");
 
-    // ล้าง cookies
+    // 1) ล้างคุกกี้ฟอร์ม
     COOKIE_KEYS_TO_CLEAR.forEach((key) => {
-      clearFormCookie(key);
-      console.log("[Confirm] Cleared cookie:", key);
+      try {
+        clearFormCookie(key);
+        console.log("[Confirm] Cleared cookie:", key);
+      } catch {
+        // ถ้า util fail ก็ลบแบบ raw
+        clearCookieRaw(key);
+        console.log("[Confirm] Cleared cookie (raw):", key);
+      }
     });
 
-    // ล้าง sessionStorage
+    // 2) ล้างคุกกี้ progress/step ของ flow (สำคัญสุด)
+    FLOW_PROGRESS_COOKIES.forEach((key) => {
+      clearCookieRaw(key);
+      console.log("[Confirm] Cleared flow cookie:", key);
+    });
+
+    // 3) ล้าง sessionStorage ที่เก็บรูป/สถานะระหว่างทาง
     if (typeof window !== "undefined") {
       SESSION_KEYS_TO_CLEAR.forEach((key) => {
         sessionStorage.removeItem(key);
@@ -41,7 +67,7 @@ export default function FaceVerificationPage() {
       });
     }
 
-    // ไปหน้า login
+    // 4) ออกจากระบบ → กลับหน้า login
     await signOut({ callbackUrl: "/user-login" });
   };
 

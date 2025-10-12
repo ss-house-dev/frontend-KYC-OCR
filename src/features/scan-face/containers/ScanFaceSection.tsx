@@ -11,7 +11,7 @@ import { Step1Validator } from "../utils/validators/step1Validator";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import AlertPopUp from "@/components/AlertPopUp"; 
+import AlertPopUp from "@/components/AlertPopUp";
 
 export default function ScanFaceSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -101,7 +101,7 @@ export default function ScanFaceSection() {
         <VideoCanvas
           canvasRef={canvasRef}
           state={state}
-          detectionResults={detectionResults} 
+          detectionResults={detectionResults}
           videoElement={videoRef.current || undefined}
         />
 
