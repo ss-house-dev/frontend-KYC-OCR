@@ -568,17 +568,28 @@ export default function CameraDetectCard() {
     full.height = videoEl.videoHeight;
     full.getContext("2d")!.drawImage(videoEl, 0, 0, full.width, full.height);
 
-    // ===== A) DETECTED FACE: ครอปจากผลตรวจจับ (เดิม) =====
+    // ===== A) DETECTED FACE: ครอปจากผลตรวจจับ (ซูมออกจากกึ่งกลาง) =====
     let faceCropped = false;
     if (faceRectRef.current) {
       const face = faceRectRef.current;
 
-      // ขยาย margin รอบหน้าเล็กน้อย
-      const m = Math.round(Math.max(face.w, face.h) * 0.15);
-      const sx = face.x - m;
-      const sy = face.y - m;
-      const sw = face.w + m * 2;
-      const sh = face.h + m * 2;
+      // ปรับได้ตามต้องการ
+      const scale = 1.8; // >1 = ซูมออกมากขึ้น (เช่น 1.4–1.8)
+      const extra = 0; // เผื่อขอบคงที่ (px) เช่น 10–40 ถ้าต้องการ
+
+      // คำนวณจากกึ่งกลางใบหน้า
+      const cx = face.x + face.w / 2;
+      const cy = face.y + face.h / 2;
+
+      let sw = Math.round(face.w * scale + extra * 2);
+      let sh = Math.round(face.h * scale + extra * 2);
+
+      // (ออปชัน) อยากได้สี่เหลี่ยมจัตุรัส/แนวตั้งให้เปิดใช้หนึ่งในสองบรรทัดนี้:
+      // const s = Math.max(sw, sh); sw = sh = s;           // จัตุรัส
+      // const ar = 4/5; if (sw/sh > ar) sh = Math.round(sw/ar); else sw = Math.round(sh*ar); // 4:5
+
+      let sx = Math.round(cx - sw / 2);
+      let sy = Math.round(cy - sh / 2);
 
       const bounded = clampRectToBounds(
         sx,
@@ -588,23 +599,25 @@ export default function CameraDetectCard() {
         full.width,
         full.height
       );
+
       if (bounded.w > 4 && bounded.h > 4) {
         const faceCv = document.createElement("canvas");
         faceCv.width = bounded.w;
         faceCv.height = bounded.h;
-        faceCv
-          .getContext("2d")!
-          .drawImage(
-            full,
-            bounded.x,
-            bounded.y,
-            bounded.w,
-            bounded.h,
-            0,
-            0,
-            bounded.w,
-            bounded.h
-          );
+        const ctx = faceCv.getContext("2d")!;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(
+          full,
+          bounded.x,
+          bounded.y,
+          bounded.w,
+          bounded.h,
+          0,
+          0,
+          bounded.w,
+          bounded.h
+        );
         const faceData = faceCv.toDataURL("image/jpeg", 0.92);
         sessionStorage.setItem("capturedFaceImage", faceData);
         sessionStorage.setItem("capturedFaceRect", JSON.stringify(bounded));
