@@ -605,54 +605,6 @@ export function useFaceMesh(
   );
 
   /* --------------------------------------
-   *            Auto-submit on done
-   * -------------------------------------- */
-  const { data: session } = useSession();
-  const kycRequestId = session?.kycRequestId;
-
-  useEffect(() => {
-    async function sendIfReady() {
-      const st = captureStore.get();
-      const allMovements = Object.values(st.movements).flat();
-
-      if (!kycRequestId || allMovements.length < 3 || !st.step1Sample) {
-        if (DEBUG)
-          log("auto-submit: not ready", {
-            hasKyc: !!kycRequestId,
-            movements: allMovements.length,
-            hasSample: !!st.step1Sample,
-          });
-        return;
-      }
-
-      async function urlToFile(url: string, filename: string): Promise<File> {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        return new File([blob], filename, { type: blob.type });
-      }
-
-      const files = await Promise.all(
-        allMovements.map((url, i) => urlToFile(url, `movement_${i}.jpg`))
-      );
-      const file = await urlToFile(st.step1Sample, "step1Sample.jpg");
-
-      try {
-        info("auto-submit: start", { files: files.length });
-        await FaceSubmit({
-          files,
-          file,
-          kycRequestId,
-          onProgress: () => {},
-        });
-        info("auto-submit: success");
-      } catch (err) {
-        error("auto-submit: Upload error", err);
-      }
-    }
-    sendIfReady();
-  }, [done, kycRequestId]);
-
-  /* --------------------------------------
    *        Stop / restart session
    * -------------------------------------- */
   const stopCurrentSession = useCallback(async () => {

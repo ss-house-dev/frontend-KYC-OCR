@@ -28,12 +28,16 @@ export function drawFaceBoxFromFrac(
   guide: Rect,
   frac: FracRect,
   opts: {
-    marginPct?: number;   // ใช้ค่าเดียวกับตอนครอป fallback (เช่น 0.08)
-    coreColor?: string;   // สีกรอบแกนกลาง (ไม่รวม margin)
+    marginPct?: number;
+    coreColor?: string;
     coreWidth?: number;
-    outerColor?: string;  // สีกรอบรวม margin (แสดง “ขอบเผื่อหัวไหล่”)
+    outerColor?: string;
     outerWidth?: number;
-    dash?: number[];      // เส้นประ
+    dash?: number[];
+    offsetFracX?: number; // ⬅ เพิ่ม: ออฟเซ็ตเป็นสัดส่วนของ guide.w (เช่น -0.02 = ซ้าย 2%)
+    offsetFracY?: number; // ⬅ เพิ่ม: ออฟเซ็ตเป็นสัดส่วนของ guide.h
+    offsetPxX?: number;   // ⬅ เพิ่ม: ออฟเซ็ตเป็นพิกเซลแนวนอน (เช่น -8 = ซ้าย 8px)
+    offsetPxY?: number;   // ⬅ เพิ่ม: ออฟเซ็ตเป็นพิกเซลแนวตั้ง
   } = {}
 ) {
   const {
@@ -43,16 +47,23 @@ export function drawFaceBoxFromFrac(
     outerColor = "rgba(0,200,255,0.9)",
     outerWidth = 2,
     dash = [],
+    offsetFracX = 0,
+    offsetFracY = 0,
+    offsetPxX = 0,
+    offsetPxY = 0,
   } = opts;
 
-  // กล่องแกนกลาง (ตาม FACE_BOX_FRAC)
-  const fx = guide.x + guide.w * frac.x;
-  const fy = guide.y + guide.h * frac.y;
+  const offX = offsetFracX * guide.w + offsetPxX;
+  const offY = offsetFracY * guide.h + offsetPxY;
+
+  // กล่องแกนกลาง (ตาม FACE_BOX_FRAC + ออฟเซ็ต)
+  const fx = guide.x + guide.w * frac.x + offX; // ตั้ง offset เป็นค่าลบ = ขยับซ้าย
+  const fy = guide.y + guide.h * frac.y + offY;
   const fw = guide.w * frac.w;
   const fh = guide.h * frac.h;
 
   // กล่องรวม margin (ต้องตรงกับตอนครอป fallback)
-  const m = Math.max(fw, fh) * marginPct;
+  const m  = Math.max(fw, fh) * marginPct;
   const ox = fx - m;
   const oy = fy - m;
   const ow = fw + m * 2;

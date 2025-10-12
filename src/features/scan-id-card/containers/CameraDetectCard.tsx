@@ -38,7 +38,7 @@ const GUIDE_SCALE = 0.42; // 🔧 ใช้ตอน fallback กำหนดส
 // คงระยะชิดขวา/ล่างเดิม แล้วลดขนาดลง 15%
 const RIGHT_MARGIN = 0.05;
 const BOTTOM_MARGIN = 0.16;
-const SCALE = 0.85;           // ย่อ 15%
+const SCALE = 0.85; // ย่อ 15%
 
 const BASE_W = 0.216;
 const BASE_H = 0.396;
@@ -48,9 +48,9 @@ const H = +(BASE_H * SCALE).toFixed(3); // 0.337
 
 export const FACE_BOX_FRAC = {
   x: +(1 - W - RIGHT_MARGIN).toFixed(3), // 0.766  (คงชิดขวาเท่าเดิม)
-  y: +(1 - H - BOTTOM_MARGIN).toFixed(3),// 0.543  (คงชิดล่างเท่าเดิม)
-  w: W,                                   // 0.184
-  h: H,                                   // 0.337
+  y: +(1 - H - BOTTOM_MARGIN).toFixed(3), // 0.543  (คงชิดล่างเท่าเดิม)
+  w: W, // 0.184
+  h: H, // 0.337
 } as const;
 
 const CASCADE_FILE = "/haarcascade_frontalface_default.xml";
@@ -377,12 +377,13 @@ export default function CameraDetectCard() {
 
     // วาดกรอบ FACE_BOX_FRAC (core + outer) ให้เห็นตำแหน่งคร่าว ๆ ของใบหน้า
     drawFaceBoxFromFrac(octx, guide, FACE_BOX_FRAC, {
-      marginPct: 0.08, // ให้ตรงกับตอน fallback crop
+      marginPct: 0.12,
       coreColor: "rgba(255,255,255,0.95)",
       coreWidth: 2,
-      outerColor: "rgba(0,200,255,0.9)", // เส้นขอบนอก (รวม margin)
+      outerColor: "rgba(0,200,255,0.9)",
       outerWidth: 2,
-      dash: [6, 6], // เส้นประสำหรับ outer
+      dash: [6, 6],
+      offsetFracX: -0.04, // ซ้าย ~4% ของ guide.w
     });
 
     // (5) สร้างข้อความ/สถานะ สำหรับ UI และตัดสินใจ “พร้อมถ่าย” หรือยัง
