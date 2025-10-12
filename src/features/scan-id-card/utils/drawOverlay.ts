@@ -45,17 +45,17 @@ export function drawFaceBoxFromFrac(
   } = {}
 ) {
   const {
-    marginPct = 0.08,
+    marginPct = 0.12,
     coreColor = "rgba(255,255,255,0.95)",
     coreWidth = 2,
     outerColor = "rgba(0,200,255,0.9)",
     outerWidth = 2,
     dash = [],
-    offsetFracX = 0,
+    offsetFracX = -0.04,
     offsetFracY = 0,
     offsetPxX = 0,
     offsetPxY = 0,
-    zoom = 1,
+    zoom = 1.35,
     clampToGuide = true,
   } = opts;
 
