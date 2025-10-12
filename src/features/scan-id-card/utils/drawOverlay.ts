@@ -34,10 +34,14 @@ export function drawFaceBoxFromFrac(
     outerColor?: string;
     outerWidth?: number;
     dash?: number[];
-    offsetFracX?: number; // ⬅ เพิ่ม: ออฟเซ็ตเป็นสัดส่วนของ guide.w (เช่น -0.02 = ซ้าย 2%)
-    offsetFracY?: number; // ⬅ เพิ่ม: ออฟเซ็ตเป็นสัดส่วนของ guide.h
-    offsetPxX?: number;   // ⬅ เพิ่ม: ออฟเซ็ตเป็นพิกเซลแนวนอน (เช่น -8 = ซ้าย 8px)
-    offsetPxY?: number;   // ⬅ เพิ่ม: ออฟเซ็ตเป็นพิกเซลแนวตั้ง
+    offsetFracX?: number;
+    offsetFracY?: number;
+    offsetPxX?: number;
+    offsetPxY?: number;
+    /** > 1 = ซูมออก, < 1 = ซูมเข้า (สเกลจากจุดกึ่งกลางของกล่อง) */
+    zoom?: number;
+    /** true = บังคับให้กรอบไม่ล้น guide */
+    clampToGuide?: boolean;
   } = {}
 ) {
   const {
@@ -51,37 +55,83 @@ export function drawFaceBoxFromFrac(
     offsetFracY = 0,
     offsetPxX = 0,
     offsetPxY = 0,
+    zoom = 1,
+    clampToGuide = true,
   } = opts;
 
   const offX = offsetFracX * guide.w + offsetPxX;
   const offY = offsetFracY * guide.h + offsetPxY;
 
-  // กล่องแกนกลาง (ตาม FACE_BOX_FRAC + ออฟเซ็ต)
-  const fx = guide.x + guide.w * frac.x + offX; // ตั้ง offset เป็นค่าลบ = ขยับซ้าย
-  const fy = guide.y + guide.h * frac.y + offY;
-  const fw = guide.w * frac.w;
-  const fh = guide.h * frac.h;
+  // กล่องแกนกลางจาก frac (มุมซ้ายบนเป็นสัดส่วนของ guide) + ออฟเซ็ต
+  let fx = guide.x + guide.w * frac.x + offX;
+  let fy = guide.y + guide.h * frac.y + offY;
+  let fw = guide.w * frac.w;
+  let fh = guide.h * frac.h;
 
-  // กล่องรวม margin (ต้องตรงกับตอนครอป fallback)
-  const m  = Math.max(fw, fh) * marginPct;
-  const ox = fx - m;
-  const oy = fy - m;
-  const ow = fw + m * 2;
-  const oh = fh + m * 2;
+  // ซูมออก/เข้า โดยยึด "กึ่งกลาง" เดิม
+  if (zoom !== 1 && zoom > 0) {
+    const cx = fx + fw / 2;
+    const cy = fy + fh / 2;
+    const nfw = fw * zoom;
+    const nfh = fh * zoom;
+    fx = cx - nfw / 2;
+    fy = cy - nfh / 2;
+    fw = nfw;
+    fh = nfh;
+  }
+
+  // บังคับให้อยู่ในกรอบ guide
+  if (clampToGuide) {
+    fx = Math.max(guide.x, Math.min(fx, guide.x + guide.w - fw));
+    fy = Math.max(guide.y, Math.min(fy, guide.y + guide.h - fh));
+  }
+
+  // กล่องรวม margin (ใช้กับขั้นตอนครอป fallback ให้ตรงกัน)
+  const m = Math.max(fw, fh) * marginPct;
+  let ox = fx - m;
+  let oy = fy - m;
+  let ow = fw + m * 2;
+  let oh = fh + m * 2;
+
+  // บังคับ outer ให้อยู่ใน guide เช่นกัน (ถ้าเปิด clamp)
+  if (clampToGuide) {
+    const gx = guide.x,
+      gy = guide.y,
+      gr = guide.x + guide.w,
+      gb = guide.y + guide.h;
+    const nx = Math.max(gx, ox);
+    const ny = Math.max(gy, oy);
+    const nr = Math.min(gr, ox + ow);
+    const nb = Math.min(gb, oy + oh);
+    ox = nx;
+    oy = ny;
+    ow = Math.max(0, nr - nx);
+    oh = Math.max(0, nb - ny);
+  }
 
   // core
   ctx.save();
   ctx.setLineDash(dash);
   ctx.lineWidth = coreWidth;
   ctx.strokeStyle = coreColor;
-  ctx.strokeRect(Math.round(fx), Math.round(fy), Math.round(fw), Math.round(fh));
+  ctx.strokeRect(
+    Math.round(fx),
+    Math.round(fy),
+    Math.round(fw),
+    Math.round(fh)
+  );
   ctx.restore();
 
-  // outer
+  // outer (เส้นประค่าเริ่มต้น)
   ctx.save();
   ctx.setLineDash(dash.length ? dash : [6, 6]);
   ctx.lineWidth = outerWidth;
   ctx.strokeStyle = outerColor;
-  ctx.strokeRect(Math.round(ox), Math.round(oy), Math.round(ow), Math.round(oh));
+  ctx.strokeRect(
+    Math.round(ox),
+    Math.round(oy),
+    Math.round(ow),
+    Math.round(oh)
+  );
   ctx.restore();
 }

@@ -377,13 +377,15 @@ export default function CameraDetectCard() {
 
     // วาดกรอบ FACE_BOX_FRAC (core + outer) ให้เห็นตำแหน่งคร่าว ๆ ของใบหน้า
     drawFaceBoxFromFrac(octx, guide, FACE_BOX_FRAC, {
-      marginPct: 0.12,
+      marginPct: 0.12, // อยากให้ outer ใหญ่อีกก็เพิ่มได้ เช่น 0.16
       coreColor: "rgba(255,255,255,0.95)",
       coreWidth: 2,
       outerColor: "rgba(0,200,255,0.9)",
       outerWidth: 2,
       dash: [6, 6],
-      offsetFracX: -0.04, // ซ้าย ~4% ของ guide.w
+      offsetFracX: -0.04, // ขยับซ้าย
+      zoom: 1.35, // ⬅ ซูมออก(ขยาย)ทั้ง core/outer
+      clampToGuide: true, // กันกรอบล้น
     });
 
     // (5) สร้างข้อความ/สถานะ สำหรับ UI และตัดสินใจ “พร้อมถ่าย” หรือยัง
