@@ -187,7 +187,7 @@ export default function VerifyIdentityScreen() {
     try {
       if (!ocr.imageSrc) throw new Error("Missing captured ID card image file");
 
-      const files = base64StringToFile(ocr.imageSrc, "idcard.jpg");
+      const files = await base64StringToFile(ocr.imageSrc, "idcard.jpg");
 
       await submit({
         files,

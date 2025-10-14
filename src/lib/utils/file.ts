@@ -1,22 +1,54 @@
-export function base64StringToFile(base64String: string, filename: string, fallbackMime = "image/jpeg"): File {
-  let mime = fallbackMime;
-  let b64 = base64String;
+/** แปลงสตริงอ้างอิงรูป (blob:, data:, หรือ base64 ล้วน) → File */
+export async function base64StringToFile(
+  input: string,
+  filename: string,
+  fallbackMime = "image/jpeg"
+): Promise<File> {
+  try {
+    // --- 1) blob URL ---
+    if (input.startsWith("blob:")) {
+      console.log("[base64StringToFile] blob URL detected");
+      const resp = await fetch(input);
+      const blob = await resp.blob();
+      const type = blob.type || fallbackMime;
+      console.log("[base64StringToFile] blob size/type:", blob.size, type);
+      return new File([blob], filename, { type });
+    }
 
-  if (base64String.startsWith("data:")) {
-    const [meta, data] = base64String.split(",");
-    const mimeMatch = meta.match(/:(.*?);/);
-    if (mimeMatch) mime = mimeMatch[1];
-    b64 = data;
+    // --- 2) data URL ---
+    if (input.startsWith("data:")) {
+      console.log("[base64StringToFile] data URL detected");
+      const [meta, data] = input.split(",", 2);
+      const mimeMatch = /data:(.*?);base64/i.exec(meta);
+      const mime = mimeMatch?.[1] || fallbackMime;
+
+      // decode base64 ส่วนข้อมูล
+      const bin = atob(data);
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      console.log("[base64StringToFile] data URL bytes:", u8.length, "mime:", mime);
+      return new File([u8], filename, { type: mime });
+    }
+
+    // --- 3) base64 ล้วน (รองรับ URL-safe + เติม padding) ---
+    console.log("[base64StringToFile] raw base64 detected (no scheme)");
+    let b64 = input.replace(/[\r\n\s]/g, "");      // ตัดช่องว่าง/newline
+    b64 = b64.replace(/-/g, "+").replace(/_/g, "/"); // URL-safe → standard
+    const pad = b64.length % 4;
+    if (pad) b64 = b64 + "=".repeat(4 - pad);
+
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    console.log("[base64StringToFile] raw base64 bytes:", u8.length, "mime:", fallbackMime);
+    return new File([u8], filename, { type: fallbackMime });
+  } catch (err) {
+    console.error("[base64StringToFile] failed:", err);
+    throw new Error("Unsupported/invalid image string for base64StringToFile");
   }
-
-  const bstr = atob(b64);
-  const u8 = new Uint8Array(bstr.length);
-  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
-
-  return new File([u8], filename, { type: mime });
 }
 
-// src/lib/utils/file.ts
+
 export async function dataURLtoFile(
   dataUrl: string,
   filename: string

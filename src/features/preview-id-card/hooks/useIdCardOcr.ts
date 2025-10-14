@@ -233,7 +233,7 @@ export function useIdCardOcr<TForm extends FieldValues>({
       setImageSrc(dataUrl);
 
       try {
-        const file = base64StringToFile(dataUrl, "idcard_from_session.jpg");
+        const file = await base64StringToFile(dataUrl, "idcard_from_session.jpg");
         mutation.mutate(file);
       } catch (e) {
         console.error("[IDCard OCR] Failed to create file:", e);
