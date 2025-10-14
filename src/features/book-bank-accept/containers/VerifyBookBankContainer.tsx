@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import VerifyBookBankView from "../components/VerifyBookBankView";
+import AlertPopUp from "@/components/AlertPopUp";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = [
@@ -17,6 +18,14 @@ const ALLOWED_TYPES = [
 export default function VerifyBookBankContainer() {
   const [isChecked, setIsChecked] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const [errorAlert, setErrorAlert] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+    imageSrc?: string;
+    redirectTo?: string;
+  }>({ isOpen: false, message: "" });
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -45,27 +54,50 @@ export default function VerifyBookBankContainer() {
     const file = e.target.files?.[0];
 
     try {
+      //ไม่มีไฟล์
       if (!file) return;
+      console.log("[Verify] picked file:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
 
-      // validate: ไฟล์ใหญ่เกิน/ชนิดไม่รองรับ (iOS บางเครื่องให้ type = "" ก็ปล่อยผ่าน)
+      // ตรวจขนาดไฟล์
       if (file.size > MAX_FILE_SIZE) {
-        alert("ไฟล์ใหญ่เกิน 10 MB กรุณาเลือกรูปที่เล็กกว่า 10 MB");
-        return;
-      }
-      if (file.type && !ALLOWED_TYPES.includes(file.type)) {
-        alert("รองรับเฉพาะ JPEG, PNG, HEIC/HEIF, JPG และ WEBP เท่านั้น");
+        console.warn("[Verify] file too large >", MAX_FILE_SIZE, "bytes");
+        setErrorAlert({
+          isOpen: true,
+          title: "Upload Failed",
+          message: "The file exceeds the maximum upload size. Please upload a file smaller than 10 MB.",
+          imageSrc: "/popup/error-upload-bookbank.png",
+        });
         return;
       }
 
-      const dataUrl = await fileToDataURL(file);
+      // ตรวจชนิดไฟล์
+      if (file.type && !ALLOWED_TYPES.includes(file.type)) {
+        console.warn("[Verify] unsupported type:", file.type);
+        setErrorAlert({
+          isOpen: true,
+          title: "Upload Failed",
+          message: "Only JPEG, PNG, HEIC/HEIF, JPG, and WEBP formats are supported. Please upload a valid image file.",
+          imageSrc: "/popup/error-upload-bookbank.png",
+        });
+        return;
+      }
+
+      // เปลี่ยนมาใช้ Object URL (เลี่ยงโควต้า sessionStorage)
+      const objUrl = URL.createObjectURL(file);
+      console.log("[Verify] created objectURL:", objUrl);
 
       // เก็บรูปใหม่ทับของเดิม
       try {
-        sessionStorage.setItem("capturedBookBankImage", dataUrl);
+        sessionStorage.setItem("capturedBookBankImage", objUrl);
         sessionStorage.setItem("imageSource", "upload");
       } catch (err) {
         console.warn("sessionStorage unavailable:", err);
         alert("เบราว์เซอร์ไม่อนุญาตให้เก็บรูปชั่วคราว");
+        URL.revokeObjectURL(objUrl);
         return;
       }
 
@@ -149,6 +181,15 @@ export default function VerifyBookBankContainer() {
           </div>
         </div>
       )}
+
+      <AlertPopUp
+        isOpen={errorAlert.isOpen}
+        title={errorAlert.title}
+        message={errorAlert.message}
+        imageSrc={errorAlert.imageSrc}
+        redirectTo={errorAlert.redirectTo}
+        onRetry={() => setErrorAlert((s) => ({ ...s, isOpen: false }))}
+      />
     </>
   );
 }

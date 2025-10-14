@@ -138,13 +138,13 @@ export default function BookBankPage() {
     try {
       const captured =
         typeof window !== "undefined"
-          ? (sessionStorage.getItem("croppedBookBankImage") ??
+          ? (sessionStorage.getItem("croppedBookBankImageURL") ??
             sessionStorage.getItem("capturedBookBankImage"))
           : null;
       if (!captured)
         throw new Error("Missing BookBank image (cropped/captured)");
 
-      const files = base64StringToFile(captured, "bookbank.jpg");
+      const files = await base64StringToFile(captured, "bookbank.jpg");
 
       const bankName =
         bankOptions.find((b) => b.value === data.bank)?.label ?? data.bank;

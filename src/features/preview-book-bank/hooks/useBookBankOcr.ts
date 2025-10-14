@@ -194,18 +194,36 @@ export function useBookBankOcr<TForm extends FieldValues>({
 
     // ถ้าไม่มี OCR cookie → run OCR จาก sessionStorage
     if (!hasOcrCookie) {
-      const dataUrl = sessionStorage.getItem(sessionImageKey);
-      if (!dataUrl) {
+      const dataUrl = sessionStorage.getItem(sessionImageKey); // "croppedBookBankImage" (legacy)
+      const objUrl = sessionStorage.getItem("croppedBookBankImageURL"); // ✅ ใหม่
+
+      console.log("[OCR] session check:", {
+        sessionImageKey,
+        hasDataUrl: !!dataUrl,
+        hasObjUrl: !!objUrl,
+      });
+
+      if (!dataUrl && !objUrl) {
         router.replace(redirects.noImage || "/book-bank-accept");
         return;
       }
-      setImageSrc(dataUrl);
-
       try {
-        const file = base64StringToFile(dataUrl, "bookbank_from_session.jpg");
+        let file: File;
+        if (objUrl) {
+          const blob = await (await fetch(objUrl)).blob();
+          setImageSrc(objUrl);
+          file = new File([blob], "bookbank_from_session.jpg", {
+            type: blob.type || "image/jpeg",
+          });
+          console.log("[OCR] built File from objectURL, size:", blob.size);
+        } else {
+          setImageSrc(dataUrl!);
+          file = await base64StringToFile(dataUrl!, "bookbank_from_session.jpg");
+          console.log("[OCR] built File from dataURL");
+        }
         mutation.mutate(file);
       } catch (e) {
-        console.error("[BookBank OCR] Failed to create file:", e);
+        console.error("[OCR] failed to create file from session image:", e);
         onError?.(e);
       }
     }

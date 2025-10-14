@@ -33,7 +33,12 @@ const BookBankCropContainer = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const s = getItemSafe("capturedBookBankImage");
+    const dataUrl = sessionStorage.getItem("capturedBookBankImage"); // legacy
+    const objUrl = sessionStorage.getItem("capturedBookBankImageURL"); // ✅ ใหม่
+
+    console.log("[Crop] init:", { hasDataUrl: !!dataUrl, hasObjUrl: !!objUrl });
+
+    const s = objUrl || dataUrl;
     if (!s) {
       toast({
         title: "ไม่พบรูปภาพ",
@@ -47,10 +52,28 @@ const BookBankCropContainer = () => {
     setImgSrc(s);
   }, [router, toast]);
 
-  const onConfirm = useCallback(() => {
+  const onConfirm = useCallback(async () => {
     const dataUrl = cropperApiRef.current?.getCroppedDataURL();
-    if (!dataUrl) return;
-    setItemSafe("croppedBookBankImage", dataUrl);
+    if (!dataUrl) {
+      console.warn("[Crop] getCroppedDataURL() returned empty");
+      return;
+    }
+    console.log("[Crop] got cropped dataURL length:", dataUrl.length);
+
+    // ✅ แปลงเป็น Blob แล้วทำ Object URL (เลี่ยงโควต้า)
+    const blob = await (await fetch(dataUrl)).blob();
+    const url = URL.createObjectURL(blob);
+
+    try {
+      sessionStorage.setItem("croppedBookBankImageURL", url);
+      sessionStorage.removeItem("croppedBookBankImage"); 
+      console.log("[Crop] saved croppedBookBankImageURL");
+    } catch (e) {
+      console.error("[Crop] failed to set croppedBookBankImageURL:", e);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
     const v = Date.now().toString();
     router.push(`/preview-book-bank?v=${v}`);
   }, [router]);
